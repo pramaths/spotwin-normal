@@ -2,6 +2,7 @@ import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import MyQuestionCard from '../../components/MyQuestionCard';
 import { Shield } from 'lucide-react-native';
 import HeaderProfile from '@/components/HeaderProfile';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QuestionScreen() {
   const questions = [
@@ -35,7 +36,7 @@ export default function QuestionScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <HeaderProfile />
       <ScrollView>
         {questions.map((question) => (
@@ -50,7 +51,7 @@ export default function QuestionScreen() {
           />
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

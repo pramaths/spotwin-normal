@@ -19,8 +19,6 @@ import PaymentModal from '../../components/PaymentModal';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatDateTime } from '../../utils/dateUtils';
-
-// Type for your contests
 import { IContest } from '../../types';
 
 // Hard-coded data
@@ -283,7 +281,6 @@ export default function HomeScreen() {
   };
 
   const handleContestPress = (contest: IContest) => {
-    // Alternatively, same as joinPress
     setSelectedContest(contest);
     setPaymentModalVisible(true);
   };
