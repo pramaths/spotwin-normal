@@ -1,11 +1,16 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import HomeIcon from '../../assets/icons/home.svg';
 import CupIcon from '../../assets/icons/cup.svg';
 import QuestionIcon from '../../assets/icons/question.svg';
 import FeedIcon from '../../assets/icons/feed.svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import WhiteHome from '../../assets/icons/whitehome.svg';
+import WhiteCup from '../../assets/icons/whitecup.svg';
+import WhiteFeed from '../../assets/icons/whitefeed.svg';
+import WhiteQuestion from '../../assets/icons/whitequestion.svg';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -32,28 +37,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ }) => <HomeIcon />,
+          tabBarIcon: ({ focused }) => focused ? <WhiteHome /> : <HomeIcon />,
         }}
       />
       <Tabs.Screen
         name="contests"
         options={{
           title: 'Contests',
-          tabBarIcon: ({ }) => <CupIcon />,
+          tabBarIcon: ({ focused }) => focused ? <WhiteCup /> : <CupIcon />,
         }}
       />
       <Tabs.Screen
         name="feeds"
         options={{
           title: 'Feeds',
-          tabBarIcon: ( ) => <FeedIcon />,
+          tabBarIcon: ({ focused }) => focused ? <WhiteFeed /> : <FeedIcon />,
         }}
       />
       <Tabs.Screen
         name="questions"
         options={{
           title: 'Questions',
-          tabBarIcon: () => <QuestionIcon />,
+          tabBarIcon: ({ focused }) => focused ? <WhiteQuestion /> : <QuestionIcon />,
         }}
       />
       <Tabs.Screen
