@@ -6,6 +6,7 @@ import QuestionIcon from '../../assets/icons/question.svg';
 import FeedIcon from '../../assets/icons/feed.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
@@ -15,10 +16,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           ...styles.tabBar,
-          height: 60 + (Platform.OS === 'ios' ? insets.bottom : 0),
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 5 : 5,
         },
-        tabBarActiveTintColor: '#17163B',
+        tabBarActiveTintColor: '#FFF',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         tabBarLabelStyle: styles.tabBarLabel,
       }}
@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="contests"
         options={{
-          title: 'My Contests',
+          title: 'Contests',
           tabBarIcon: ({ }) => <CupIcon />,
         }}
       />
@@ -47,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="questions"
         options={{
-          title: 'My Questions',
+          title: 'Questions',
           tabBarIcon: () => <QuestionIcon />,
         }}
       />
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#1A1A3A',
     borderTopWidth: 0,
+    height: 60,
     paddingTop: 5,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
