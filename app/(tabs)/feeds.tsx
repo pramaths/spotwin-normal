@@ -162,7 +162,7 @@ const mockContests: IContest[] = [
   }
 ];
 
-const QuestionsScreen = () => {
+const FeedsScreen = () => {
   const [selectedTab, setSelectedTab] = useState('all');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
@@ -187,6 +187,7 @@ const QuestionsScreen = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.contestList}
+            style = {{flexGrow:0}}
             renderItem={({ item }) => {
               const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
               return (
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginRight: 12,
-    width: 200,
+    width: 280,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -318,4 +319,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default QuestionsScreen;
+export default FeedsScreen;

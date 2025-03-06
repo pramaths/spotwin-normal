@@ -39,9 +39,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="feed"
+        name="feeds"
         options={{
-          title: 'Live Feed',
+          title: 'Feeds',
           tabBarIcon: ( ) => <FeedIcon />,
         }}
       />
