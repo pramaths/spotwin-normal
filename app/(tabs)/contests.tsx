@@ -115,11 +115,6 @@ export default function ContestsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1A1A3A' }}>
-      <StatusBar
-        translucent={false} 
-        style="light"
-        backgroundColor="#1A1A3A"
-      />
       <View style={styles.container}>
         <HeaderProfile />
         <View style={styles.tabContainer}>
