@@ -47,8 +47,12 @@ const VideoItem = ({
   videos
 }: VideoItemProps) => {
   const [loading, setLoading] = useState(true);
-  const [questionsLeft, setQuestionsLeft] = useState(9);
   const [isPlayerMounted, setIsPlayerMounted] = useState(true);
+  const [questionsLeft, setQuestionsLeft] = useState(videos.length - index);
+
+  useEffect(() => {
+    setQuestionsLeft(videos.length - index);
+  }, [videos.length, index]);
 
   const videoPlayer = useVideoPlayer(
     { uri: item.videoUrl },
@@ -65,6 +69,21 @@ const VideoItem = ({
     }
   );
 
+  useEffect(() => {
+    return () => {
+      setIsPlayerMounted(false);
+      try {
+        if (videoPlayer) {
+          videoPlayer.pause();
+        }
+      } catch (err: any) {
+        console.log(`Cleanup error handled: ${err.message}`);
+      }
+    };
+  }, [videoPlayer]);
+
+
+
   const { isPlaying } = useEvent(videoPlayer, 'playingChange', {
     isPlaying: videoPlayer?.playing || false
   });
@@ -79,19 +98,6 @@ const VideoItem = ({
       videoPlayer.muted = muteState;
     }
   }, [isVisible, muteState, videoPlayer, isPlayerMounted]);
-
-  useEffect(() => {
-    return () => {
-      setIsPlayerMounted(false);
-      try {
-        if (videoPlayer) {
-          videoPlayer.pause();
-        }
-      } catch (err: any) {
-        console.log(`Cleanup error handled: ${err.message}`);
-      }
-    };
-  }, [videoPlayer]);
 
   const handleVideoPress = () => {
     if (videoPlayer && isPlayerMounted) {
@@ -214,7 +220,6 @@ export default function VideoPredictionScreen() {
     itemVisiblePercentThreshold: 50
   }).current;
 
-  // Load videos or specific video for editing
   useEffect(() => {
     const loadVideos = async () => {
       try {
@@ -238,7 +243,6 @@ export default function VideoPredictionScreen() {
 
             setVideos(videoData);
 
-            // Set initial selection based on existing prediction
             setSelections({
               0: prediction.outcome === IOutcomeType.YES ? 'yes' : 'no'
             });
@@ -476,7 +480,7 @@ const styles = StyleSheet.create({
   },
   glassyContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 80 : 40,
+    bottom: Platform.OS === 'ios' ? 100 : 40,
     left: 20,
     right: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -485,10 +489,11 @@ const styles = StyleSheet.create({
     backdropFilter: 'blur(10px)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    transform: [{ translateY: 0 }],
   },
   predictionButton: {
     flex: 1,
-    padding: 16,
+    padding: 10,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -515,7 +520,7 @@ const styles = StyleSheet.create({
   },
   predictionButtonText: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   predictionIndicator: {
@@ -601,7 +606,7 @@ const styles = StyleSheet.create({
   },
   questionText: {
     color: '#FFF',
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
