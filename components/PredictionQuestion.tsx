@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +12,7 @@ interface PredictionQuestionProps {
     teams: string;
     timeRemaining: string;
     onAnswer: (id: string, answer: 'YES' | 'NO') => void;
-    onQuestionPress?: (id: string) => void; // New prop for handling question press
+    onQuestionPress?: (id: string) => void;
 }
 
 const PredictionQuestion = ({
@@ -21,67 +22,63 @@ const PredictionQuestion = ({
     timeRemaining,
     onAnswer,
     onQuestionPress,
-}: PredictionQuestionProps) => {
-    return (
-        <View style={styles.container}>
-            <Image source={{ uri: matchImage }} style={styles.image} />
+}: PredictionQuestionProps) => (
+    <View style={styles.container}>
+        <Image source={{ uri: matchImage }} style={styles.image} />
 
-            <View style={styles.overlay}>
-                <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>Ends in: {timeRemaining}</Text>
-                </View>
+        <View style={styles.overlay}>
+            <View style={styles.timeContainer}>
+                <Text style={styles.timeText}>Ends in: {timeRemaining}</Text>
+            </View>
 
-                <View style={styles.bottomContent}>
+            <View style={styles.bottomContent}>
+                <TouchableOpacity
+                    style={styles.questionContainer}
+                    onPress={() => onQuestionPress && onQuestionPress(id)}
+                    activeOpacity={0.8}
+                >
+                    <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+                        <Text style={styles.questionText}>{question}</Text>
+                    </BlurView>
+                </TouchableOpacity>
+
+                <View style={styles.buttonsContainer}>
                     <TouchableOpacity
-                        style={styles.questionContainer}
-                        onPress={() => onQuestionPress && onQuestionPress(id)}
+                        style={styles.buttonWrapper}
                         activeOpacity={0.8}
+                        onPress={() => onAnswer(id, 'YES')}
                     >
-                        <BlurView intensity={50} style={styles.blurContainer}>
-                            <Text style={styles.questionText}>
-                                Will there be a goal in next 5 minutes?
-                            </Text>
-                        </BlurView>
+                        <LinearGradient
+                            colors={['#00E676', '#00C853']}
+                            style={styles.button}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                            <Text style={styles.buttonText}>YES</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
 
-                    <View style={styles.buttonsContainer}>
-                        <TouchableOpacity
-                            style={styles.buttonWrapper}
-                            activeOpacity={0.8}
-                            onPress={() => onAnswer(id, 'YES')}
+                    <TouchableOpacity
+                        style={styles.buttonWrapper}
+                        activeOpacity={0.8}
+                        onPress={() => onAnswer(id, 'NO')}
+                    >
+                        <LinearGradient
+                            colors={['#FF5252', '#D50000']}
+                            style={styles.button}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
                         >
-                            <LinearGradient
-                                colors={['#00E676', '#00C853']}
-                                style={styles.button}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                                <Text style={styles.buttonText}>YES</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.buttonWrapper}
-                            activeOpacity={0.8}
-                            onPress={() => onAnswer(id, 'NO')}
-                        >
-                            <LinearGradient
-                                colors={['#FF5252', '#D50000']}
-                                style={styles.button}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Ionicons name="close-circle" size={18} color="#FFFFFF" />
-                                <Text style={styles.buttonText}>NO</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
+                            <Ionicons name="close-circle" size={18} color="#FFFFFF" />
+                            <Text style={styles.buttonText}>NO</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
                 </View>
             </View>
         </View>
-    );
-};
+    </View>
+);
 
 const styles = StyleSheet.create({
     container: {
@@ -98,26 +95,22 @@ const styles = StyleSheet.create({
             android: {
                 elevation: 4,
             },
-            web: {
-                boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-            },
         }),
     },
     image: {
         width: '100%',
         height: 260,
-        borderRadius: 16,
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
         borderRadius: 16,
         padding: 12,
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(0, 0, 0, 0.15)',
+        backgroundColor: 'rgba(0,0,0,0.15)',
     },
     timeContainer: {
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         padding: 6,
         borderRadius: 12,
     },
@@ -128,73 +121,40 @@ const styles = StyleSheet.create({
     },
     bottomContent: {
         marginTop: 'auto',
-        width: '100%',
     },
     questionContainer: {
-        borderRadius: 6,
+        marginBottom: 10,
+        borderRadius: 8,
         overflow: 'hidden',
-        marginBottom: 4,
-    },
-    questionInnerContainer: {
-        paddingVertical: 6,
-        width: '100%',
-    },
-    questionText: {
-        fontSize: 14,
-        fontWeight: '400',
-        color: '#fff',
-        textAlign: 'left',
-        justifyContent: 'flex-start',
-        textShadowColor: 'rgba(1, 1, 1, 0.9)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 6,
-    },
-
-    buttonsContainer: {
-        flexDirection: 'row',
-        gap: 8,
-        maxWidth: '100%',
-        alignItems: 'center',
-        justifyContent: 'center'
     },
     blurContainer: {
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 8,
-        overflow: 'hidden',
-      },
+    },
+    questionText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#b1a49a',
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        gap: 8,
+    },
     buttonWrapper: {
-        width: '50%',
+        flex: 1,
     },
     button: {
         paddingVertical: 8,
-        paddingHorizontal: 15,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
-            },
-            android: {
-                elevation: 3,
-            },
-            web: {
-                boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.2)',
-            },
-        }),
     },
     buttonText: {
         color: '#FFFFFF',
         fontSize: 12,
         fontWeight: 'bold',
-        textAlign: 'center',
         marginLeft: 5,
-        letterSpacing: 0.5,
     },
 });
 
