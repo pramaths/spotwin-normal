@@ -6,7 +6,6 @@ import QuestionIcon from '../../assets/icons/question.svg';
 import FeedIcon from '../../assets/icons/feed.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
@@ -16,7 +15,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           ...styles.tabBar,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 5 : 5,
+          height: 60 + (Platform.OS === 'ios' ? insets.bottom : 0),
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
         },
         tabBarActiveTintColor: '#17163B',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
@@ -65,7 +65,6 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#1A1A3A',
     borderTopWidth: 0,
-    height: 60,
     paddingTop: 5,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
