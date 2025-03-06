@@ -1,10 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, Platform } from 'react-native';
-import HomeIcon from '../../assets/icons/home.svg';
-import CupIcon from '../../assets/icons/cup.svg';
-import QuestionIcon from '../../assets/icons/question.svg';
-import FeedIcon from '../../assets/icons/feed.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -17,7 +14,7 @@ export default function TabLayout() {
           ...styles.tabBar,
           paddingBottom: Platform.OS === 'ios' ? insets.bottom + 5 : 5,
         },
-        tabBarActiveTintColor: '#FFFFFF',
+        tabBarActiveTintColor: '#17163B',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         tabBarLabelStyle: styles.tabBarLabel,
       }}
@@ -26,28 +23,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ }) => <HomeIcon />,
+          tabBarIcon: ({ }) => <Image source={require('../../assets/icons/home.svg')} />,
         }}
       />
       <Tabs.Screen
         name="contests"
         options={{
           title: 'My Contests',
-          tabBarIcon: ({ }) => <CupIcon />,
+          tabBarIcon: ({ }) => <Image source={require('../../assets/icons/cup.svg')} />,
         }}
       />
       <Tabs.Screen
         name="feed"
         options={{
           title: 'Live Feed',
-          tabBarIcon: ( ) => <FeedIcon />,
+          tabBarIcon: ( ) => <Image source={require('../../assets/icons/feed.svg')} />,
         }}
       />
       <Tabs.Screen
         name="questions"
         options={{
           title: 'My Questions',
-          tabBarIcon: () => <QuestionIcon />,
+          tabBarIcon: () => <Image source={require('../../assets/icons/question.svg')} />,
         }}
       />
       <Tabs.Screen

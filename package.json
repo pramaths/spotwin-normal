@@ -1,6 +1,6 @@
 {
   "name": "9shoot-mobile",
-  "main": "expo-router/entry",
+  "main": "entrypoint.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -22,6 +22,9 @@
     "@privy-io/expo-native-extensions": "^0.0.4",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@solana-mobile/mobile-wallet-adapter-protocol": "^2.1.5",
+    "@solana-mobile/mobile-wallet-adapter-protocol-web3js": "^2.1.5",
+    "@solana/web3.js": "^1.98.0",
     "9shoot-mobile": "file:",
     "buffer": "^6.0.3",
     "expo": "~52.0.36",
@@ -59,7 +62,8 @@
     "react-native-svg": "15.8.0",
     "react-native-svg-transformer": "^1.5.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5"
+    "react-native-webview": "13.12.5",
+    "expo-image": "~2.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

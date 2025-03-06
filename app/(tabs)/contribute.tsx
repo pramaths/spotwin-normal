@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
-  Dimensions
+  Dimensions,
+  Animated,
+  Easing
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +28,8 @@ const ContributePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaPermission, setMediaPermission] = useState<string | null>(null);
   const videoRef = useRef(null);
+  const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const checkmarkOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     (async () => {
@@ -34,6 +37,25 @@ const ContributePage = () => {
       setMediaPermission(status);
     })();
   }, []);
+
+  const animateCheckmark = () => {
+    checkmarkScale.setValue(0);
+    checkmarkOpacity.setValue(0);
+    Animated.parallel([
+      Animated.spring(checkmarkScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 4
+      }),
+      Animated.timing(checkmarkOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+        easing: Easing.ease
+      })
+    ]).start();
+  };
 
   const pickVideo = async () => {
     setVideoError('');
@@ -45,7 +67,7 @@ const ContributePage = () => {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.video],
+        mediaTypes: ['videos'],
         allowsEditing: true,
         quality: 1,
         videoMaxDuration: 60, // Limit to 60 seconds
@@ -69,6 +91,7 @@ const ContributePage = () => {
           setVideoUri(selectedVideo.uri);
           setUploading(false);
           setVideoUploaded(true);
+          animateCheckmark(); // Trigger animation when upload completes
         }, 1500);
       }
     } catch (error: any) {
@@ -80,6 +103,8 @@ const ContributePage = () => {
   const handleRemoveVideo = () => {
     setVideoUri(null);
     setVideoUploaded(false);
+    checkmarkScale.setValue(0);
+    checkmarkOpacity.setValue(0);
   };
 
   const handleSubmit = () => {
@@ -139,8 +164,15 @@ const ContributePage = () => {
               <ActivityIndicator color="#FFFFFF" />
             ) : videoUploaded ? (
               <>
-                <Check color="#FFFFFF" size={20} />
-                <Text style={styles.uploadButtonText}>Video Uploaded</Text>
+                <Animated.View style={{
+                  transform: [{ scale: checkmarkScale }],
+                  opacity: checkmarkOpacity,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}>
+                  <Check color="#FFFFFF" size={20} />
+                  <Text style={styles.uploadButtonText}>Video Uploaded</Text>
+                </Animated.View>
               </>
             ) : (
               <>
