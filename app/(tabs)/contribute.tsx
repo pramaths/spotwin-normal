@@ -66,29 +66,21 @@ const ContributePage = () => {
     }
 
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['videos'],
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 1,
-        videoMaxDuration: 60, // Limit to 60 seconds
+        aspect: [16, 9],
       });
 
+      console.log(result);
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedVideo = result.assets[0];
-        
-        // Check if the file is actually a video
-        if (!selectedVideo.uri.endsWith('.mp4') && 
-            !selectedVideo.uri.endsWith('.mov') && 
-            !selectedVideo.uri.endsWith('.3gp')) {
-          setVideoError('Please select a valid video file');
-          return;
-        }
-        
         setUploading(true);
+        setVideoUri(result.assets[0].uri);
         
         // Simulate upload process - in a real app, you would upload to your server here
         setTimeout(() => {
-          setVideoUri(selectedVideo.uri);
           setUploading(false);
           setVideoUploaded(true);
           animateCheckmark(); // Trigger animation when upload completes
