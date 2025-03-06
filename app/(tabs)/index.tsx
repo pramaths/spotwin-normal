@@ -168,17 +168,6 @@ export default function HomeScreen() {
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    // Status bar styling if desired
-    StatusBar.setBarStyle('light-content');
-    if (Platform.OS === 'android') {
-      StatusBar.setBackgroundColor('#000');
-    }
-    if (Platform.OS === 'ios') {
-      StatusBar.setBarStyle('dark-content');
-    }
-  }, []);
-
   // Join or press a card => show modal
   const handleJoinPress = (contest: IContest) => {
     setSelectedContest(contest);
@@ -195,7 +184,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Renders each “Blue Card” in a horizontal list
   const renderFeaturedCard = ({ item }: { item: IContest }) => {
     const { formattedTime } = formatDateTime(item.event.startDate);
     
@@ -210,7 +198,6 @@ export default function HomeScreen() {
           {/* Header */}
           <View style={styles.cardHeader}>
             <Text style={styles.leagueText}>{item.event.title}</Text>
-            {/* You can replace the arrow with next/prev logic if you want */}
             <TouchableOpacity style={styles.slideArrowContainer}>
               <ChevronRight color="#FFF" size={16} />
             </TouchableOpacity>
@@ -415,9 +402,10 @@ const styles = StyleSheet.create({
   },
   teamsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+
   },
   teamContainer: {
     alignItems: 'center',
@@ -425,7 +413,7 @@ const styles = StyleSheet.create({
   },
   vsContainer: {
     alignItems: 'center',
-    width: '20%',
+    width: '30%',
   },
   vsText: {
     fontSize: 16,
