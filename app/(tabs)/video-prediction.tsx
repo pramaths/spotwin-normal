@@ -75,6 +75,15 @@ const VideoItem = ({
     }
   }, [isVisible, muteState, videoPlayer]);
 
+  // Pause video when component unmounts
+  useEffect(() => {
+    return () => {
+      if (videoPlayer) {
+        videoPlayer.pause();
+      }
+    };
+  }, [videoPlayer]);
+
   // Handle play/pause toggle
   const handleVideoPress = () => {
     if (videoPlayer) {
@@ -126,14 +135,17 @@ const VideoItem = ({
             
             {/* Question overlay at bottom */}
             <View style={styles.questionContainer}>
-              <Text style={styles.questionText}>{item.question}</Text>
+              <View style={styles.questionBubble}>
+                <Text style={styles.questionText}>{item.question}</Text>
+              </View>
               
               {/* Yes/No prediction buttons */}
               <View style={styles.predictionButtonsContainer}>
                 <TouchableOpacity
                   style={[
                     styles.predictionButton,
-                    hasSelected && selection === 'yes' && styles.selectedButton
+                    styles.yesButton,
+                    hasSelected && selection === 'yes' && styles.selectedYesButton
                   ]}
                   onPress={() => onPrediction('yes', index)}
                   disabled={hasSelected}
@@ -144,7 +156,8 @@ const VideoItem = ({
                 <TouchableOpacity
                   style={[
                     styles.predictionButton,
-                    hasSelected && selection === 'no' && styles.selectedButton
+                    styles.noButton,
+                    hasSelected && selection === 'no' && styles.selectedNoButton
                   ]}
                   onPress={() => onPrediction('no', index)}
                   disabled={hasSelected}
@@ -211,6 +224,12 @@ export default function VideoPredictionScreen() {
     };
     
     loadVideos();
+
+    // Cleanup function when component unmounts or when navigating away
+    return () => {
+      // Any cleanup needed when component unmounts
+      console.log('Cleaning up VideoPredictionScreen');
+    };
   }, []);
   
   const handleViewableItemsChanged = ({ 
@@ -222,16 +241,14 @@ export default function VideoPredictionScreen() {
       const visibleIndexes: Record<number, boolean> = {};
       
       viewableItems.forEach(viewable => {
-        if (viewable.index !== undefined) {
+        if (viewable.index !== undefined && viewable.index !== null) {
           visibleIndexes[viewable.index] = true;
         }
       });
       
       // Set current visible videos
       setVisibleVideos(visibleIndexes);
-      
-      // Set current index to the first visible video
-      if (viewableItems[0]?.index !== undefined) {
+            if (viewableItems[0]?.index !== undefined && viewableItems[0]?.index !== null) {
         setCurrentIndex(viewableItems[0].index);
       }
     }
@@ -273,8 +290,7 @@ export default function VideoPredictionScreen() {
     router.back();
   };
 
-  // Function to render each item in the FlatList
-  const renderItem = useCallback(({ item, index }) => (
+  const renderItem = useCallback(({ item, index }: { item: IFeaturedVideo, index: number }) => (
     <VideoItem 
       item={item}
       index={index}
@@ -352,7 +368,6 @@ export default function VideoPredictionScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Main container
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -363,7 +378,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  // Video container - full screen with position relative for overlays
   videoContainer: {
     width,
     height,
@@ -426,20 +440,27 @@ const styles = StyleSheet.create({
   // Container for the question at the bottom
   questionContainer: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 100,
     left: 0,
     right: 0,
     padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  questionBubble: {
+    backgroundColor: '#3672E9',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#FFF',
   },
   // Question text styling
   questionText: {
     color: '#FFF',
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 1, height: 1 },
@@ -449,29 +470,47 @@ const styles = StyleSheet.create({
   predictionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 15,
   },
   // Individual prediction button
   predictionButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     padding: 16,
     borderRadius: 12,
-    marginHorizontal: 5,
+    marginHorizontal: 8,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  yesButton: {
+    backgroundColor: '#34C759',
+  },
+  noButton: {
+    backgroundColor: '#FF3B30',
   },
   // Selected button style
-  selectedButton: {
-    backgroundColor: '#3672E9',
-    borderColor: '#FFF',
+  selectedYesButton: {
+    backgroundColor: '#2ECC71',
+    borderColor: '#FFFF00',
+    borderWidth: 3,
+  },
+  selectedNoButton: {
+    backgroundColor: '#E74C3C',
+    borderColor: '#FFFF00',
+    borderWidth: 3,
   },
   // Prediction button text
   predictionButtonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   // Container for showing user's prediction
   predictionIndicator: {
