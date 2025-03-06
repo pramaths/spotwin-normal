@@ -1,45 +1,76 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { StyleSheet, Platform } from 'react-native';
+import HomeIcon from '../../assets/icons/home.svg';
+import CupIcon from '../../assets/icons/cup.svg';
+import QuestionIcon from '../../assets/icons/question.svg';
+import FeedIcon from '../../assets/icons/feed.svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        tabBarStyle: {
+          ...styles.tabBar,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 5 : 5,
+        },
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
+        tabBarLabelStyle: styles.tabBarLabel,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ }) => <HomeIcon />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="contests"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'My Contests',
+          tabBarIcon: ({ }) => <CupIcon />,
+        }}
+      />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: 'Live Feed',
+          tabBarIcon: ( ) => <FeedIcon />,
+        }}
+      />
+      <Tabs.Screen
+        name="questions"
+        options={{
+          title: 'My Questions',
+          tabBarIcon: () => <QuestionIcon />,
+        }}
+      />
+      <Tabs.Screen
+        name="contribute"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#1A1A3A',
+    borderTopWidth: 0,
+    height: 60,
+    paddingTop: 5,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  tabBarLabel: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+  },
+});

@@ -1,39 +1,53 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { useAuthStore } from '../store/authstore';
+import {PrivyProvider} from '@privy-io/expo';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const segments = useSegments();
+
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (loaded) {
+    // Hide splash screen after a short delay
+    const timer = setTimeout(() => {
       SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (!loaded) {
+  useEffect(() => {
+    if (!isAuthenticated && segments[0] !== '(auth)' && !isLoading) {
+      router.replace('/(auth)/signup');
+    }
+  }, [isAuthenticated, segments, router, isLoading]);
+
+  if (isLoading) {
     return null;
   }
 
+  const privyAppId = process.env.EXPO_PUBLIC_PRIVY_APP_ID as string;
+  const privyClientId = process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID as string;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <>
+    <PrivyProvider
+    appId={privyAppId}
+    clientId={privyClientId}>
+      <Slot />
+      <StatusBar
+        translucent={false} 
+        style="light"
+        backgroundColor="#1A1A3A"
+      />
+      </PrivyProvider>
+    </>
   );
 }
