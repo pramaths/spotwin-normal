@@ -66,7 +66,6 @@ const VideoItem = ({
     isPlaying: videoPlayer?.playing || false
   });
 
-  // Handle visibility and mute state changes
   useEffect(() => {
     if (videoPlayer && isPlayerMounted) {
       if (isVisible) {
@@ -84,7 +83,6 @@ const VideoItem = ({
       try {
         if (videoPlayer) {
           videoPlayer.pause();
-          videoPlayer.dispose();
         }
       } catch (err: any) {
         console.log(`Cleanup error handled: ${err.message}`);
@@ -123,7 +121,6 @@ const VideoItem = ({
               </View>
             )}
 
-            {/* Questions left counter - hide if editing a specific prediction */}
             {!isEditing && (
               <View style={styles.questionsLeftContainer}>
                 <View style={styles.questionsLeftBadge}>
@@ -412,7 +409,7 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width,
-    height: Platform.OS === 'ios' ? height : height - 48, // Adjust for Android tab bar
+    height: Platform.OS === 'ios' ? height - 90 : height,
     backgroundColor: '#000',
     position: 'relative',
   },
@@ -465,12 +462,12 @@ const styles = StyleSheet.create({
   },
   glassyContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20,
+    bottom: Platform.OS === 'ios' ? 80 : 40,
     left: 20,
     right: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
-    padding: 20,
+    padding: Platform.OS === 'ios' ? 16 : 20,
     backdropFilter: 'blur(10px)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -559,7 +556,7 @@ const styles = StyleSheet.create({
   },
   questionsLeftContainer: {
     position: 'absolute',
-    top: 20,
+    top: 40,
     alignSelf: 'center',
     zIndex: 10,
   },
