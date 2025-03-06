@@ -65,26 +65,36 @@ const VideoItem = ({
   });
   
   useEffect(() => {
-    if (videoPlayer) {
-      if (isVisible) {
-        videoPlayer.play();
-      } else {
-        videoPlayer.pause();
+    try {
+      if (videoPlayer && typeof videoPlayer === 'object') {
+        if (isVisible) {
+          videoPlayer.play();
+        } else {
+          videoPlayer.pause();
+        }
+        videoPlayer.muted = muteState;
       }
-      videoPlayer.muted = muteState;
+    } catch (err:any) {
+      console.log(`Error handling video player: ${err.message}`);
     }
   }, [isVisible, muteState, videoPlayer]);
 
   // Pause video when component unmounts
   useEffect(() => {
     return () => {
-      if (videoPlayer) {
-        videoPlayer.pause();
+      try {
+        // Only attempt to pause if videoPlayer exists and has a valid reference
+        if (videoPlayer && typeof videoPlayer === 'object' && videoPlayer.status !== 'error') {
+          console.log(`Safely cleaning up video player for index ${index}`);
+          videoPlayer.pause();
+        }
+      } catch (err:any) {
+        // Silent catch to prevent unmount errors
+        console.log(`Error during video cleanup: ${err.message}`);
       }
     };
-  }, [videoPlayer]);
+  }, [videoPlayer, index]);
 
-  // Handle play/pause toggle
   const handleVideoPress = () => {
     if (videoPlayer) {
       if (videoPlayer.playing) {
@@ -126,20 +136,17 @@ const VideoItem = ({
               nativeControls ={false}
             />
             
-            {/* Play/Pause indicator */}
             {!isPlaying  && (
               <View style={styles.pauseOverlay}>
                 <Play color="#FFF" size={48} />
               </View>
             )}
             
-            {/* Question overlay at bottom */}
             <View style={styles.questionContainer}>
               <View style={styles.questionBubble}>
                 <Text style={styles.questionText}>{item.question}</Text>
               </View>
-              
-              {/* Yes/No prediction buttons */}
+       
               <View style={styles.predictionButtonsContainer}>
                 <TouchableOpacity
                   style={[
@@ -225,34 +232,36 @@ export default function VideoPredictionScreen() {
     
     loadVideos();
 
-    // Cleanup function when component unmounts or when navigating away
     return () => {
-      // Any cleanup needed when component unmounts
       console.log('Cleaning up VideoPredictionScreen');
     };
   }, []);
   
-  const handleViewableItemsChanged = ({ 
+  const handleViewableItemsChanged = useCallback(({ 
     viewableItems 
   }: { 
     viewableItems: Array<ViewToken> 
   }) => {
     if (viewableItems.length > 0) {
-      const visibleIndexes: Record<number, boolean> = {};
+      // Build a new visibility map
+      const newVisibleVideos: Record<number, boolean> = {};
       
-      viewableItems.forEach(viewable => {
-        if (viewable.index !== undefined && viewable.index !== null) {
-          visibleIndexes[viewable.index] = true;
+      // Mark currently visible items
+      viewableItems.forEach((viewToken) => {
+        if (viewToken.index !== null) {
+          newVisibleVideos[viewToken.index] = true;
         }
       });
       
-      // Set current visible videos
-      setVisibleVideos(visibleIndexes);
-            if (viewableItems[0]?.index !== undefined && viewableItems[0]?.index !== null) {
+      // Update current index to the first visible video
+      if (viewableItems[0].index !== null) {
         setCurrentIndex(viewableItems[0].index);
       }
+      
+      // Update visible videos state
+      setVisibleVideos(newVisibleVideos);
     }
-  };
+  }, []);
 
   const handlePrediction = useCallback(async (prediction: string, index: number) => {
     try {
@@ -341,7 +350,11 @@ export default function VideoPredictionScreen() {
         decelerationRate="fast"
         onViewableItemsChanged={handleViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        initialScrollIndex={0}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
+        windowSize={3}
+        removeClippedSubviews={false}
+        keyboardShouldPersistTaps="always"
         getItemLayout={(_, index) => ({
           length: height,
           offset: height * index,
@@ -349,7 +362,6 @@ export default function VideoPredictionScreen() {
         })}
       />
       
-      {/* Controls overlay */}
       <View style={styles.topControls}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <ChevronLeft color="#FFF" size={24} />
@@ -372,7 +384,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  // Center content for loading and error states
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -440,7 +451,7 @@ const styles = StyleSheet.create({
   // Container for the question at the bottom
   questionContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 20,
     left: 0,
     right: 0,
     padding: 20,
@@ -456,26 +467,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFF',
   },
-  // Question text styling
   questionText: {
     color: '#FFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-  // Container for prediction buttons
   predictionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+    marginTop: 4,
   },
-  // Individual prediction button
   predictionButton: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     marginHorizontal: 8,
     alignItems: 'center',
@@ -494,7 +502,6 @@ const styles = StyleSheet.create({
   noButton: {
     backgroundColor: '#FF3B30',
   },
-  // Selected button style
   selectedYesButton: {
     backgroundColor: '#2ECC71',
     borderColor: '#FFFF00',
@@ -505,10 +512,9 @@ const styles = StyleSheet.create({
     borderColor: '#FFFF00',
     borderWidth: 3,
   },
-  // Prediction button text
   predictionButtonText: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
