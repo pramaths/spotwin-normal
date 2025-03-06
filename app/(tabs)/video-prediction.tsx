@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   ViewToken,
   ViewabilityConfig,
+  Platform,
+  SafeAreaView,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
@@ -40,6 +42,8 @@ const VideoItem = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [totalQuestions] = useState(9); // Hardcoded for now, but could come from API
+  const [questionsLeft] = useState(totalQuestions); // Could be calculated based on progress
   
   const videoPlayer = useVideoPlayer(
     { uri: item.videoUrl }, 
@@ -133,20 +137,26 @@ const VideoItem = ({
             <VideoView
               player={videoPlayer}
               style={styles.videoPlayer}
-              nativeControls ={false}
+              nativeControls={false}
             />
             
-            {!isPlaying  && (
+            {!isPlaying && (
               <View style={styles.pauseOverlay}>
                 <Play color="#FFF" size={48} />
               </View>
             )}
             
-            <View style={styles.questionContainer}>
-              <View style={styles.questionBubble}>
-                <Text style={styles.questionText}>{item.question}</Text>
+            {/* Questions left counter - centered at top */}
+            <View style={styles.questionsLeftContainer}>
+              <View style={styles.questionsLeftBadge}>
+                <Text style={styles.questionsLeftText}>{questionsLeft} Questions left</Text>
               </View>
-       
+            </View>
+            
+            {/* Question and answers at bottom - matching reference image */}
+            <View style={styles.questionFooter}>
+              <Text style={styles.questionText}>{item.question}</Text>
+              
               <View style={styles.predictionButtonsContainer}>
                 <TouchableOpacity
                   style={[
@@ -200,19 +210,16 @@ export default function VideoPredictionScreen() {
   
   const flatListRef = useRef<FlatList<IFeaturedVideo> | null>(null);
   
-  // Create a ref for the viewability config to avoid recreating it on each render
   const viewabilityConfig = useRef<ViewabilityConfig>({
     itemVisiblePercentThreshold: 50
   }).current;
   
-  // Fetch videos on component mount
   useEffect(() => {
     const loadVideos = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // You can pass eventId and contestId if needed
         const data = await fetchPredictionVideos();
         
         if (data.length === 0) {
@@ -258,22 +265,18 @@ export default function VideoPredictionScreen() {
         setCurrentIndex(viewableItems[0].index);
       }
       
-      // Update visible videos state
       setVisibleVideos(newVisibleVideos);
     }
   }, []);
 
   const handlePrediction = useCallback(async (prediction: string, index: number) => {
     try {
-      // Update UI immediately for better UX
       setSelections(prev => ({ ...prev, [index]: prediction }));
       
-      // Submit prediction to API if there's a valid video
       if (videos[index]) {
         await submitPrediction(videos[index].id, prediction);
       }
 
-      // Automatically scroll to next video after a short delay
       setTimeout(() => {
         if (index < videos.length - 1) {
           flatListRef.current?.scrollToIndex({
@@ -285,7 +288,6 @@ export default function VideoPredictionScreen() {
       }, 300);
     } catch (err) {
       console.error('Error submitting prediction:', err);
-      // We could show an error toast here, but we'll keep the UI selection for better UX
     }
   }, [videos]);
 
@@ -313,7 +315,7 @@ export default function VideoPredictionScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFF" />
         <Text style={styles.loadingText}>Loading prediction videos...</Text>
       </View>
@@ -322,7 +324,7 @@ export default function VideoPredictionScreen() {
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity 
           style={styles.retryButton}
@@ -335,7 +337,7 @@ export default function VideoPredictionScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       
       <FlatList
@@ -375,7 +377,7 @@ export default function VideoPredictionScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -391,22 +393,19 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width,
-    height,
+    height: Platform.OS === 'ios' ? height : height - 48, // Adjust for Android tab bar
     backgroundColor: '#000',
     position: 'relative',
   },
-  // Touchable area for video
   videoTouchable: {
     flex: 1,
   },
-  // Video player styles
   videoPlayer: {
     flex: 1,
   },
-  // Top controls container (back button and mute toggle)
   topControls: {
     position: 'absolute',
-    top: 50,
+    top: Platform.OS === 'ios' ? 50 : 30,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -415,110 +414,82 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 10,
   },
-  // Back button styling
   backButton: {
     padding: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 30,
   },
-  // Mute button styling
   muteButton: {
     padding: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 30,
   },
-  // Overlay when video is paused
   pauseOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Overlay when video is buffering
   bufferingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Text shown during buffering
   bufferingText: {
     color: '#FFF',
     fontSize: 16,
     marginTop: 10,
     fontWeight: '500',
   },
-  // Container for the question at the bottom
-  questionContainer: {
+  questionFooter: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20, // Adjust for iOS home indicator
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  questionBubble: {
-    backgroundColor: '#3672E9',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#FFF',
   },
   questionText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    marginBottom: 16,
   },
   predictionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
+    gap: 12,
+    marginHorizontal: 20,
   },
   predictionButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 8,
+    padding: 14,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   yesButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#27ae60', // Exact green from reference
   },
   noButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#e74c3c', // Exact red from reference
   },
   selectedYesButton: {
     backgroundColor: '#2ECC71',
-    borderColor: '#FFFF00',
-    borderWidth: 3,
+    opacity: 0.8,
   },
   selectedNoButton: {
     backgroundColor: '#E74C3C',
-    borderColor: '#FFFF00',
-    borderWidth: 3,
+    opacity: 0.8,
   },
   predictionButtonText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
-  // Container for showing user's prediction
   predictionIndicator: {
     position: 'absolute',
     top: 100,
@@ -529,45 +500,65 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFF',
   },
-  // Text for prediction indicator
   predictionIndicatorText: {
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // Error container
   errorContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  // Error text
   errorText: {
     color: '#FFF',
     fontSize: 18,
     marginBottom: 20,
     textAlign: 'center',
   },
-  // Retry button
   retryButton: {
     backgroundColor: '#3672E9',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 150,
-    borderWidth: 1,
-    borderColor: '#FFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
   },
-  // Retry button text
   retryButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Loading text
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
   loadingText: {
     color: '#FFF',
     fontSize: 16,
     marginTop: 10,
+  },
+  questionsLeftContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  questionsLeftBadge: {
+    backgroundColor: '#1a2a47', // Dark blue like in the image
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  questionsLeftText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
