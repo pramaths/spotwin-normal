@@ -56,18 +56,6 @@ export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
         </View>
       </View>
       
-      {/* Team country flags below team names */}
-      <View style={styles.teamFlagsContainer}>
-        <View style={styles.teamFlagItem}>
-        </View>
-        
-        <View style={styles.teamFlagItem}>
-        </View>
-        
-        <View style={styles.teamFlagItem}>
-        </View>
-      </View>
-      
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Entry Fee</Text>

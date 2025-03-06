@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 12,
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(0,0,0,0.15)',
     },
     timeContainer: {
         alignSelf: 'flex-start',
