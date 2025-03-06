@@ -19,6 +19,7 @@ import { Play, Volume2, VolumeX, ChevronLeft } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { fetchPredictionVideos, submitPrediction, updateUserPrediction, IUserPrediction, fetchUserPredictions } from '@/api/predictionVideos';
 import { IFeaturedVideo, IOutcomeType } from '@/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height, width } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ interface VideoItemProps {
   selection: string | undefined;
   onPrediction: (prediction: string, index: number) => void;
   isEditing?: boolean;
+  videos: IFeaturedVideo[];
 }
 
 const VideoItem = ({
@@ -41,7 +43,8 @@ const VideoItem = ({
   hasSelected,
   selection,
   onPrediction,
-  isEditing
+  isEditing,
+  videos
 }: VideoItemProps) => {
   const [loading, setLoading] = useState(true);
   const [questionsLeft, setQuestionsLeft] = useState(9);
@@ -100,8 +103,15 @@ const VideoItem = ({
     }
   };
 
+  const insets = useSafeAreaInsets();
+  const isLastVideo = index === videos.length - 1;
+  const tabBarHeight = Platform.OS === 'ios' ? 60 + insets.bottom : 60;
+
   return (
-    <View style={styles.videoContainer}>
+    <View style={[
+      styles.videoContainer,
+      isLastVideo && { marginBottom: tabBarHeight }
+    ]}>
       <TouchableOpacity
         activeOpacity={1}
         style={styles.videoTouchable}
@@ -129,7 +139,10 @@ const VideoItem = ({
               </View>
             )}
 
-            <View style={styles.glassyContainer}>
+            <View style={[
+              styles.glassyContainer,
+              isLastVideo && Platform.OS === 'ios' && { bottom: 100 }
+            ]}>
               <View style={styles.questionHeader}>
                 <Text style={styles.questionText}>{item.question}</Text>
               </View>
@@ -379,6 +392,7 @@ export default function VideoPredictionScreen() {
             selection={selections[index]}
             onPrediction={handlePrediction}
             isEditing={isEditing}
+            videos={videos}
           />
         )}
         keyExtractor={item => item.id}
