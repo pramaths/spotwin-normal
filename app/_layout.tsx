@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/authstore';
-import {PrivyProvider} from '@privy-io/expo';
+import { PrivyProvider } from '@privy-io/expo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -14,12 +14,11 @@ export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Hide splash screen after a short delay
     const timer = setTimeout(() => {
       SplashScreen.hideAsync();
       setIsLoading(false);
     }, 1000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -38,15 +37,10 @@ export default function RootLayout() {
 
   return (
     <>
-    <PrivyProvider
-    appId={privyAppId}
-    clientId={privyClientId}>
-      <Slot />
-      <StatusBar
-        translucent={false} 
-        style="light"
-        backgroundColor="#1A1A3A"
-      />
+      <PrivyProvider
+        appId={privyAppId}
+        clientId={privyClientId}>
+        <Slot />
       </PrivyProvider>
     </>
   );
