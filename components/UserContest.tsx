@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { router } from 'expo-router';
 
 interface ContestCardProps {
   contest: IContest;
@@ -8,11 +9,16 @@ interface ContestCardProps {
 }
 
 export const UserContestCard = ({ contest, onPress }: ContestCardProps) => {
-  const { event, entryFee, name, currency } = contest;
+  const { event, entryFee, name, currency, id } = contest;
   
   const handlePress = () => {
     if (onPress) {
       onPress(contest);
+    } else {
+      router.push({
+        pathname: "/contest-detail/[id]",
+        params: { id }
+      });
     }
   };
   

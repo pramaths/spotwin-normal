@@ -37,9 +37,9 @@ const PredictionQuestion = ({
                     onPress={() => onQuestionPress && onQuestionPress(id)}
                     activeOpacity={0.8}
                 >
-                    <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+                    <View  style={styles.blurContainer}>
                         <Text style={styles.questionText}>{question}</Text>
-                    </BlurView>
+                    </View>
                 </TouchableOpacity>
 
                 <View style={styles.buttonsContainer}>
@@ -127,13 +127,15 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     blurContainer: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: 2,
     },
     questionText: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#b1a49a',
+        color: '#fff',
+        padding:4,
+        borderRadius:12,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     buttonsContainer: {
         flexDirection: 'row',

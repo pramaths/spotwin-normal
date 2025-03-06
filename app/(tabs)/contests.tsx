@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
-import { StatusBar } from 'expo-status-bar';
 import HeaderProfile from '../../components/HeaderProfile';
 import { UserContestCard } from '../../components/UserContest';
 import { IContest} from '../../types';
@@ -107,7 +106,6 @@ export default function ContestsScreen() {
   const [selectedTab, setSelectedTab] = useState<TabOption>('ACTIVE');
   const insets = useSafeAreaInsets();
   
-  // Calculate the tab bar height to add appropriate padding
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
   const handleTabPress = (tab: TabOption) => {
