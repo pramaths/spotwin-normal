@@ -70,20 +70,17 @@ const ContributePage = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 1,
-        aspect: [16, 9],
+        aspect: [9, 16],
       });
-
-      console.log(result);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setUploading(true);
         setVideoUri(result.assets[0].uri);
         
-        // Simulate upload process - in a real app, you would upload to your server here
         setTimeout(() => {
           setUploading(false);
           setVideoUploaded(true);
-          animateCheckmark(); // Trigger animation when upload completes
+          animateCheckmark();
         }, 1500);
       }
     } catch (error: any) {
@@ -143,37 +140,49 @@ const ContributePage = () => {
             </View>
           </View>
           
-          <TouchableOpacity 
-            style={[
-              styles.uploadButton, 
-              videoUploaded && styles.uploadButtonSuccess,
-              Platform.OS === 'android' && styles.uploadButtonAndroid
-            ]} 
-            onPress={pickVideo}
-            disabled={uploading || videoUploaded}
-          >
-            {uploading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : videoUploaded ? (
-              <>
-                <Animated.View style={{
-                  transform: [{ scale: checkmarkScale }],
-                  opacity: checkmarkOpacity,
-                  flexDirection: 'row',
-                  alignItems: 'center'
-                }}>
-                  <Check color="#FFFFFF" size={20} />
-                  <Text style={styles.uploadButtonText}>Video Uploaded</Text>
-                </Animated.View>
-              </>
-            ) : (
-              <>
-                <VideoIcon color="#FFFFFF" size={20} />
-                <Text style={styles.uploadButtonText}>Upload Video</Text>
-              </>
+          <View style={styles.videoButtonsContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.uploadButton, 
+                videoUploaded && styles.uploadButtonSuccess,
+                Platform.OS === 'android' && styles.uploadButtonAndroid
+              ]} 
+              onPress={pickVideo}
+              disabled={uploading || videoUploaded}
+            >
+              {uploading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : videoUploaded ? (
+                <>
+                  <Animated.View style={{
+                    transform: [{ scale: checkmarkScale }],
+                    opacity: checkmarkOpacity,
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                  }}>
+                    <Check color="#FFFFFF" size={20} />
+                    <Text style={styles.uploadButtonText}>Video Uploaded</Text>
+                  </Animated.View>
+                </>
+              ) : (
+                <>
+                  <VideoIcon color="#FFFFFF" size={20} />
+                  <Text style={styles.uploadButtonText}>Upload Video</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {videoUploaded && (
+              <TouchableOpacity 
+                style={styles.removeButton} 
+                onPress={handleRemoveVideo}
+              >
+                <X color="#FFFFFF" size={20} />
+                <Text style={styles.uploadButtonText}>Retake</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-          
+          </View>
+
           {videoError ? (
             <Text style={styles.errorText}>{videoError}</Text>
           ) : null}
@@ -271,6 +280,13 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     flex: 1,
   },
+  videoButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
   uploadButton: {
     backgroundColor: '#6366F1',
     borderRadius: 8,
@@ -279,8 +295,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 20,
-    marginBottom: 10,
   },
   uploadButtonAndroid: {
     elevation: 4,
@@ -295,29 +309,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  videoPreviewContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    height: 200,
-    backgroundColor: '#000',
-  },
-  videoPreview: {
-    width: '100%',
-    height: '100%',
-  },
-  removeVideoButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+  removeButton: {
+    backgroundColor: '#7cdcfe',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
   },
   errorText: {
     color: '#EF4444',
