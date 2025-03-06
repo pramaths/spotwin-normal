@@ -77,3 +77,16 @@ export interface Contest {
     YES = 'YES',
     NO = 'NO'
   }
+
+  export interface IFeaturedVideos{
+    contestId: string;
+    eventId: string;
+    videos: IFeaturedVideo[];
+  }
+
+
+  export interface IFeaturedVideo{
+    id: string;
+    question: string;
+    videoUrl: string;
+  }

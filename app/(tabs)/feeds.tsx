@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
 import HeaderProfile from '@/components/HeaderProfile';
 import { IContest } from '@/types';
@@ -168,6 +168,10 @@ const FeedsScreen = () => {
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const [questions, setQuestions] = useState(mockQuestions);
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
+  const insets = useSafeAreaInsets();
+  
+  // Calculate the tab bar height to add appropriate padding
+  const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
   const handleAnswer = (id: string, answer: 'YES' | 'NO') => {
     console.log(`Question ${id} answered with: ${answer}`);
@@ -187,7 +191,7 @@ const FeedsScreen = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.contestList}
-            style = {{flexGrow:0}}
+            style={{flexGrow: 0}}
             renderItem={({ item }) => {
               const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
               return (
@@ -229,11 +233,19 @@ const FeedsScreen = () => {
               );
             }}
           />
-          <PredictionQuestionGrid
-            questions={questions}
-            onAnswer={handleAnswer}
-            contests={mockContests}
-          />
+          <ScrollView 
+            style={styles.predictionScrollView}
+            contentContainerStyle={{ 
+              paddingBottom: tabBarHeight + 16 // Add padding to the bottom to avoid tab bar overlap
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            <PredictionQuestionGrid
+              questions={questions}
+              onAnswer={handleAnswer}
+              contests={mockContests}
+            />
+          </ScrollView>
         </View>
       </View>
     </SafeAreaView>
@@ -249,6 +261,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    flex: 1,
+  },
+  predictionScrollView: {
     flex: 1,
   },
   contestList: {

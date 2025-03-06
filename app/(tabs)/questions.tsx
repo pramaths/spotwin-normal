@@ -1,10 +1,15 @@
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Platform } from 'react-native';
 import MyQuestionCard from '../../components/MyQuestionCard';
 import { Shield } from 'lucide-react-native';
 import HeaderProfile from '@/components/HeaderProfile';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function QuestionScreen() {
+  const insets = useSafeAreaInsets();
+  
+  // Calculate the tab bar height to add appropriate padding
+  const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
+
   const questions = [
     {
       id: '1',
@@ -38,7 +43,13 @@ export default function QuestionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderProfile />
-      <ScrollView>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingBottom: tabBarHeight + 16 // Add padding to the bottom to avoid tab bar overlap
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         {questions.map((question) => (
           <MyQuestionCard
             key={question.id}
@@ -59,6 +70,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
   },
   title: {
     fontSize: 24,

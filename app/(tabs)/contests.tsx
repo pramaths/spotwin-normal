@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import HeaderProfile from '../../components/HeaderProfile';
 import { UserContestCard } from '../../components/UserContest';
 import { IContest} from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Define types and interfaces
 export type ContestStatus = 'LIVE' | 'OPEN' | 'COMPLETED' | 'UPCOMING';
@@ -104,6 +105,10 @@ type TabOption = 'ACTIVE' | 'COMPLETED';
 
 export default function ContestsScreen() {
   const [selectedTab, setSelectedTab] = useState<TabOption>('ACTIVE');
+  const insets = useSafeAreaInsets();
+  
+  // Calculate the tab bar height to add appropriate padding
+  const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
   const handleTabPress = (tab: TabOption) => {
     setSelectedTab(tab);
@@ -144,7 +149,10 @@ export default function ContestsScreen() {
           data={getContests()}
           renderItem={({ item }) => <UserContestCard contest={item} />}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: tabBarHeight + 16 } // Add padding to the bottom to avoid tab bar overlap
+          ]}
           showsVerticalScrollIndicator={false}
         />
       </View>

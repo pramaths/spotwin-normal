@@ -72,6 +72,12 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="video-prediction"
+          options={{
+            href: null, 
+          }}
+        />
       </Tabs>
     </View>
   );
