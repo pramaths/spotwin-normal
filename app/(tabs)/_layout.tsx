@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from 'react';
 
 import HomeIcon from '../../assets/icons/home.svg';
 import CupIcon from '../../assets/icons/cup.svg';

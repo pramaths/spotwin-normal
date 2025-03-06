@@ -286,8 +286,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         <HeaderProfile />
 
         <View style={styles.featuredSection}>
@@ -365,7 +369,7 @@ export default function HomeScreen() {
 }
 
 // Styles
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -374,6 +378,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 100, // Add extra padding at the bottom to account for tab bar
   },
   featuredSection: {
     marginTop: 8,
@@ -550,7 +557,7 @@ const styles = StyleSheet.create({
   // All contests
   contestCardContainer: {
     paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 100, // Increased bottom margin to ensure content doesn't get hidden behind tab bar
     marginTop: 8,
   },
 });
