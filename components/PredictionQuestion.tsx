@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 interface PredictionQuestionProps {
     id: string;
@@ -31,14 +32,16 @@ const PredictionQuestion = ({
                 </View>
 
                 <View style={styles.bottomContent}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.questionContainer}
                         onPress={() => onQuestionPress && onQuestionPress(id)}
                         activeOpacity={0.8}
                     >
-                        <View style={styles.questionInnerContainer}>
-                            <Text style={styles.questionText}>{question}</Text>
-                        </View>
+                        <BlurView intensity={50} style={styles.blurContainer}>
+                            <Text style={styles.questionText}>
+                                Will there be a goal in next 5 minutes?
+                            </Text>
+                        </BlurView>
                     </TouchableOpacity>
 
                     <View style={styles.buttonsContainer}>
@@ -139,14 +142,14 @@ const styles = StyleSheet.create({
     questionText: {
         fontSize: 14,
         fontWeight: '400',
-        color: 'transparent', 
+        color: '#fff',
         textAlign: 'left',
         justifyContent: 'flex-start',
         textShadowColor: 'rgba(1, 1, 1, 0.9)',
-        textShadowOffset: { width: 0, height: 0 }, 
-        textShadowRadius: 6, 
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 6,
     },
-    
+
     buttonsContainer: {
         flexDirection: 'row',
         gap: 8,
@@ -154,6 +157,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
+    blurContainer: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        overflow: 'hidden',
+      },
     buttonWrapper: {
         width: '50%',
     },

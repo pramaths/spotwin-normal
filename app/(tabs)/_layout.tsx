@@ -23,7 +23,6 @@ export default function TabLayout() {
           ...styles.tabBar,
           height: 60 + (Platform.OS === 'ios' ? insets.bottom : 0),
           paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
-          position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
