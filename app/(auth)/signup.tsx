@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SignupBg from '../../assets/images/signupbg.svg';
-import Logo from '../../assets/Logo.svg';
+import Logo from '../../assets/logo.svg';
 import XIcon from '../../assets/icons/x.svg';
 import GoogleIcon from '../../assets/icons/googleicon.svg';
 
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
 
   trophyIcon: {
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 200,
   },
 
   contentContainer: {
