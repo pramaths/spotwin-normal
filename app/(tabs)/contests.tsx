@@ -117,7 +117,7 @@ export default function ContestsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#1A1A3A' }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
         <HeaderProfile />
         <View style={styles.tabContainer}>

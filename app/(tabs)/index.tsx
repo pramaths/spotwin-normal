@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -152,6 +152,48 @@ const allContests: IContest[] = [
         country: 'Unknown',
       },
     },
+  },{
+    id: '12435689',
+    name: 'Premier League: Manchester United vs Arsenal',
+    entryFee: 0.2,
+    currency: 'SOL',
+    description: 'A contest for the Premier League match',
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    event: {
+      id: '12435',
+      title: 'Premier league',
+      description: 'Premier League match between Manchester United and Arsenal',
+      eventImageUrl:
+        'https://images.unsplash.com/photo-1610990294219-54d098aa9b16?q=80&w=100&auto=format&fit=crop',
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 3600000).toISOString(),
+      status: 'OPEN',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sport: {
+        id: '1',
+        name: 'Football',
+        imageUrl:
+          'https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg',
+        isActive: true,
+      },
+      teamA: {
+        id: '1',
+        name: 'Manchester United',
+        imageUrl:
+          'https://images.unsplash.com/photo-1610990294219-54d098aa9b16?q=80&w=100&auto=format&fit=crop',
+        country: 'Unknown',
+      },
+      teamB: {
+        id: '2',
+        name: 'Arsenal',
+        imageUrl:
+          'https://images.unsplash.com/photo-1594674686397-a1da66d212bc?q=80&w=100&auto=format&fit=crop',
+        country: 'Unknown',
+      },
+    },
   },
 ];
 
@@ -167,6 +209,7 @@ export default function HomeScreen() {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const router = useRouter();
+  const featuredListRef = useRef<FlatList>(null);
 
   // Join or press a card => show modal
   const handleJoinPress = (contest: IContest) => {
@@ -184,26 +227,36 @@ export default function HomeScreen() {
     }
   };
 
-  const renderFeaturedCard = ({ item }: { item: IContest }) => {
+  const renderFeaturedCard = ({ item, index }: { item: IContest, index: number }) => {
     const { formattedTime } = formatDateTime(item.event.startDate);
     
     return (
       <View style={styles.featuredCardWrapper}>
+        <View style={[styles.stackedCard, styles.secondStackedCard]} />
+        
         <LinearGradient
           colors={['#1a194e', '#2d2c5f', '#37348b']}
           style={styles.featuredCard}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          {/* Header */}
           <View style={styles.cardHeader}>
             <Text style={styles.leagueText}>{item.event.title}</Text>
-            <TouchableOpacity style={styles.slideArrowContainer}>
+            <TouchableOpacity 
+              style={styles.slideArrowContainer}
+              onPress={() => {
+                // Scroll to the next card
+                const nextIndex = (index + 1) % featuredContests.length;
+                featuredListRef.current?.scrollToIndex({
+                  index: nextIndex,
+                  animated: true
+                });
+              }}
+            >
               <ChevronRight color="#FFF" size={16} />
             </TouchableOpacity>
           </View>
 
-          {/* Teams */}
           <View style={styles.teamsContainer}>
             <View style={styles.teamContainer}>
               <Image
@@ -283,6 +336,7 @@ export default function HomeScreen() {
 
         <View style={styles.featuredSection}>
           <FlatList
+            ref={featuredListRef}
             data={featuredContests}
             renderItem={renderFeaturedCard}
             keyExtractor={(item) => item.id}
@@ -291,6 +345,7 @@ export default function HomeScreen() {
             snapToAlignment="center"
             decelerationRate="fast"
             pagingEnabled
+            snapToInterval={width * 0.9 + width * 0.05 * 2} // Card width + horizontal margins
           />
         </View>
 
@@ -372,14 +427,31 @@ const styles = StyleSheet.create({
   featuredSection: {
     marginTop: 8,
     marginBottom: 16,
+    height: 240, // Fixed height to accommodate stacked cards
   },
   featuredCardWrapper: {
     width: width * 0.9, // so each card nearly fills the screen
     marginHorizontal: width * 0.05, // center it
+    height: 220,
+    position: 'relative',
+  },
+  stackedCard: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    backgroundColor: '#37348b',
+  },
+  secondStackedCard: {
+    bottom: -5,
+    right: -5,
+    opacity: 0.6,
   },
   featuredCard: {
     borderRadius: 20,
     padding: 16,
+    height: '100%',
+    zIndex: 3,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -399,6 +471,7 @@ const styles = StyleSheet.create({
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   teamsContainer: {
     flexDirection: 'row',

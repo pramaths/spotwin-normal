@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, View } from 'react-native';
 import { useAuthStore } from '../store/authstore';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 // import { PrivyProvider } from '@privy-io/expo';
 
 SplashScreen.preventAutoHideAsync();
@@ -37,13 +37,13 @@ export default function RootLayout() {
   const privyClientId = process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID as string;
 
   return (
-    <>
+    <SafeAreaProvider>
       {/* <PrivyProvider
         appId={privyAppId}
         clientId={privyClientId}> */}
+        <StatusBar style="dark" backgroundColor="transparent" translucent />
         <Slot />
-        <StatusBar style='dark' />
       {/* </PrivyProvider> */}
-    </>
+    </SafeAreaProvider>
   );
 }

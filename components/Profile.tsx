@@ -8,8 +8,6 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="black" barStyle="light-content" />
       <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left']}>
         {onClose && (
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -77,7 +75,6 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
-    </SafeAreaView>
   );
 }
 
@@ -88,6 +85,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    backgroundColor: '#F5F7FA',
   },
   scrollView: {
     flex: 1,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoView, VideoPlayer } from 'expo-video';
 import { Play } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface IFeaturedVideo {
   id: string;
@@ -32,38 +32,79 @@ const VideoItem = ({
   muteState,
   onPrediction,
 }: VideoItemProps) => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [selectedOption, setSelectedOption] = useState<'yes' | 'no' | null>(null);
+  const playerRef = useRef<VideoPlayer | null>(null);
+  
+  // Create video player with null source initially
   const videoPlayer = useVideoPlayer(
-    { uri: item.videoUrl },
+    null,
     (player) => {
-      if (!player) return;
+      playerRef.current = player;
       
       try {
         player.loop = true;
         player.muted = muteState;
-        
-        if (isVisible) {
-          try {
-            player.play();
-            setIsLoading(false);
-            setIsPlaying(true);
-          } catch (err) {
-            setError('Failed to play video');
-            setIsLoading(false);
-          }
-        } else {
-          player.pause();
-          setIsPlaying(false);
-        }
       } catch (err) {
-        setError('Video player error');
-        setIsLoading(false);
+        setError('Video player initialization error');
       }
     }
   );
+
+  // Set the video source when the component mounts
+  useEffect(() => {
+    if (!videoPlayer) return;
+    
+    try {
+      videoPlayer.replace({ uri: item.videoUrl });
+    } catch (err) {
+      setError('Failed to set video source');
+    }
+    
+    return () => {
+      try {
+        if (videoPlayer) {
+          videoPlayer.pause();
+          // Replace with null source to fully unload the video
+          videoPlayer.replace(null);
+        }
+      } catch (err) {
+        // Silent cleanup error
+      }
+    };
+  }, [item.videoUrl, videoPlayer]);
+
+  // Handle visibility and mute state changes
+  useEffect(() => {
+    if (!videoPlayer) return;
+    
+    try {
+      videoPlayer.muted = muteState;
+      
+      if (isVisible) {
+        videoPlayer.play();
+        setIsPlaying(true);
+      } else {
+        videoPlayer.pause();
+        setIsPlaying(false);
+      }
+    } catch (err) {
+      setError('Failed to update video playback state');
+    }
+  }, [isVisible, muteState, videoPlayer]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        if (playerRef.current) {
+          playerRef.current.pause();
+          playerRef.current.release();
+        }
+      } catch (err) {
+      }
+    };
+  }, []);
 
   const handleVideoPress = () => {
     if (!videoPlayer) return;
@@ -79,6 +120,16 @@ const VideoItem = ({
     } catch (err) {
       setError('Failed to toggle playback');
     }
+  };
+
+  const handlePrediction = (prediction: 'yes' | 'no') => {
+    setSelectedOption(prediction);
+    
+    // Small delay to show the selected option before moving to next video
+    setTimeout(() => {
+      onPrediction(prediction);
+      setSelectedOption(null);
+    }, 800);
   };
 
   if (error) {
@@ -102,15 +153,11 @@ const VideoItem = ({
               player={videoPlayer}
               style={styles.videoPlayer}
               nativeControls={false}
+              allowsFullscreen
+              contentFit='fill'
             />
 
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#fff" />
-              </View>
-            )}
-
-            {!isPlaying && !isLoading && (
+            {!isPlaying && (
               <View style={styles.pauseOverlay}>
                 <Play color="#FFF" size={48} />
               </View>
@@ -127,15 +174,23 @@ const VideoItem = ({
               </View>
               <View style={styles.predictionContainer}>
                 <TouchableOpacity
-                  style={[styles.predictionButton, styles.yesButton]}
-                  onPress={() => onPrediction('yes')}
+                  style={[
+                    styles.predictionButton, 
+                    styles.yesButton,
+                    selectedOption === 'yes' && styles.selectedButton
+                  ]}
+                  onPress={() => handlePrediction('yes')}
                 >
                   <Text style={styles.predictionButtonText}>YES</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.predictionButton, styles.noButton]}
-                  onPress={() => onPrediction('no')}
+                  style={[
+                    styles.predictionButton, 
+                    styles.noButton,
+                    selectedOption === 'no' && styles.selectedButton
+                  ]}
+                  onPress={() => handlePrediction('no')}
                 >
                   <Text style={styles.predictionButtonText}>NO</Text>
                 </TouchableOpacity>
@@ -151,20 +206,19 @@ const VideoItem = ({
 const styles = StyleSheet.create({
   videoContainer: {
     width,
-    height: Dimensions.get('window').height,
+    height,
     backgroundColor: '#000',
+    overflow: 'hidden',
   },
   videoTouchable: {
     flex: 1,
   },
   videoPlayer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   errorContainer: {
     justifyContent: 'center',
@@ -194,60 +248,54 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 20,
     right: 20,
-    bottom: 40,
+    bottom: 40, 
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     borderRadius: 20,
     padding: 10,
     backdropFilter: 'blur(10px)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   questionHeader: {
-    marginBottom: 20,
-    alignItems: 'center',
+    marginBottom: 12,
   },
   questionText: {
-    color: '#FFF',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
   },
   predictionContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
+    justifyContent: 'space-around',
   },
   predictionButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    minWidth: 120,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
   yesButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#4CAF50',
   },
   noButton: {
-    backgroundColor: '#E74C3C',
+    backgroundColor: '#F44336',
+  },
+  selectedButton: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    transform: [{ scale: 1.05 }],
   },
   predictionButtonText: {
-    color: '#FFF',
-    fontSize: 14,
+    color: '#fff',
     fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  oddsText: {
-    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 14,
-    fontWeight: '500',
   },
 });
 

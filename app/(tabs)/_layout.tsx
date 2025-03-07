@@ -15,7 +15,7 @@ import WhiteQuestion from '../../assets/icons/whitequestion.svg';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
+  const tabBarHeight = 40 + (Platform.OS === 'ios' ? insets.bottom : 20);
 
   return (
     <View style={{ flex: 1 }}>

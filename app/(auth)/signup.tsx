@@ -39,7 +39,7 @@ export default function SignupScreen() {
                 onPress={handleSignup}
               >
                 <View style={styles.buttonContent}>
-                  <XIcon width={20} height={20} style={styles.iconWhite} />
+                  <XIcon width={20} height={20} />
                   <Text style={styles.twitterButtonText}>Sign in with Twitter</Text>
                 </View>
               </TouchableOpacity>
@@ -49,7 +49,7 @@ export default function SignupScreen() {
                 onPress={handleSignup}
               >
                 <View style={styles.buttonContent}>
-                  <GoogleIcon width={20} height={20} style={styles.iconBlack} />
+                  <GoogleIcon width={20} height={20}/>
                   <Text style={styles.googleButtonText}>Sign in with Google</Text>
                 </View>
               </TouchableOpacity>
@@ -146,10 +146,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-  iconWhite: {
-    tintColor: '#fff',
-  },
-
   googleButton: {
     backgroundColor: '#fff',
   },
@@ -159,10 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-  iconBlack: {
-    tintColor: '#000',
-  },
-
   footerText: {
     color: '#ccc',
     fontSize: 12,
