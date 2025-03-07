@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SignupBg from '../../assets/images/signupbg.svg';
-import TrophyIcon from '../../assets/icons/Trophy.svg';
+import Logo from '../../assets/Logo.svg';
 import XIcon from '../../assets/icons/x.svg';
 import GoogleIcon from '../../assets/icons/googleicon.svg';
 
@@ -25,7 +25,7 @@ export default function SignupScreen() {
 
       <View style={styles.overlay}>
         <View style={styles.contentWrapper}>
-          <TrophyIcon width={80} height={80} style={styles.trophyIcon} />
+          <Logo width={80} height={80} style={styles.trophyIcon} />
 
           <View style={styles.contentContainer}>
             <Text style={styles.title}>Watch, Play, Win, Repeat</Text>
