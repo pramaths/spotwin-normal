@@ -6,7 +6,6 @@ import { ChevronLeft } from 'lucide-react-native';
 import UserPredictions from '@/components/UserPredictions';
 import { IContest } from '@/types';
 
-// Sample data - in a real app, this would come from an API
 const getContestById = (id: string): IContest | undefined => {
   const contests = [
     {
@@ -111,7 +110,7 @@ export default function ContestDetailScreen() {
             <Text style={styles.headerTitle}>Loading...</Text>
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B3B6D" />
+            <ActivityIndicator size="large" color="#0504dc" />
           </View>
         </View>
       </SafeAreaView>

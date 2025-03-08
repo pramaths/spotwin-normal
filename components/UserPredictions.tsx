@@ -63,7 +63,7 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B3B6D" />
+        <ActivityIndicator size="large" color="#0504dc" />
       </View>
     );
   }
@@ -108,7 +108,7 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
               style={styles.editButton}
               onPress={() => handleEditPrediction(item)}
             >
-              <Pencil size={16} color="#3B3B6D" />
+              <Pencil size={16} color="#0504dc" />
               <Text style={styles.editButtonText}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 12,
     fontWeight: '500',
-    color: '#3B3B6D',
+    color: '#0504dc',
   },
 });
 

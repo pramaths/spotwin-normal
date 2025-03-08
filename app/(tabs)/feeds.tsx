@@ -1,184 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
 import HeaderProfile from '@/components/HeaderProfile';
 import { IContest } from '@/types';
 import { formatDateTime } from '@/utils/dateUtils';
-
-const mockQuestions = [
-  {
-    id: '1',
-    question: 'Will there be a goal in next 5 minutes?',
-    matchImage: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKXX1wBIdNA8LrLFnduYAhYxFYvg27RoR4oMnqhlh_DQuG3jKU7mzEdT5s5Wm8do5Ik4k&usqp=CAU',
-    league: 'Premier League',
-    teams: 'Manchester United vs Arsenal',
-    timeRemaining: '4:30',
-  },
-  {
-    id: '2',
-    question: 'Will there be a goal in next 5 minutes?',
-    matchImage: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=890&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    league: 'La Liga',
-    teams: 'Real Madrid vs Barcelona',
-    timeRemaining: '3:45',
-  },
-  {
-    id: '3',
-    question: 'Will there be a goal in next 5 minutes?',
-    matchImage: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=890&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    league: 'Serie A',
-    teams: 'Juventus vs AC Milan',
-    timeRemaining: '2:15',
-  },
-];
-
-const mockContests: IContest[] = [
-  {
-    id: "f984ea94-a07e-4bff-a802-1694f5125606",
-    name: "Cricket World Cup",
-    entryFee: 101,
-    currency: "SOL",
-    description: "A contest where two teams compete against each other in cricket",
-    status: "OPEN",
-    createdAt: "2025-03-05T10:32:19.895Z",
-    updatedAt: "2025-03-05T10:32:19.895Z",
-    event: {
-      id: "077e38f3-6275-4c68-920f-3a7de8ba9bbf",
-      title: "ICC MEN'S TROPHY",
-      description: "ICC MENS TROPHY",
-      eventImageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/5829da6d-3660-43b2-a6df-2d2e775a29b3-Men's_Champions_Trophy.png",
-      startDate: "2025-03-05T08:58:46.130Z",
-      endDate: "2025-03-05T08:58:46.130Z",
-      status: "OPEN",
-      createdAt: "2025-03-05T09:04:41.701Z",
-      updatedAt: "2025-03-05T09:27:20.389Z",
-      sport: {
-        id: "3dc44aff-9748-44fc-aa74-1379213a4363",
-        name: "Cricket",
-        description: "A team sport played with a ball",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg",
-        isActive: true,
-        createdAt: "2025-03-02T18:07:04.227Z",
-        updatedAt: "2025-03-02T18:07:04.227Z"
-      },
-      teamA: {
-        id: "4ec72fe7-263b-42e5-af1f-b0c26fed97a7",
-        name: "INDIA",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/2502a671-38ac-4ae0-a076-ad202300bfa1-india.png",
-        country: "INDIA"
-      },
-      teamB: {
-        id: "59217b82-77ae-4340-ba13-483bea11a7d6",
-        name: "PAKISTAN",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/f105ff41-e9aa-4d90-b551-2f9b488b0e5b-pak.png",
-        country: "PAKISTAN"
-      }
-    }
-  },
-  {
-    id: "f984ea94-a07e-4bff-a802-1694f5125604",
-    name: "Premier League Showdown",
-    entryFee: 100,
-    currency: "SOL",
-    description: "A contest for the Premier League match",
-    status: "OPEN",
-    createdAt: "2025-03-05T10:32:19.895Z",
-    updatedAt: "2025-03-05T10:32:19.895Z",
-    event: {
-      id: "077e38f3-6275-4c68-920f-3a7de8ba9bbf",
-      title: "Premier League",
-      description: "Premier League Match",
-      eventImageUrl: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=500&auto=format&fit=crop",
-      startDate: "2025-03-05T08:58:46.130Z",
-      endDate: "2025-03-05T08:58:46.130Z",
-      status: "OPEN",
-      createdAt: "2025-03-05T09:04:41.701Z",
-      updatedAt: "2025-03-05T09:27:20.389Z",
-      sport: {
-        id: "3dc44aff-9748-44fc-aa74-1379213a4363",
-        name: "Football",
-        description: "A team sport played with a ball",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg",
-        isActive: true,
-        createdAt: "2025-03-02T18:07:04.227Z",
-        updatedAt: "2025-03-02T18:07:04.227Z"
-      },
-      teamA: {
-        id: "4ec72fe7-263b-42e5-af1f-b0c26fed97a7",
-        name: "Manchester United",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/2502a671-38ac-4ae0-a076-ad202300bfa1-man-utd.png",
-        country: "England"
-      },
-      teamB: {
-        id: "59217b82-77ae-4340-ba13-483bea11a7d6",
-        name: "Arsenal",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/f105ff41-e9aa-4d90-b551-2f9b488b0e5b-arsenal.png",
-        country: "England"
-      }
-    }
-  },
-  {
-    id: "f984ea94-a07e-4bff-a802-1694f5125605",
-    name: "La Liga Classic",
-    entryFee: 150,
-    currency: "SOL",
-    description: "A contest for the La Liga match",
-    status: "OPEN",
-    createdAt: "2025-03-05T10:32:19.895Z",
-    updatedAt: "2025-03-05T10:32:19.895Z",
-    event: {
-      id: "077e38f3-6275-4c68-920f-3a7de8ba9bbc",
-      title: "La Liga",
-      description: "La Liga Match",
-      eventImageUrl: "https://images.unsplash.com/photo-1508098682722-e99c643e7485?q=80&w=500&auto=format&fit=crop",
-      startDate: "2025-03-05T08:58:46.130Z",
-      endDate: "2025-03-05T08:58:46.130Z",
-      status: "OPEN",
-      createdAt: "2025-03-05T09:04:41.701Z",
-      updatedAt: "2025-03-05T09:27:20.389Z",
-      sport: {
-        id: "3dc44aff-9748-44fc-aa74-1379213a4364",
-        name: "Football",
-        description: "A team sport played with a ball",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg",
-        isActive: true,
-        createdAt: "2025-03-02T18:07:04.227Z",
-        updatedAt: "2025-03-02T18:07:04.227Z"
-      },
-      teamA: {
-        id: "4ec72fe7-263b-42e5-af1f-b0c26fed97a8",
-        name: "Barcelona",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/2502a671-38ac-4ae0-a076-ad202300bfa1-barca.png",
-        country: "Spain"
-      },
-      teamB: {
-        id: "59217b82-77ae-4340-ba13-483bea11a7d7",
-        name: "Real Madrid",
-        imageUrl: "https://s3.ap-south-1.amazonaws.com/sizzils3/f105ff41-e9aa-4d90-b551-2f9b488b0e5b-real.png",
-        country: "Spain"
-      }
-    }
-  }
-];
+import { fetchContests, fetchContestVideos, IContestVideo } from '@/services/contestApi';
 
 const FeedsScreen = () => {
   const [selectedTab, setSelectedTab] = useState('all');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
-  const [questions, setQuestions] = useState(mockQuestions);
+  const [contests, setContests] = useState<IContest[]>([]);
+  const [contestVideos, setContestVideos] = useState<IContestVideo[]>([]);
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
   
-  // Calculate the tab bar height to add appropriate padding
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
+
+  useEffect(() => {
+    const loadContests = async () => {
+      try {
+        const contestsData = await fetchContests();
+        setContests(contestsData);
+        
+        // Select the first contest by default
+        if (contestsData.length > 0) {
+          setSelectedContest(contestsData[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching contests:', error);
+      }
+    };
+    
+    loadContests();
+  }, []);
+
+  // Fetch videos for the selected contest
+  useEffect(() => {
+    const loadContestVideos = async () => {
+      if (selectedContest) {
+        setIsLoading(true);
+        try {
+          const videos = await fetchContestVideos(selectedContest.id);
+          
+          // Transform contest videos to match the expected question format
+          const formattedQuestions = videos.map(video => ({
+            id: video.id,
+            question: video.question,
+            matchImage: video.thumbnailUrl,
+            league: selectedContest.event.title,
+            teams: `${selectedContest.event.teamA.name} vs ${selectedContest.event.teamB.name}`,
+            timeRemaining: '5:00', // Default time remaining
+            videoUrl: video.videoUrl,
+            contestId: video.contestId
+          }));
+          
+          setContestVideos(formattedQuestions);
+        } catch (error) {
+          console.error('Error fetching contest videos:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    loadContestVideos();
+  }, [selectedContest]);
 
   const handleAnswer = (id: string, answer: 'YES' | 'NO') => {
     console.log(`Question ${id} answered with: ${answer}`);
     setAnsweredQuestions([...answeredQuestions, id]);
     setTimeout(() => {
-      setQuestions(questions.filter(q => q.id !== id));
+      setContestVideos(contestVideos.filter(q => q.id !== id));
     }, 500);
+  };
+
+  const handleContestSelect = (contest: IContest) => {
+    setSelectedContest(contest);
   };
 
   return (
@@ -187,7 +87,7 @@ const FeedsScreen = () => {
       <View style={styles.container}>
         <View style={styles.contentContainer}>
           <FlatList
-            data={mockContests}
+            data={contests}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.contestList}
@@ -196,11 +96,11 @@ const FeedsScreen = () => {
               const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
               return (
                 <TouchableOpacity 
-                  style={styles.contestItem} 
-                  onPress={() => {
-                    setSelectedContest(item);
-                    setPaymentModalVisible(true);
-                  }}
+                  style={[
+                    styles.contestItem,
+                    selectedContest?.id === item.id && styles.selectedContestItem
+                  ]} 
+                  onPress={() => handleContestSelect(item)}
                 >
                   <View style={styles.teamsContainer}>
                     <View style={styles.teamSection}>
@@ -225,8 +125,7 @@ const FeedsScreen = () => {
                   </View>
 
                   <View style={styles.contestInfo}>
-                    <Text style={styles.contestTitle}>{item.event.title}</Text>
-                    <Text style={styles.contestName}>{item.name}</Text>
+                    <Text style={styles.contestName}>{item.event.title}</Text>
                     <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
                   </View>
                 </TouchableOpacity>
@@ -240,11 +139,21 @@ const FeedsScreen = () => {
             }}
             showsVerticalScrollIndicator={false}
           >
-            <PredictionQuestionGrid
-              questions={questions}
-              onAnswer={handleAnswer}
-              contests={mockContests}
-            />
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading predictions...</Text>
+              </View>
+            ) : contestVideos.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No predictions available for this contest</Text>
+              </View>
+            ) : (
+              <PredictionQuestionGrid
+                questions={contestVideos}
+                onAnswer={handleAnswer}
+                contests={contests}
+              />
+            )}
           </ScrollView>
         </View>
       </View>
@@ -309,7 +218,7 @@ const styles = StyleSheet.create({
   vsText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#212b90',
     marginHorizontal: 8,
   },
   contestInfo: {
@@ -330,6 +239,32 @@ const styles = StyleSheet.create({
   },
   contestTime: {
     fontSize: 12,
+    color: '#666',
+  },
+  selectedContestItem: {
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 200,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 200,
+  },
+  emptyText: {
+    fontSize: 16,
     color: '#666',
   },
 });

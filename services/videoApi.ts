@@ -12,30 +12,54 @@ const SAMPLE_VIDEOS: IFeaturedVideo[] = [
   {
     id: '1',
     question: 'Will Manchester United score in the first half?',
-    videoUrl: 'https://s3.ap-south-1.amazonaws.com/sizzils3/f367fad1-aff4-4a12-8e07-f0dbd0184b7e-perplexity.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
   },
   {
     id: '2',
     question: 'Will Liverpool win the match?',
-    videoUrl: 'https://s3.ap-south-1.amazonaws.com/sizzils3/f367fad1-aff4-4a12-8e07-f0dbd0184b7e-perplexity.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
   },
   {
     id: '3',
     question: 'Will the match end in a draw?',
-    videoUrl: 'https://s3.ap-south-1.amazonaws.com/sizzils3/0b5233d2-f1db-4714-bcfe-bfe33dcba6aa-nvidia_5T_mcap.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
   },
   {
     id: '4',
     question: 'Will the match end in a draw?',
-    videoUrl: Platform.OS === 'web' ? 'https://www.youtube.com/shorts/y02mOQudT3E' : 
-      'https://s3.ap-south-1.amazonaws.com/sizzils3/0b5233d2-f1db-4714-bcfe-bfe33dcba6aa-nvidia_5T_mcap.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
+  },
+  {
+    id: '5',
+    question: 'Will the match end in a draw?',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm5.mp4',
   },
 ];
 
-/**
- * Simulates fetching featured videos from an API
- * @returns Promise that resolves to an array of featured videos
- */
+
+const SAMPLE_VIDEOS_2 = [
+  {
+    id: '1',
+    question: 'Will Manchester United score in the first half?',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
+  },
+  {
+    id: '2',
+    question: 'Will Manchester United score in the first half?',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
+  },
+  {
+    id: '3',
+    question: 'Will Manchester United score in the first half?',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
+  },
+  {
+    id: '4',
+    question: 'Will Manchester United score in the first half?',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
+  }
+]
+
 export const fetchFeaturedVideos = async (): Promise<IFeaturedVideo[]> => {
   // Simulate network delay
   return new Promise((resolve) => {

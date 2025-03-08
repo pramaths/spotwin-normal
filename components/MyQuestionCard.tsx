@@ -1,34 +1,46 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { Shield } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
-type QuestionStatus = 'approved' | 'pending' | 'rejected';
+type QuestionStatus = 'PENDING' | 'ANSWERED' | 'EXPIRED' | 'approved' | 'pending' | 'rejected';
 
 interface QuestionCardProps {
-  league: string;
-  match: string;
   question: string;
-  submittedTime: string;
+  matchImage?: string;
+  league: string;
+  leagueImage?: string;
+  teams: string;
+  timeRemaining?: string;
   status: QuestionStatus;
-  leagueIcon?: React.ReactNode;
+  answer?: string | null;
+  submittedTime?: string;
+  rejectionReason?: string;
 }
 
-export default function QuestionCard({
-  league,
-  match,
+export default function MyQuestionCard({
   question,
-  submittedTime,
+  league,
+  leagueImage,
+  teams,
   status,
-  leagueIcon,
+  answer,
+  submittedTime,
+  rejectionReason,
 }: QuestionCardProps) {
   // Status colors
-  const statusColors = {
+  const statusColors: Record<string, string> = {
+    PENDING: '#f1c40f',
+    ANSWERED: '#2ecc71',
+    EXPIRED: '#e74c3c',
     approved: '#2ecc71',
     pending: '#f1c40f',
     rejected: '#e74c3c',
   };
 
   // Status text
-  const statusText = {
+  const statusText: Record<string, string> = {
+    PENDING: 'Pending',
+    ANSWERED: 'Answered',
+    EXPIRED: 'Expired',
     approved: 'Approved',
     pending: 'Pending',
     rejected: 'Rejected',
@@ -37,10 +49,13 @@ export default function QuestionCard({
   // Border color based on status
   const getBorderColor = () => {
     switch (status) {
+      case 'ANSWERED':
       case 'approved':
         return '#2ecc71';
+      case 'PENDING':
       case 'pending':
         return '#f1c40f';
+      case 'EXPIRED':
       case 'rejected':
         return '#e74c3c';
       default:
@@ -52,21 +67,46 @@ export default function QuestionCard({
     <View style={[styles.container, { borderColor: getBorderColor() }]}>
       <View style={styles.header}>
         <View style={styles.leagueContainer}>
-          {leagueIcon || <Shield size={20} color="#333" />}
+          {leagueImage ? (
+            <Image 
+              source={{ uri: leagueImage }} 
+              style={styles.leagueImage} 
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.placeholderImage} />
+          )}
           <Text style={styles.leagueText}>{league}</Text>
         </View>
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: statusColors[status] },
+            { backgroundColor: statusColors[status] || '#f1c40f' },
           ]}
         >
-          <Text style={styles.statusText}>{statusText[status]}</Text>
+          <Text style={styles.statusText}>{statusText[status] || 'Pending'}</Text>
         </View>
       </View>
-      <Text style={styles.matchText}>{match}</Text>
+      
+      <Text style={styles.teamsText}>{teams}</Text>
       <Text style={styles.questionText}>{question}</Text>
-      <Text style={styles.submittedText}>{submittedTime}</Text>
+      
+      {submittedTime && (
+        <Text style={styles.submittedText}>{submittedTime}</Text>
+      )}
+      
+      {rejectionReason && status === 'rejected' && (
+        <Text style={styles.rejectionReason}>
+          {rejectionReason}
+        </Text>
+      )}
+      
+      {answer && (
+        <View style={styles.answerContainer}>
+          <Text style={styles.answerLabel}>Your answer:</Text>
+          <Text style={styles.answerText}>{answer}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -95,10 +135,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  leagueImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+  },
+  placeholderImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#e0e0e0',
+  },
   leagueText: {
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+    color: '#333',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -110,24 +162,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  rejectionReason: {
-    color: '#e74c3c',
+  teamsText: {
     fontSize: 14,
+    fontWeight: '500',
+    color: '#555',
     marginBottom: 8,
-    textAlign: 'right',
-  },
-  matchText: {
-    color: '#7f8c8d',
-    fontSize: 14,
-    marginBottom: 4,
   },
   questionText: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#000',
     marginBottom: 8,
   },
   submittedText: {
     color: '#95a5a6',
     fontSize: 12,
+    marginTop: 4,
+  },
+  rejectionReason: {
+    color: '#e74c3c',
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  answerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  answerLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#555',
+    marginRight: 8,
+  },
+  answerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2ecc71',
   },
 });

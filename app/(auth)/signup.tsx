@@ -1,16 +1,101 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useRef, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import SignupBg from '../../assets/images/signupbg.svg';
 import Logo from '../../assets/logo.svg';
 import XIcon from '../../assets/icons/x.svg';
-import GoogleIcon from '../../assets/icons/googleicon.svg';
+
+import { useLoginWithOAuth, useOAuthTokens } from '@privy-io/expo';
 
 export default function SignupScreen() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const router = useRouter();
+  const shimmerValue = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [isPressing, setIsPressing] = useState(false);
+  
+  useEffect(() => {
+    const startShimmerAnimation = () => {
+      Animated.loop(
+        Animated.timing(shimmerValue, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        })
+      ).start();
+    };
+    
+    const startPulseAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    };
+    
+    const startRotateAnimation = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 2000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    };
+    
+    startShimmerAnimation();
+    startPulseAnimation();
+    startRotateAnimation();
+  }, []);
+
+  const { login, state: oauthState } = useLoginWithOAuth({
+    onSuccess: (user, isNewUser) => {
+      console.log('Login successful', { user, isNewUser });
+      console.log('User:', JSON.stringify(user));
+      setAuthenticated(true);
+      router.replace('/(tabs)');
+    },
+    onError: (error) => {
+      console.error('Login error:', error);
+    }
+  });
+
+  useOAuthTokens({
+    onOAuthTokenGrant: ({
+      provider
+    }) => {
+      console.log('OAuth tokens received', { provider });
+    }
+  });
+
+  const handleTwitterLogin = () => {
+    login({ provider: 'twitter' });
+  };
 
   const handleSignup = () => {
     setAuthenticated(true);
@@ -33,27 +118,52 @@ export default function SignupScreen() {
               Join contests, vote on videos, and earn rewards!
             </Text>
 
-            <View style={styles.buttonsContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.twitterButton]}
-                onPress={handleSignup}
-              >
-                <View style={styles.buttonContent}>
-                  <XIcon width={20} height={20} />
-                  <Text style={styles.twitterButtonText}>Sign in with Twitter</Text>
-                </View>
-              </TouchableOpacity>
+            {oauthState.status === 'error' && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>
+                  {oauthState.error?.message || 'Authentication error'}
+                </Text>
+              </View>
+            )}
 
-              <TouchableOpacity
-                style={[styles.button, styles.googleButton]}
-                onPress={handleSignup}
-              >
-                <View style={styles.buttonContent}>
-                  <GoogleIcon width={20} height={20}/>
-                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
-                </View>
-              </TouchableOpacity>
+            <View style={styles.buttonsContainer}>
+              <Animated.View style={{
+                transform: [{ scale: pulseAnim }],
+                width: '80%',
+              }}>
+                <TouchableOpacity
+                  style={styles.buttonWrapper}
+                  onPress={handleTwitterLogin}
+                  disabled={oauthState.status === 'loading'}
+                  activeOpacity={0.7}
+                  onPressIn={() => setIsPressing(true)}
+                  onPressOut={() => setIsPressing(false)}
+                >
+                  <View style={[
+                    styles.twitterButton,
+                    isPressing && styles.twitterButtonPressed
+                  ]}>
+                    <View style={styles.buttonContent}>
+                      {oauthState.status === 'loading' ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          
+                            <XIcon width={20} height={20} />
+                          <Text style={styles.twitterButtonText}>Sign in with Twitter</Text>
+                        
+                          <View style={styles.glow} />
+                        </>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
+
+            {oauthState.status === 'loading' && (
+              <Text style={styles.loadingText}>Authenticating...</Text>
+            )}
 
             <Text style={styles.footerText}>
               By signing in, you agree to the{' '}
@@ -73,36 +183,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     width: '100%',
   },
-
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
-
   overlay: {
     flex: 1,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
-
   contentWrapper: {
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-
   trophyIcon: {
     alignSelf: 'center',
-    marginBottom: 200,
+    marginBottom: 250,
   },
-
   contentContainer: {
     alignItems: 'center',
     marginTop: 10,
     width: '100%',
   },
-
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -117,13 +220,21 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     paddingHorizontal: 10,
   },
-
   buttonsContainer: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 60,
   },
-
+  buttonWrapper: {
+    width: '100%',
+    borderRadius: 30,
+    marginBottom: 16,
+    shadowColor: '#1d9bf0',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 6,
+  },
   button: {
     width: '80%',
     paddingVertical: 14,
@@ -135,10 +246,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
   },
-
   twitterButton: {
     backgroundColor: '#000',
+    paddingVertical: 14,
+    borderRadius: 28,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1d9bf0',
+  },
+  twitterButtonPressed: {
+    backgroundColor: '#111',
+    transform: [{ scale: 0.98 }],
   },
   twitterButtonText: {
     color: '#fff',
@@ -146,14 +269,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-  googleButton: {
-    backgroundColor: '#fff',
+  shimmerEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 50,
+    height: '100%',
+    transform: [{ skewX: '-20deg' }],
   },
-  googleButtonText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 16,
-    marginLeft: 8,
+  glow: {
+    position: 'absolute',
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    borderRadius: 50,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'rgba(29, 155, 240, 0.2)',
+    opacity: 0.6,
   },
   footerText: {
     color: '#ccc',
@@ -165,5 +302,20 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#fff',
     textDecorationLine: 'underline',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    width: '80%',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    textAlign: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
   },
 });

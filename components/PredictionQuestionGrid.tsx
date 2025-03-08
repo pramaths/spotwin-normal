@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import PredictionQuestion from './PredictionQuestion';
-import PaymentModal from './PaymentModal';
+import ContestJoinModal from './ContestJoinModal';
 import { IContest } from '@/types';
 
 interface Question {
@@ -20,71 +20,99 @@ interface PredictionQuestionGridProps {
 }
 
 const PredictionQuestionGrid = ({ questions, onAnswer, contests = [] }: PredictionQuestionGridProps) => {
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  
-  // Mock contest for demo purposes - in a real app, you would match the question ID to a contest
-  const mockContest: IContest = {
-    id: "mock-contest-id",
-    name: "Prediction Contest",
-    entryFee: 0.5,
-    currency: "SOL",
-    description: "Answer prediction questions to win prizes",
-    status: "OPEN",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    event: {
-      id: "mock-event-id",
-      title: "Sports Prediction",
-      description: "Sports prediction event",
-      eventImageUrl: questions.length > 0 ? questions[0].matchImage : "",
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 3600000).toISOString(),
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      sport: {
-        id: "mock-sport-id",
-        name: "Mixed Sports",
-        description: "Various sports predictions",
-        imageUrl: "",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      teamA: {
-        id: "team-a-id",
-        name: "Team A",
-        imageUrl: "",
-        country: "Country A"
-      },
-      teamB: {
-        id: "team-b-id",
-        name: "Team B",
-        imageUrl: "",
-        country: "Country B"
-      }
-    }
-  };
+  const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
 
   const handleQuestionPress = (id: string) => {
     setSelectedQuestionId(id);
-    setPaymentModalVisible(true);
   };
 
-  const handleClosePaymentModal = () => {
-    setPaymentModalVisible(false);
+  const getFixedQuestions = () => {
+    let fixedQuestions = [...questions];
+    
+    while (fixedQuestions.length < 4) {
+      if (fixedQuestions.length > 0) {
+        const duplicateQuestion = {...fixedQuestions[0]};
+        duplicateQuestion.id = `duplicate-${fixedQuestions.length}`;
+        fixedQuestions.push(duplicateQuestion);
+      } else {
+        fixedQuestions.push({
+          id: `placeholder-${fixedQuestions.length}`,
+          question: "No question available",
+          matchImage: "https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png",
+          league: "",
+          teams: "",
+          timeRemaining: "0:00"
+        });
+      }
+    }
+    
+    fixedQuestions = fixedQuestions.slice(0, 4);
+    
+    if (fixedQuestions.length === 4) {
+      fixedQuestions[3] = {
+        ...fixedQuestions[3],
+        question: "" // Empty string to hide the question
+      };
+    }
+    
+    return fixedQuestions;
   };
 
-  if (!questions || questions.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No prediction questions available</Text>
-      </View>
-    );
-  }
+  const fixedQuestions = getFixedQuestions();
 
-  // Create pairs of questions for the grid layout
+  // Get the default contest to use
+  const getDefaultContest = (): IContest => {
+    if (contests.length > 0) {
+      return contests[0];
+    }
+    
+    return {
+      id: "default-contest",
+      name: "Prediction Contest",
+      entryFee: 49,
+      currency: "USD",
+      description: "Answer prediction questions to win prizes",
+      status: "OPEN",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      event: {
+        id: "default-event",
+        title: "Sports Prediction",
+        description: "Sports prediction event",
+        eventImageUrl: questions.length > 0 ? questions[0].matchImage : "",
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 3600000).toISOString(),
+        status: "OPEN",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sport: {
+          id: "default-sport",
+          name: "Mixed Sports",
+          description: "Various sports predictions",
+          imageUrl: "",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        teamA: {
+          id: "team-a",
+          name: "Team A",
+          imageUrl: "",
+          country: "Country A"
+        },
+        teamB: {
+          id: "team-b",
+          name: "Team B",
+          imageUrl: "",
+          country: "Country B"
+        }
+      }
+    };
+  };
+
+  const defaultContest = getDefaultContest();
+
   const createPairs = (items: Question[]) => {
     const pairs = [];
     for (let i = 0; i < items.length; i += 2) {
@@ -93,7 +121,7 @@ const PredictionQuestionGrid = ({ questions, onAnswer, contests = [] }: Predicti
     return pairs;
   };
 
-  const questionPairs = createPairs(questions);
+  const questionPairs = createPairs(fixedQuestions);
 
   return (
     <>
@@ -111,6 +139,7 @@ const PredictionQuestionGrid = ({ questions, onAnswer, contests = [] }: Predicti
                   timeRemaining={question.timeRemaining}
                   onAnswer={onAnswer}
                   onQuestionPress={handleQuestionPress}
+                  contest={defaultContest}
                 />
               </View>
             ))}
@@ -118,14 +147,6 @@ const PredictionQuestionGrid = ({ questions, onAnswer, contests = [] }: Predicti
           </View>
         ))}
       </ScrollView>
-
-      {paymentModalVisible && (
-        <PaymentModal
-          isVisible={paymentModalVisible}
-          onClose={handleClosePaymentModal}
-          contest={mockContest}
-        />
-      )}
     </>
   );
 };

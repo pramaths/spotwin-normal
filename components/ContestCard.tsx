@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   vsText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#3B3B6D',
+    color: '#0504dc',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   joinButton: {
-    backgroundColor: '#3B3B6D',
+    backgroundColor: '#0504dc',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',

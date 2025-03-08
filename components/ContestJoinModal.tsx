@@ -1,29 +1,31 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Image,
   Platform,
   Animated,
-  Image,
-  Easing
+  Easing,
+  Dimensions
 } from 'react-native';
 import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
 
-interface PaymentModalProps {
+interface ContestJoinModalProps {
   isVisible: boolean;
   onClose: () => void;
   contest: IContest;
   onConfirm?: () => void;
 }
 
-const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalProps) => {
-  const [amount, setAmount] = useState(contest?.entryFee || 1);
+const { height } = Dimensions.get('window');
+
+const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoinModalProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -81,24 +83,21 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
 
   const handlePayment = () => {
     animateSuccess();
-  };
-
-  const handlePayAndContribute = () => {
-    animateSuccess();
-    
     setTimeout(() => {
-      router.push('/(tabs)/contribute');
-    }, 1800);
+      router.push('/(tabs)/video-prediction');
+    }, 1500);
   };
 
   useEffect(() => {
     if (isVisible) {
-      setAmount(contest?.entryFee || 1);
       setShowSuccess(false);
     }
-  }, [isVisible, contest]);
+  }, [isVisible]);
 
   if (!contest) return null;
+
+  // Get thumbnail from the first video if available
+  const thumbnailUrl = contest.event?.eventImageUrl || 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png';
 
   return (
     <Modal
@@ -113,60 +112,55 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <ChevronLeft color="#000" size={24} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Fee Payment</Text>
+            <Text style={styles.headerTitle}>Join Contest</Text>
             <View style={{ width: 24 }} />
           </View>
 
-          <View style={styles.matchInfo}>
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{contest.event.teamA.name}</Text>
-              <Image style={styles.teamLogo} source={{ uri: contest.event.teamA.imageUrl }} />
-            </View>
-
-            <View style={styles.timeContainer}>
-              <Text style={styles.timeLabel}>Start time</Text>
-              <View style={styles.timeBox}>
-                <Text style={styles.timeText}>{formatFullDate(contest.event.startDate)}</Text>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={{ uri: thumbnailUrl }} 
+              style={styles.contestImage} 
+              resizeMode="cover"
+            />
+            <View style={styles.questionOverlay}>
+              <Text style={styles.questionText}>{contest.name || "Will there be a goal in next 5 minutes?"}</Text>
+              <View style={styles.timerContainer}>
+                <Text style={styles.timerText}>Ends in 4:30</Text>
               </View>
-            </View>
-
-            <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{contest.event.teamB.name}</Text>
-              <Image style={styles.teamLogo} source={{ uri: contest.event.teamB.imageUrl }} />
             </View>
           </View>
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Vote pool</Text>
+              <Text style={styles.statValue}>$30,000</Text>
+            </View>
+            <View style={styles.statItem}>
               <Text style={styles.statLabel}>Joining fee</Text>
-              <Text style={styles.statValue}>${contest.entryFee}</Text>
+              <Text style={styles.statValue}>${contest.entryFee || 49}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Prize pool</Text>
-              <Text style={styles.statValue}>24 SOL</Text>
+              <Text style={styles.statValue}>$8,000</Text>
             </View>
           </View>
 
-          <View style={styles.balanceContainer}>
-            <Text style={styles.balanceText}>Your current balance: <Text style={styles.balanceAmount}>1000 SOL</Text></Text>
-          </View>
-          {contest.status === 'OPEN' && (
-            <TouchableOpacity
-              style={styles.contributeButton}
-              onPress={handlePayAndContribute}
-            >
-              <Text style={styles.payButtonText}>Play and Contribute</Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
-            style={styles.payButton}
+            style={styles.joinButton}
             onPress={handlePayment}
           >
-            <Text style={styles.payButtonText}>Play</Text>
+            <Text style={styles.joinButtonText}>Pay ${contest.entryFee || 49}</Text>
           </TouchableOpacity>
 
-          {/* Success overlay with animated checkmark */}
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.balanceText}>Your current balance: $900</Text>
+
           {showSuccess && (
             <View style={styles.successOverlay}>
               <Animated.View
@@ -186,7 +180,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
                     }
                   ]}
                 >
-                  <Check color="#fff" size={40} strokeWidth={3} />
+                  <Check color="#4CAF50" size={40} strokeWidth={3} />
                 </Animated.View>
               </Animated.View>
               <Animated.Text 
@@ -215,77 +209,68 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     width: '100%',
-    minHeight: 300,
-    position: 'relative', 
+    height: height * 0.9,
+    overflow: 'hidden',
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   backButton: {
-    padding: 8,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
   },
-  matchInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  imageContainer: {
+    width: '100%',
+    height: 350,
+    position: 'relative',
   },
-  teamInfo: {
-    alignItems: 'center',
-    width: '30%',
+  contestImage: {
+    width: '100%',
+    height: '100%',
   },
-  teamName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
-    textAlign: 'center',
+  questionOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  questionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: 8,
   },
-  teamLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  timerContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
-  timeContainer: {
-    alignItems: 'center',
-  },
-  timeLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  timeBox: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  timeText: {
+  timerText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '500',
-    color: '#333',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -302,40 +287,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
-  balanceContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  balanceText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  balanceAmount: {
-    fontWeight: '600',
-    color: '#000',
-  },
-  contributeButton: {
-    backgroundColor: '#0504dc',
+  joinButton: {
+    backgroundColor: '#4CAF50',
     marginHorizontal: 16,
+    marginTop: 16,
     paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  payButton: {
-    backgroundColor: '#0504dc',
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  payButtonText: {
+  joinButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
+  cancelButton: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#FF0000',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  balanceText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 12,
+    paddingBottom: 8,
+  },
   successOverlay: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
@@ -343,15 +327,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     zIndex: 10,
   },
   successIconContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -360,6 +342,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   successTitle: {
     fontSize: 20,
@@ -369,4 +353,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PaymentModal;
+export default ContestJoinModal;

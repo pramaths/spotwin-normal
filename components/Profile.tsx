@@ -1,88 +1,105 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X } from 'lucide-react-native';
+import { usePrivy,  } from '@privy-io/expo';
+import { useRouter } from 'expo-router';
 
 interface ProfileScreenProps {
   onClose?: () => void;
 }
 
 export default function ProfileScreen({ onClose }: ProfileScreenProps) {
+  const { logout } = usePrivy();
+  const router = useRouter();
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const handlelogOut = () => {
+    logout();
+    router.push('/(auth)/signup');
+  };
+
   return (
-      <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left']}>
-        {onClose && (
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <X size={24} color="#000" />
-          </TouchableOpacity>
-        )}
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.header}>
-            <View style={styles.profileContainer}>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80' }}
-                style={styles.profileImage}
-              />
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>John Doe</Text>
-                <Text style={styles.profileUsername}>@JohnDoe</Text>
-              </View>
+    <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left', 'top']}>
+      {onClose && (
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={handleClose}
+          activeOpacity={0.7}
+          hitSlop={{ top: 20, right: 20, bottom: 20, left: 20 }}
+        >
+          <X size={24} color="#000" />
+        </TouchableOpacity>
+      )}
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.header}>
+          <View style={styles.profileContainer}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80' }}
+              style={styles.profileImage}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>John Doe</Text>
+              <Text style={styles.profileUsername}>@JohnDoe</Text>
             </View>
           </View>
-          
-          <View style={styles.walletCard}>
-            <Text style={styles.walletLabel}>Wallet</Text>
-            <Text style={styles.walletAmount}>$2,694.46</Text>
-            <Text style={styles.walletDate}>Updated 21/02/2025</Text>
-            
-            <View style={styles.walletActions}>
-              <TouchableOpacity style={styles.depositButton}>
-                <ArrowDown size={20} color="#FFF" />
-                <Text style={styles.depositButtonText}>Deposit</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.withdrawButton}>
-                <ArrowUp size={20} color="#3B3B6D" />
-                <Text style={styles.withdrawButtonText}>Withdraw</Text>
-              </TouchableOpacity>
+        </View>
+
+        <View style={styles.walletCard}>
+          <Text style={styles.walletLabel}>Wallet</Text>
+          <Text style={styles.walletAmount}>269 SOL</Text>
+
+          <View style={styles.walletActions}>
+            <TouchableOpacity style={styles.depositButton}>
+              <ArrowDown size={20} color="#FFF" />
+              <Text style={styles.depositButtonText}>Deposit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.withdrawButton}>
+              <ArrowUp size={20} color="#0504dc" />
+              <Text style={styles.withdrawButtonText}>Withdraw</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.menuSection}>
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Settings size={24} color="#000" />
             </View>
-          </View>
-          
-          <View style={styles.menuSection}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <Settings size={24} color="#000" />
-              </View>
-              <Text style={styles.menuText}>Settings</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <HelpCircle size={24} color="#000" />
-              </View>
-              <Text style={styles.menuText}>Help & support</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <Shield size={24} color="#000" />
-              </View>
-              <Text style={styles.menuText}>Privacy & Security</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <TouchableOpacity style={styles.logoutButton}>
-            <LogOut size={20} color="#FF3B30" />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <HelpCircle size={24} color="#000" />
+            </View>
+            <Text style={styles.menuText}>Help & support</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Shield size={24} color="#000" />
+            </View>
+            <Text style={styles.menuText}>Privacy & Security</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton}
+          onPress={handlelogOut}>
+          <LogOut size={20} color="#FF3B30" />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F5F7FA',
@@ -116,7 +133,7 @@ const styles = StyleSheet.create({
   profileUsername: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
-    color: '#3B3B6D',
+    color: '#0504dc',
   },
   walletCard: {
     backgroundColor: '#FFF',
@@ -138,7 +155,7 @@ const styles = StyleSheet.create({
   walletAmount: {
     fontFamily: 'Inter-Bold',
     fontSize: 32,
-    color: '#3B3B6D',
+    color: '#0504dc',
     marginBottom: 4,
   },
   walletDate: {
@@ -155,7 +172,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3B3B6D',
+    backgroundColor: '#0504dc',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -183,7 +200,7 @@ const styles = StyleSheet.create({
   withdrawButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
-    color: '#3B3B6D',
+    color: '#0504dc',
     marginLeft: 8,
   },
   menuSection: {
@@ -239,8 +256,11 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 16,
+    top: 16 + (Platform.OS === 'ios' ? 20 : 0),
     right: 16,
-    zIndex: 1,
+    zIndex: 10,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
   },
 });

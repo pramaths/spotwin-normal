@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   vsText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#3B3B6D',
+    color: '#0504dc',
   },
   statsContainer: {
     flexDirection: 'row',

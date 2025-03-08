@@ -3,7 +3,7 @@ import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/authstore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-// import { PrivyProvider } from '@privy-io/expo';
+import { PrivyProvider, PrivyElements } from '@privy-io/expo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,11 +23,11 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (!isAuthenticated && segments[0] !== '(auth)' && !isLoading) {
-      router.replace('/(auth)/signup');
-    }
-  }, [isAuthenticated, segments, router, isLoading]);
+  // useEffect(() => {
+  //   if (!isAuthenticated && segments[0] !== '(auth)' && !isLoading) {
+  //     router.replace('/(auth)/signup');
+  //   }
+  // }, [isAuthenticated, segments, router, isLoading]);
 
   if (isLoading) {
     return null;
@@ -38,12 +38,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      {/* <PrivyProvider
+      <PrivyProvider
         appId={privyAppId}
-        clientId={privyClientId}> */}
+        clientId={privyClientId}>
+        <PrivyElements config={{appearance: {accentColor: '#00AF55'}}} />
         <StatusBar style="dark" backgroundColor="transparent" translucent />
-        <Slot />
-      {/* </PrivyProvider> */}
+          <Slot />
+      </PrivyProvider>
     </SafeAreaProvider>
   );
 }

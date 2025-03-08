@@ -5,7 +5,9 @@ import {
   StyleSheet, 
   Image, 
   TouchableOpacity, 
-  Modal
+  Modal,
+  StatusBar,
+  Platform
 } from 'react-native';
 import { User } from '../types';
 import EmptyWalletIcon from '../assets/icons/empty-wallet.svg';
@@ -16,7 +18,7 @@ import { CircleHelp } from 'lucide-react-native'
 // Default user if none provided
 const defaultUser: User = {
   id: '1',
-  name: 'John Doe',
+  name: 'toly',
   avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80'
 };
 
@@ -70,7 +72,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>Hi!, {user.name}</Text>
+            <Text style={styles.userName}>gm, {user.name}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>
@@ -96,8 +98,10 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
         transparent={true}
         visible={profileModalVisible}
         onRequestClose={closeProfileModal}
+        statusBarTranslucent={true}
       >
         <View style={styles.modalOverlay}>
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
           <ProfileScreen onClose={closeProfileModal} />
         </View>
       </Modal>
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: '#F5F7FA',
   },
 });
 

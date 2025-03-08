@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { StyleSheet, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
+import { useAuthStore } from '../../store/authstore';
 
 import HomeIcon from '../../assets/icons/home.svg';
 import CupIcon from '../../assets/icons/cup.svg';
@@ -12,12 +13,21 @@ import WhiteHome from '../../assets/icons/whitehome.svg';
 import WhiteCup from '../../assets/icons/whitecup.svg';
 import WhiteFeed from '../../assets/icons/whitefeed.svg';
 import WhiteQuestion from '../../assets/icons/whitequestion.svg';
+import { AuthBoundary } from '@privy-io/expo';
+
+import FullScreenLoader from '../../components/FullScreenLoader';
+import ErrorScreen from '../../components/ErrorScreen';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 40 + (Platform.OS === 'ios' ? insets.bottom : 20);
 
   return (
+    <AuthBoundary
+    loading={<FullScreenLoader />}
+      error={(error) => <ErrorScreen error={error} />}
+      unauthenticated={<Redirect href="/(auth)/signup" />}
+    >
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
@@ -80,6 +90,7 @@ export default function TabLayout() {
         />
       </Tabs>
     </View>
+    </AuthBoundary>
   );
 }
 

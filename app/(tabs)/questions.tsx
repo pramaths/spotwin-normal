@@ -13,31 +13,76 @@ export default function QuestionScreen() {
   const questions = [
     {
       id: '1',
-      league: 'Premier league',
-      match: 'Manchester United vs Arsenal',
-      question: 'Will Rashford score a header?',
-      submittedTime: 'Submitted 2 days ago',
+      question: 'Will Real Madrid score in the first half?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      league: 'UCL',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      teams: 'Real Madrid vs Atletico Madrid',
+      timeRemaining: '45:00',
       status: 'approved' as const,
-      leagueIcon: <Shield size={20} color="#3F1052" />,
+      answer: null,
+      contestId: '',
     },
     {
       id: '2',
-      league: 'LaLiga Contest',
-      match: 'Manchester United vs Arsenal',
-      question: 'Will Rashford score a header?',
-      submittedTime: 'Submitted 1 day ago',
+      question: 'Will there be a red card in the match?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      league: 'Europa League',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      teams: 'Manchester United vs AS Roma',
+      timeRemaining: '30:15',
       status: 'pending' as const,
-      leagueIcon: <Shield size={20} color="#2D3791" />,
+      answer: null,
+      contestId: '',
     },
     {
       id: '3',
-      league: 'Premier League',
-      match: 'Manchester City vs Liverpool',
-      question: 'Will Rashford score a header?',
-      submittedTime: 'Submitted 3 days ago',
-      status: 'rejected' as const,
-      leagueIcon: <Shield size={20} color="#3F1052" />,
+      question: 'Will Atletico Madrid win the match?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      league: 'UCL',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      teams: 'Real Madrid vs Atletico Madrid',
+      timeRemaining: '15:30',
+      status: 'approved' as const,
+      answer: null,
+      contestId: '',
     },
+    {
+      id: '4',
+      question: 'Will there be more than 2 goals in the match?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      league: 'Europa League',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      teams: 'Arsenal vs Bayer Leverkusen',
+      timeRemaining: '60:00',
+      status: 'pending' as const,
+      answer: null,
+      contestId: '',
+    },
+    {
+      id: '5',
+      question: 'Will there be a penalty in the match?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      league: 'UCL',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png',
+      teams: 'Barcelona vs Bayern Munich',
+      timeRemaining: '25:45',
+      status: 'rejected' as const,
+      answer: null,
+      contestId: '',
+    },
+    {
+      id: '6',
+      question: 'Will the match end in a draw?',
+      matchImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      league: 'Europa League',
+      leagueImage: 'https://9shootnew.s3.us-east-1.amazonaws.com/europa.png',
+      teams: 'Sevilla vs Benfica',
+      timeRemaining: '10:00',
+      status: 'approved' as const,
+      answer: null,
+      contestId: '',
+    }
   ];
 
   return (
@@ -46,19 +91,21 @@ export default function QuestionScreen() {
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={{
-          paddingBottom: tabBarHeight + 16 // Add padding to the bottom to avoid tab bar overlap
+          paddingBottom: tabBarHeight + 16
         }}
         showsVerticalScrollIndicator={false}
       >
         {questions.map((question) => (
-          <MyQuestionCard
+          <MyQuestionCard 
             key={question.id}
-            league={question.league}
-            match={question.match}
             question={question.question}
-            submittedTime={question.submittedTime}
+            matchImage={question.matchImage}
+            league={question.league}
+            leagueImage={question.leagueImage}
+            teams={question.teams}
+            timeRemaining={question.timeRemaining}
             status={question.status}
-            leagueIcon={question.leagueIcon}
+            answer={question.answer}
           />
         ))}
       </ScrollView>

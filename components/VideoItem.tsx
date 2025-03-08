@@ -154,7 +154,7 @@ const VideoItem = ({
               style={styles.videoPlayer}
               nativeControls={false}
               allowsFullscreen
-              contentFit='fill'
+              // contentFit='fill'
             />
 
             {!isPlaying && (
@@ -168,8 +168,8 @@ const VideoItem = ({
               style={styles.gradient}
             />
 
-            <View style={styles.glassyContainer}>
-              <View style={styles.questionHeader}>
+            <View style={styles.bottomContainer}>
+              <View style={styles.questionContainer}>
                 <Text style={styles.questionText}>{item.question}</Text>
               </View>
               <View style={styles.predictionContainer}>
@@ -181,7 +181,7 @@ const VideoItem = ({
                   ]}
                   onPress={() => handlePrediction('yes')}
                 >
-                  <Text style={styles.predictionButtonText}>YES</Text>
+                  <Text style={styles.yesText}>YES</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -192,7 +192,7 @@ const VideoItem = ({
                   ]}
                   onPress={() => handlePrediction('no')}
                 >
-                  <Text style={styles.predictionButtonText}>NO</Text>
+                  <Text style={styles.noText}>NO</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -244,42 +244,37 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: '100%',
   },
-  glassyContainer: {
+  bottomContainer: {
     position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 40, 
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderRadius: 20,
-    padding: 10,
-    backdropFilter: 'blur(10px)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    elevation: 5, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    left: 0,
+    right: 0,
+    bottom: 40,
+    paddingHorizontal: 16,
   },
-  questionHeader: {
-    marginBottom: 12,
+  questionContainer: {
+    backgroundColor: 'rgba(33, 33, 33, 0.7)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    backdropFilter: 'blur(10px)',
   },
   questionText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
   },
   predictionContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   predictionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    minWidth: 120,
+    flex: 1,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 30,
+    marginHorizontal: 8,
   },
   yesButton: {
     backgroundColor: '#4CAF50',
@@ -288,14 +283,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   selectedButton: {
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
-    transform: [{ scale: 1.05 }],
   },
-  predictionButtonText: {
-    color: '#fff',
+  yesText: {
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  noText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 });
 
