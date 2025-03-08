@@ -230,7 +230,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
         
         <View style={styles.questionCounter}>
-          <Text style={styles.questionCounterText}>{remainingQuestions}/{totalQuestions}</Text>
+          <Text style={styles.questionCounterText}>{remainingQuestions-totalQuestions}/9 questions answered</Text>
         </View>
 
         {videos.length > 0 && (
@@ -330,6 +330,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
+    borderColor: '#FFF',
+    borderWidth: 1,
     paddingVertical: 8,
     paddingHorizontal: 16,
     zIndex: 10,

@@ -36,13 +36,13 @@ const VideoItem = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<'yes' | 'no' | null>(null);
   const playerRef = useRef<VideoPlayer | null>(null);
-  
+
   // Create video player with null source initially
   const videoPlayer = useVideoPlayer(
     null,
     (player) => {
       playerRef.current = player;
-      
+
       try {
         player.loop = true;
         player.muted = muteState;
@@ -55,13 +55,13 @@ const VideoItem = ({
   // Set the video source when the component mounts
   useEffect(() => {
     if (!videoPlayer) return;
-    
+
     try {
       videoPlayer.replace({ uri: item.videoUrl });
     } catch (err) {
       setError('Failed to set video source');
     }
-    
+
     return () => {
       try {
         if (videoPlayer) {
@@ -78,10 +78,10 @@ const VideoItem = ({
   // Handle visibility and mute state changes
   useEffect(() => {
     if (!videoPlayer) return;
-    
+
     try {
       videoPlayer.muted = muteState;
-      
+
       if (isVisible) {
         videoPlayer.play();
         setIsPlaying(true);
@@ -124,11 +124,8 @@ const VideoItem = ({
 
   const handlePrediction = (prediction: 'yes' | 'no') => {
     setSelectedOption(prediction);
-    
-    // Small delay to show the selected option before moving to next video
     setTimeout(() => {
-      onPrediction(prediction);
-      setSelectedOption(null);
+      onPrediction(prediction); setSelectedOption(null);
     }, 800);
   };
 
@@ -154,7 +151,7 @@ const VideoItem = ({
               style={styles.videoPlayer}
               nativeControls={false}
               allowsFullscreen
-              // contentFit='fill'
+            // contentFit='fill'
             />
 
             {!isPlaying && (
@@ -175,7 +172,7 @@ const VideoItem = ({
               <View style={styles.predictionContainer}>
                 <TouchableOpacity
                   style={[
-                    styles.predictionButton, 
+                    styles.predictionButton,
                     styles.yesButton,
                     selectedOption === 'yes' && styles.selectedButton
                   ]}
@@ -186,7 +183,7 @@ const VideoItem = ({
 
                 <TouchableOpacity
                   style={[
-                    styles.predictionButton, 
+                    styles.predictionButton,
                     styles.noButton,
                     selectedOption === 'no' && styles.selectedButton
                   ]}
@@ -256,7 +253,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    backdropFilter: 'blur(10px)',
   },
   questionText: {
     color: '#fff',
