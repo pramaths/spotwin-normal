@@ -6,6 +6,7 @@ import HeaderProfile from '@/components/HeaderProfile';
 import { IContest } from '@/types';
 import { formatDateTime } from '@/utils/dateUtils';
 import { fetchContests, fetchContestVideos, IContestVideo } from '@/services/contestApi';
+import { ContestCardSkeleton } from '@/components/SkeletonLoading';
 
 const FeedsScreen = () => {
   const [selectedTab, setSelectedTab] = useState('all');
@@ -15,12 +16,14 @@ const FeedsScreen = () => {
   const [contestVideos, setContestVideos] = useState<IContestVideo[]>([]);
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isContestsLoading, setIsContestsLoading] = useState(true);
   const insets = useSafeAreaInsets();
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
   useEffect(() => {
     const loadContests = async () => {
+      setIsContestsLoading(true);
       try {
         const contestsData = await fetchContests();
         setContests(contestsData);
@@ -31,6 +34,8 @@ const FeedsScreen = () => {
         }
       } catch (error) {
         console.error('Error fetching contests:', error);
+      } finally {
+        setIsContestsLoading(false);
       }
     };
     
@@ -81,57 +86,107 @@ const FeedsScreen = () => {
     setSelectedContest(contest);
   };
 
+  const renderContestItem = ({ item }: { item: IContest }) => {
+    const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.contestItem,
+          selectedContest?.id === item.id && styles.selectedContestItem
+        ]} 
+        onPress={() => handleContestSelect(item)}
+      >
+        <View style={styles.teamsContainer}>
+          <View style={styles.teamSection}>
+            <Image 
+              source={{uri: item.event.teamA.imageUrl}} 
+              style={styles.teamLogo} 
+              resizeMode="contain"
+            />
+            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamA.name}</Text>
+          </View>
+          
+          <Text style={styles.vsText}>VS</Text>
+          
+          <View style={styles.teamSection}>
+            <Image 
+              source={{uri: item.event.teamB.imageUrl}} 
+              style={styles.teamLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamB.name}</Text>
+          </View>
+        </View>
+
+        <View style={styles.contestInfo}>
+          <Text style={styles.contestName}>{item.event.title}</Text>
+          <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderContestSkeletons = () => {
+    return (
+      <FlatList
+        data={[1, 2, 3]} // Show 3 skeleton items
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.contestList}
+        style={{flexGrow: 0}}
+        renderItem={() => <ContestCardSkeleton />}
+        keyExtractor={(item) => `skeleton-${item}`}
+      />
+    );
+  };
+
+  // Render content based on loading state and data availability
+  const renderPredictionContent = () => {
+    if (isLoading) {
+      return (
+        <PredictionQuestionGrid
+          questions={[]}
+          onAnswer={handleAnswer}
+          contests={contests}
+          isLoading={true}
+        />
+      );
+    } else if (contestVideos.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No predictions available for this contest</Text>
+        </View>
+      );
+    } else {
+      return (
+        <PredictionQuestionGrid
+          questions={contestVideos}
+          onAnswer={handleAnswer}
+          contests={contests}
+          isLoading={false}
+        />
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <HeaderProfile />
       <View style={styles.container}>
         <View style={styles.contentContainer}>
-          <FlatList
-            data={contests}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.contestList}
-            style={{flexGrow: 0}}
-            renderItem={({ item }) => {
-              const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
-              return (
-                <TouchableOpacity 
-                  style={[
-                    styles.contestItem,
-                    selectedContest?.id === item.id && styles.selectedContestItem
-                  ]} 
-                  onPress={() => handleContestSelect(item)}
-                >
-                  <View style={styles.teamsContainer}>
-                    <View style={styles.teamSection}>
-                      <Image 
-                        source={{uri: item.event.teamA.imageUrl}} 
-                        style={styles.teamLogo} 
-                        resizeMode="contain"
-                      />
-                      <Text style={styles.teamName} numberOfLines={1}>{item.event.teamA.name}</Text>
-                    </View>
-                    
-                    <Text style={styles.vsText}>VS</Text>
-                    
-                    <View style={styles.teamSection}>
-                      <Image 
-                        source={{uri: item.event.teamB.imageUrl}} 
-                        style={styles.teamLogo}
-                        resizeMode="contain"
-                      />
-                      <Text style={styles.teamName} numberOfLines={1}>{item.event.teamB.name}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.contestInfo}>
-                    <Text style={styles.contestName}>{item.event.title}</Text>
-                    <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
+          {isContestsLoading ? (
+            renderContestSkeletons()
+          ) : (
+            <FlatList
+              data={contests}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.contestList}
+              style={{flexGrow: 0}}
+              renderItem={renderContestItem}
+              keyExtractor={(item) => item.id}
+            />
+          )}
           <ScrollView 
             style={styles.predictionScrollView}
             contentContainerStyle={{ 
@@ -139,21 +194,7 @@ const FeedsScreen = () => {
             }}
             showsVerticalScrollIndicator={false}
           >
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Loading predictions...</Text>
-              </View>
-            ) : contestVideos.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No predictions available for this contest</Text>
-              </View>
-            ) : (
-              <PredictionQuestionGrid
-                questions={contestVideos}
-                onAnswer={handleAnswer}
-                contests={contests}
-              />
-            )}
+            {renderPredictionContent()}
           </ScrollView>
         </View>
       </View>
@@ -194,6 +235,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  selectedContestItem: {
+    borderColor: '#3B82F6',
+    borderWidth: 2,
+  },
   teamsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,71 +246,64 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   teamSection: {
-    flex: 1,
     alignItems: 'center',
+    width: 100,
   },
   teamLogo: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     marginBottom: 4,
   },
   teamName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
-    color: '#1A1A1A',
     textAlign: 'center',
+    color: '#333',
   },
   vsText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#212b90',
-    marginHorizontal: 8,
+    fontWeight: 'bold',
+    color: '#666',
   },
   contestInfo: {
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: '#EEEEEE',
     paddingTop: 8,
-  },
-  contestTitle: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
+    marginTop: 4,
   },
   contestName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#333',
     marginBottom: 4,
   },
   contestTime: {
     fontSize: 12,
     color: '#666',
   },
-  selectedContestItem: {
-    borderWidth: 2,
-    borderColor: '#3498db',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    minHeight: 200,
   },
   loadingText: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    minHeight: 200,
+    marginTop: 40,
   },
   emptyText: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
   },
 });
 

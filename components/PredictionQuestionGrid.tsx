@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import PredictionQuestion from './PredictionQuestion';
 import ContestJoinModal from './ContestJoinModal';
 import { IContest } from '@/types';
+import { PredictionGridSkeleton } from './SkeletonLoading';
 
 interface Question {
   id: string;
@@ -17,15 +18,26 @@ interface PredictionQuestionGridProps {
   questions: Question[];
   onAnswer: (id: string, answer: 'YES' | 'NO') => void;
   contests?: IContest[]; // Optional array of contests to use for the payment modal
+  isLoading?: boolean;
 }
 
-const PredictionQuestionGrid = ({ questions, onAnswer, contests = [] }: PredictionQuestionGridProps) => {
+const PredictionQuestionGrid = ({ 
+  questions, 
+  onAnswer, 
+  contests = [],
+  isLoading = false
+}: PredictionQuestionGridProps) => {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
 
   const handleQuestionPress = (id: string) => {
     setSelectedQuestionId(id);
   };
+
+  // If loading is true, render the skeleton
+  if (isLoading) {
+    return <PredictionGridSkeleton />;
+  }
 
   const getFixedQuestions = () => {
     let fixedQuestions = [...questions];

@@ -33,7 +33,6 @@ export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
   const isMountedRef = useRef(true);
 
-  // Load videos when the component mounts or when the screen comes into focus
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
     
@@ -46,7 +45,6 @@ export default function HomeScreen() {
       
       if (isMountedRef.current) {
         setVideos(data);
-        // Only set the first video as visible after a small delay
         setTimeout(() => {
           if (isMountedRef.current) {
             setVisibleVideos({ 0: true });
@@ -70,7 +68,6 @@ export default function HomeScreen() {
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
       setIsScreenActive(true);
-      // Reload videos when the screen comes into focus
       loadVideos();
     });
 
@@ -159,7 +156,7 @@ export default function HomeScreen() {
   };
   
   const totalQuestions = videos.length;
-  const remainingQuestions = totalQuestions - answeredQuestions.length;
+  const remainingQuestions = answeredQuestions.length;
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (!isScreenActive || loading) return;
@@ -230,7 +227,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
         
         <View style={styles.questionCounter}>
-          <Text style={styles.questionCounterText}>{remainingQuestions-totalQuestions}/9 questions answered</Text>
+          <Text style={styles.questionCounterText}>{remainingQuestions}/9 questions answered</Text>
         </View>
 
         {videos.length > 0 && (

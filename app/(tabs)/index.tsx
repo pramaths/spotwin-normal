@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Platform, 
-  Image, 
-  StatusBar, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  Image,
+  StatusBar,
   FlatList,
   Dimensions
 } from 'react-native';
@@ -336,23 +336,22 @@ export default function HomeScreen() {
   const featuredListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // Filter contests based on selected sport
     filterContestsBySport(activeSport);
   }, [activeSport]);
 
   const filterContestsBySport = (sportId: string) => {
     const sportName = sportsCategories.find(sport => sport.id === sportId)?.name;
-    
+
     if (!sportName) {
-      setFilteredContests(allContests);
+      setFilteredContests([]);
       return;
     }
-    
-    const filtered = allContests.filter(contest => 
+
+    const filtered = allContests.filter(contest =>
       contest.event.sport?.name.toLowerCase() === sportName.toLowerCase()
     );
-    
-    setFilteredContests(filtered.length > 0 ? filtered : allContests);
+
+    setFilteredContests(filtered.length > 0 ? filtered : []);
   };
 
   const handleJoinPress = (contest: IContest) => {
@@ -372,11 +371,11 @@ export default function HomeScreen() {
 
   const renderFeaturedCard = ({ item, index }: { item: IContest, index: number }) => {
     const { formattedTime } = formatDateTime(item.event.startDate);
-    
+
     return (
       <View style={styles.featuredCardWrapper}>
         <View style={[styles.stackedCard, styles.secondStackedCard]} />
-        
+
         <LinearGradient
           colors={['#0504dc', '#0504dc', '#37348b']}
           style={styles.featuredCard}
@@ -385,7 +384,7 @@ export default function HomeScreen() {
         >
           <View style={styles.cardHeader}>
             <Text style={styles.leagueText}>{item.event.title}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.slideArrowContainer}
               onPress={() => {
                 // Scroll to the next card
@@ -470,8 +469,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
       >
@@ -526,15 +525,14 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* All contests below */}
         <View style={styles.contestCardContainer}>
-          {filteredContests.map((contest) => (
-            <ContestCard 
-              key={contest.id} 
-              contest={contest} 
+          {filteredContests.length > 0 ? filteredContests.map((contest) => (
+            <ContestCard
+              key={contest.id}
+              contest={contest}
               onPress={handleContestPress}
             />
-          ))}
+          )) : <Text style={styles.noContestsText}>No contests available</Text>}
         </View>
 
         {paymentModalVisible && selectedContest && (
@@ -760,5 +758,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 100, // Increased bottom margin to ensure content doesn't get hidden behind tab bar
     marginTop: 8,
+  },
+  noContestsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });
