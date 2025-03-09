@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   useEmbeddedSolanaWallet,
   useRecoverEmbeddedWallet,
@@ -9,6 +10,7 @@ import {
   getUserEmbeddedSolanaWallet,
   usePrivy,
 } from '@privy-io/expo';
+import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
 
 interface ProfileScreenProps {
   onClose?: () => void;
@@ -19,6 +21,40 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const router = useRouter();
   const solanaWallet = useEmbeddedSolanaWallet();
   const { recover } = useRecoverEmbeddedWallet();
+  const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
+
+  const [balance, setBalance] = useState<number>(0);
+
+  useEffect(() => {
+    const getBalance = async () => {
+      if (walletAddress) {
+        const solBalance = await fetchSolanaBalance(walletAddress);
+        setBalance(solBalance);
+      }
+    };
+
+    getBalance();
+  }, [walletAddress]);
+
+  const handleWalletRecover = async () => {
+    try {
+      if (!solanaWallet) {
+        console.error('No wallet found');
+        return;
+      }
+
+      const needsWalletRecovery = needsRecovery(solanaWallet);
+
+      if (needsWalletRecovery) {
+        await recover({
+          recoveryMethod: 'privy'
+        });
+        await solanaWallet.getProvider();
+      }
+    } catch (error) {
+      console.error('Failed to recover wallet:', error);
+    }
+  };
   const handleClose = () => {
     if (onClose) {
       onClose();
@@ -51,14 +87,14 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             />
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>Toly</Text>
-              <Text style={styles.profileUsername}>@Toly</Text>
+              <Text style={styles.profileUsername}>{solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString().slice(0, 6) + '...' + solanaWallet.publicKey.toString().slice(-4) : 'Not created'}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.walletCard}>
           <Text style={styles.walletLabel}>Wallet</Text>
-          <Text style={styles.walletAmount}>269 SOL</Text>
+          <Text style={styles.walletAmount}>{balance}</Text>
 
           <View style={styles.walletActions}>
             <TouchableOpacity style={styles.depositButton}>
@@ -87,8 +123,9 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             </View>
             <Text style={styles.menuText}>Help & support</Text>
           </TouchableOpacity>
-        
-          <TouchableOpacity style={styles.menuItem}>
+
+          <TouchableOpacity style={styles.menuItem}
+            onPress={handleWalletRecover}>
             <View style={styles.menuIconContainer}>
               <HelpCircle size={24} color="#000" />
             </View>

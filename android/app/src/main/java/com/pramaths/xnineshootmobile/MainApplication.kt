@@ -1,4 +1,4 @@
-package com.pramaths.x9shootmobile
+package com.pramaths.xnineshootmobile
 
 import android.app.Application
 import android.content.res.Configuration

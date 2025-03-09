@@ -1,4 +1,4 @@
-package com.pramaths.x9shootmobile
+package com.pramaths.xnineshootmobile
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

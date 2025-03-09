@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "9shoot-mobile",
-    "slug": "9shoot-mobile",
+    "name": "nineshoot-mobile",
+    "slug": "nineshoot-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,14 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pramaths.x9shootmobile"
+      "bundleIdentifier": "com.pramaths.xnineshootmobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pramaths.x9shootmobile"
+      "package": "com.pramaths.xnineshootmobile"
     },
     "web": {
       "bundler": "metro",
@@ -53,7 +53,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "020dc403-5c28-46f7-846c-81b7ca33c03f"
+        "projectId": "aad18b66-f66d-4deb-a21c-50c716fff6a6"
       }
     }
   }

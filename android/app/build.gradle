@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.9shootmobile"
+    namespace 'com.pramaths.xnineshootmobile'
     defaultConfig {
-        applicationId 'com.pramaths.x9shootmobile'
+        applicationId 'com.pramaths.xnineshootmobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

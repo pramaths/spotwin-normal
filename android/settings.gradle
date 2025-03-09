@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = '9shoot-mobile'
+rootProject.name = 'nineshoot-mobile'
 
 dependencyResolutionManagement {
   versionCatalogs {

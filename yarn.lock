@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"9shoot-mobile@file:.":
+"nineshoot-mobile@file:.":
   version "1.0.0"
   dependencies:
-    "9shoot-mobile" "file:../../AppData/Local/Yarn/Cache/v6/npm-9shoot-mobile-1.0.0-66b89e82-91ab-42af-be39-6aeafc27a39f-1741536452395/node_modules/9shoot-mobile"
+    "nineshoot-mobile" "file:../../AppData/Local/Yarn/Cache/v6/npm-nineshoot-mobile-1.0.0-66b89e82-91ab-42af-be39-6aeafc27a39f-1741536452395/node_modules/nineshoot-mobile"
     "@coinbase/wallet-sdk" "^3.9.3"
     "@coral-xyz/anchor" "0.28.0"
     "@ethersproject/shims" "^5.8.0"

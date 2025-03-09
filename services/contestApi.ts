@@ -24,7 +24,7 @@ export const MOCK_CONTESTS: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
       title: 'Europa League',
       description: 'UEFA Europa League tournament',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -34,7 +34,7 @@ export const MOCK_CONTESTS: IContest[] = [
         id: '3dc44aff-9748-44fc-aa74-1379213a4363',
         name: 'Football',
         description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
         isActive: true,
         createdAt: '2025-03-02T18:07:04.227Z',
         updatedAt: '2025-03-02T18:07:04.227Z',
@@ -42,13 +42,13 @@ export const MOCK_CONTESTS: IContest[] = [
       teamA: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Manchester United',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
         country: 'England',
       },
       teamB: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Real Sociedad',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
         country: 'Spain',
       },
     },
@@ -66,7 +66,7 @@ export const MOCK_CONTESTS: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bba',
       title: 'UEFA Champions League',
       description: 'UEFA Champions League tournament',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -84,13 +84,13 @@ export const MOCK_CONTESTS: IContest[] = [
       teamB: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Real Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
         country: 'Spain',
       },
       teamA: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Atletico Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/athletico.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/athletico.png',
         country: 'Spain',
       },
     },
@@ -108,7 +108,7 @@ export const MOCK_CONTESTS: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bbc',
       title: 'Premier League',
       description: 'English Premier League match',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -126,13 +126,13 @@ export const MOCK_CONTESTS: IContest[] = [
       teamA: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Liverpool',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/liverpool.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/liverpool.png',
         country: 'England',
       },
       teamB: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Manchester City',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/mancity.png',
+        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/mancity.png',
         country: 'England',
       },
     },
@@ -165,29 +165,29 @@ const CONTEST_VIDEOS: Record<string, IContestVideo[]> = {
     {
       id: '1',
       question: 'Will Manchester United score in the first half against Real Sociedad?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ss1.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f51256045'
     },
     {
       id: '2',
       question: 'Will Real Sociedad keep a clean sheet?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ss2.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ss2.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f51256045'
     },
     {
       id: '3',
       question: 'Will there be more than 2 goals in the match?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ss3.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ss3.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f51256045'
     },
     {
       id: '4',
       question: 'Will Manchester United win the match?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/blur_img.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f51256045'
     }
   ],
@@ -195,29 +195,29 @@ const CONTEST_VIDEOS: Record<string, IContestVideo[]> = {
     {
       id: '1',
       question: 'Will Real Madrid score in the first 15 minutes?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
       contestId: 'f984ea94-a07e-4bff-a802'
     },
     {
       id: '2',
       question: 'Will Atletico Madrid get a red card?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/athletico.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/athletico.png',
       contestId: 'f984ea94-a07e-4bff-a802'
     },
     {
       id: '3',
       question: 'Will the Madrid derby end in a draw?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
       contestId: 'f984ea94-a07e-4bff-a802'
     },
     {
       id: '4',
       question: 'Will both teams score?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/athletico.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/athletico.png',
       contestId: 'f984ea94-a07e-4bff-a802'
     },
   ],
@@ -225,22 +225,22 @@ const CONTEST_VIDEOS: Record<string, IContestVideo[]> = {
     {
       id: '1',
       question: 'Will Liverpool score first against Manchester City?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/liverpool.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/liverpool.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f5125'
     },
     {
       id: '2',
       question: 'Will there be a penalty in the match?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/mancity.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/mancity.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f5125'
     },
     {
       id: '3',
       question: 'Will Manchester City keep a clean sheet?',
-      videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
-      thumbnailUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/mancity.png',
+      videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
+      thumbnailUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/mancity.png',
       contestId: 'f984ea94-a07e-4bff-a802-1694f5125'
     }
   ]
