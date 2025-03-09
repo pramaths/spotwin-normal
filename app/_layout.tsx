@@ -40,11 +40,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <PrivyProvider
         appId={privyAppId}
-        clientId={privyClientId}>
+        clientId={privyClientId}
+        >
         <PrivyElements config={{appearance: {accentColor: '#00AF55'}}} />
-        <StatusBar style="dark" backgroundColor="transparent" translucent />
           <Slot />
       </PrivyProvider>
+      <StatusBar style="dark" backgroundColor="transparent" translucent />
     </SafeAreaProvider>
   );
 }

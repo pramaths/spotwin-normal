@@ -1,4 +1,3 @@
-// videoApi.ts
 import { Platform } from 'react-native';
 
 export interface IFeaturedVideo {
