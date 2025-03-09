@@ -1,17 +1,24 @@
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X } from 'lucide-react-native';
-import { usePrivy,  } from '@privy-io/expo';
 import { useRouter } from 'expo-router';
+import {
+  useEmbeddedSolanaWallet,
+  useRecoverEmbeddedWallet,
+  needsRecovery,
+  getUserEmbeddedSolanaWallet,
+  usePrivy,
+} from '@privy-io/expo';
 
 interface ProfileScreenProps {
   onClose?: () => void;
 }
 
 export default function ProfileScreen({ onClose }: ProfileScreenProps) {
-  const { logout } = usePrivy();
+  const { user, logout } = usePrivy();
   const router = useRouter();
-
+  const solanaWallet = useEmbeddedSolanaWallet();
+  const { recover } = useRecoverEmbeddedWallet();
   const handleClose = () => {
     if (onClose) {
       onClose();
@@ -79,6 +86,13 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
               <HelpCircle size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Help & support</Text>
+          </TouchableOpacity>
+        
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <HelpCircle size={24} color="#000" />
+            </View>
+            <Text style={styles.menuText}>Recover Wallet</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>

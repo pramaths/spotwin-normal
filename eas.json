@@ -1,21 +1,47 @@
 {
-  "cli": {
-    "version": ">= 14.4.1",
-    "appVersionSource": "remote"
-  },
   "build": {
+    "base": {
+      "node": "18.18.0",
+      "yarn": "1.22.19",
+      "env": {
+        "APP_ENV": "base"
+      },
+      "android": {
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e",
+              "env": {
+          "PLATFORM": "android"
+        }
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
-      "distribution": "internal"
+      "env": {
+        "APP_ENV": "development"
+      },
+      "android": {
+        "buildType": "apk",
+        "distribution": "internal"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "preview"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "extends": "base",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "APP_ENV": "production"
+      }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }
