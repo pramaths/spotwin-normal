@@ -43,8 +43,8 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
               style={styles.profileImage}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>John Doe</Text>
-              <Text style={styles.profileUsername}>@JohnDoe</Text>
+              <Text style={styles.profileName}>Toly</Text>
+              <Text style={styles.profileUsername}>@Toly</Text>
             </View>
           </View>
         </View>

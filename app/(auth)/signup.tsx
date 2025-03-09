@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   trophyIcon: {
     alignSelf: 'center',
-    marginBottom: 250,
+    marginBottom: 200,
   },
   contentContainer: {
     alignItems: 'center',
