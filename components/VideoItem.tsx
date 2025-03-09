@@ -34,82 +34,123 @@ const VideoItem = ({
   onPrediction,
 }: VideoItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<'yes' | 'no' | null>(null);
+  const isMountedRef = useRef(true);
   const playerRef = useRef<VideoPlayer | null>(null);
+  const statusListenerRef = useRef<{ remove: () => void } | null>(null);
 
   // Create video player with the video source initially
   const videoPlayer = useVideoPlayer(
     { uri: item.videoUrl },
     (player) => {
-      playerRef.current = player;
-
+      if (!isMountedRef.current) return;
+      
       try {
+        playerRef.current = player;
         player.loop = true;
         player.muted = muteState;
       } catch (err) {
-        setError('Video player initialization error');
+        console.error('Player initialization error:', err);
+        if (isMountedRef.current) {
+          setError('Video player initialization error');
+        }
       }
     }
   );
 
+  // Set up status change listener
   useEffect(() => {
-    if (!videoPlayer) return;
+    if (!videoPlayer || !isMountedRef.current) return;
     
-    const statusChangeListener = videoPlayer.addListener('statusChange', (payload) => {
-      if (payload.status === 'readyToPlay') {
-        setIsLoading(false);
-        if (isVisible) {
-          videoPlayer.play();
-          setIsPlaying(true);
+    try {
+      const statusChangeListener = videoPlayer.addListener('statusChange', (payload) => {
+        if (!isMountedRef.current) return;
+        
+        if (payload.status === 'readyToPlay') {
+          if (isVisible && isMountedRef.current) {
+            try {
+              videoPlayer.play();
+              setIsPlaying(true);
+            } catch (err) {
+              console.error('Error playing video:', err);
+            }
+          }
+        } else if (payload.status === 'error' && payload.error) {
+          if (isMountedRef.current) {
+            setError('Failed to load video');
+          }
         }
-      } else if (payload.status === 'error' && payload.error) {
-        setError('Failed to load video');
-        setIsLoading(false);
-      }
-    });
-    
-    return () => {
-      statusChangeListener.remove();
-    };
+      });
+      
+      statusListenerRef.current = statusChangeListener;
+      
+      return () => {
+        try {
+          if (statusListenerRef.current) {
+            statusListenerRef.current.remove();
+            statusListenerRef.current = null;
+          }
+        } catch (err) {
+          console.error('Error removing status listener:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Error setting up status listener:', err);
+      return () => {};
+    }
   }, [videoPlayer, isVisible]);
 
   // Handle visibility and mute state changes
   useEffect(() => {
-    if (!videoPlayer) return;
+    if (!videoPlayer || !isMountedRef.current) return;
 
     try {
       videoPlayer.muted = muteState;
 
-      if (isVisible && !isLoading) {
-        videoPlayer.play();
-        setIsPlaying(true);
+      if (isVisible) {
+        try {
+          videoPlayer.play();
+          setIsPlaying(true);
+        } catch (err) {
+          console.error('Error playing video on visibility change:', err);
+        }
       } else {
-        videoPlayer.pause();
-        setIsPlaying(false);
+        try {
+          videoPlayer.pause();
+          setIsPlaying(false);
+        } catch (err) {
+          console.error('Error pausing video on visibility change:', err);
+        }
       }
     } catch (err) {
       console.error('Failed to update video playback state:', err);
     }
-  }, [isVisible, muteState, videoPlayer, isLoading]);
+  }, [isVisible, muteState, videoPlayer]);
 
   // Cleanup when component unmounts
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
+      
+      // First remove any listeners
       try {
-        if (playerRef.current) {
-          playerRef.current.pause();
-          playerRef.current.release();
+        if (statusListenerRef.current) {
+          statusListenerRef.current.remove();
+          statusListenerRef.current = null;
         }
       } catch (err) {
-        console.error('Error cleaning up video player:', err);
+        console.error('Error removing status listener during cleanup:', err);
       }
+      
+      // Then handle player cleanup
+      playerRef.current = null;
     };
   }, []);
 
   const handleVideoPress = () => {
-    if (!videoPlayer || isLoading) return;
+    if (!videoPlayer || !isMountedRef.current) return;
 
     try {
       if (isPlaying) {
@@ -120,15 +161,22 @@ const VideoItem = ({
         setIsPlaying(true);
       }
     } catch (err) {
-      setError('Failed to toggle playback');
+      console.error('Error toggling playback:', err);
+      if (isMountedRef.current) {
+        setError('Failed to toggle playback');
+      }
     }
   };
 
   const handlePrediction = (prediction: 'yes' | 'no') => {
+    if (!isMountedRef.current) return;
+    
     setSelectedOption(prediction);
     setTimeout(() => {
-      onPrediction(prediction); 
-      setSelectedOption(null);
+      if (isMountedRef.current) {
+        onPrediction(prediction); 
+        setSelectedOption(null);
+      }
     }, 800);
   };
 
@@ -187,7 +235,7 @@ const VideoItem = ({
 
   return (
     <View style={styles.videoContainer}>
-      {isLoading ? (
+      {false && isLoading ? (
         renderSkeletonUI()
       ) : (
         <TouchableOpacity
