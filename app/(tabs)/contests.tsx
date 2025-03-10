@@ -18,6 +18,8 @@ const activeContests: IContest[] = [
     currency: 'SOL',
     description: 'A contest where two teams compete in basketball',
     status: 'OPEN',
+    solanaContestId: '1',
+    contestPublicKey: 'DRXKrMpYyPEEXrBsqGxjWXBsaAQXyoLxGvkP9z9TQCd5',
     createdAt: '2025-03-05T10:32:19.895Z',
     updatedAt: '2025-03-05T10:32:19.895Z',
     event: {
@@ -60,6 +62,8 @@ const activeContests: IContest[] = [
     currency: 'SOL',
     description: 'A contest where two teams compete in basketball',
     status: 'OPEN',
+    solanaContestId: '2',
+    contestPublicKey: 'BRXKrMpYyPEEXrBsqGxjWXBsaAQXyoLxGvkP9z9TQCd6',
     createdAt: '2025-03-05T10:32:19.895Z',
     updatedAt: '2025-03-05T10:32:19.895Z',
     event: {
@@ -105,6 +109,8 @@ const completedContests: IContest[] = [
     currency: 'SOL',
     description: 'A contest where two teams compete in basketball',
     status: 'OPEN',
+    solanaContestId: '3',
+    contestPublicKey: 'CRXKrMpYyPEEXrBsqGxjWXBsaAQXyoLxGvkP9z9TQCd7',
     createdAt: '2025-03-05T10:32:19.895Z',
     updatedAt: '2025-03-05T10:32:19.895Z',
     event: {

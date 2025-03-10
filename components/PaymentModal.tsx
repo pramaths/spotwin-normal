@@ -15,10 +15,42 @@ import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
 import { useEmbeddedSolanaWallet } from '@privy-io/expo';
-import { AnchorProvider, Program, web3 } from "@project-serum/anchor";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import idl from "../program/shoot_9_solana.json"; // Replace with your Anchor IDL JSON
+import { Connection, PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { Shoot9SDK } from '../program/contract-sdk';
 
+// Create a proper adapter for Privy wallet to work with Anchor
+class PrivyWalletAdapter {
+  constructor(private privyWallet: any, private provider: any) {
+    this.privyWallet = privyWallet;
+    this.provider = provider;
+  }
+
+  // Required by Anchor Wallet interface
+  get publicKey(): PublicKey {
+    return new PublicKey(this.privyWallet.publicKey);
+  }
+
+  // Required by NodeWallet which Anchor uses internally
+  get payer(): Keypair {
+    // This is a dummy keypair since Privy manages the actual keypair
+    // It won't be used for signing, just to satisfy the interface
+    return Keypair.generate();
+  }
+
+  // Required by Anchor Wallet interface
+  async signTransaction<T extends Transaction>(tx: T): Promise<T> {
+    // Use the provider to sign the transaction
+    const signedTx = await this.provider.signTransaction(tx);
+    return signedTx as T;
+  }
+
+  // Required by Anchor Wallet interface
+  async signAllTransactions<T extends Transaction>(txs: T[]): Promise<T[]> {
+    // Use the provider to sign all transactions
+    const signedTxs = await Promise.all(txs.map(tx => this.provider.signTransaction(tx)));
+    return signedTxs as T[];
+  }
+}
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -35,10 +67,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const { wallets } = useEmbeddedSolanaWallet();
-  const wallet = wallets[0];
-
-  const provider = await wallet.getProvider();
-  const connection = new Connection(process.env.EXPO_PUBLIC_CONNECTION_URL);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
 
   const animateSuccess = () => {
@@ -99,24 +129,38 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         throw new Error("No wallet connected");
       }
       
-      const wallet = wallets[0];
-      const provider = await wallet.getProvider();
+      const privyWallet = wallets[0];
+      const provider = await privyWallet.getProvider();
       
-      const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com');
+      // Create connection to Solana network
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
       
-      const sdk = new Shoot9SDK(connection, wallet);
+      const walletAdapter = new PrivyWalletAdapter(privyWallet, provider);
       
-      const contestCreator = new PublicKey(contest.contestPublicKey);
-      
-      const contestId = parseInt(contest.solanaContestId);
-      
-      const txId = await sdk.enterContest(contestCreator, contestId);
-      console.log("Transaction successful:", txId);
-      
-      animateSuccess();
-      
-      if (onConfirm) {
-        onConfirm();
+      try {
+        const sdk = new Shoot9SDK(connection, walletAdapter as any);
+        
+        // Get contest creator public key
+        const contestCreator = new PublicKey(contest.contestPublicKey);
+        
+        // Get contest ID
+        const contestId = parseInt(contest.solanaContestId);
+        
+        // Call enterContest
+        const txId = await sdk.enterContest(contestCreator, contestId);
+        console.log("Transaction successful:", txId);
+        
+        // Show success animation
+        animateSuccess();
+        
+        if (onConfirm) {
+          onConfirm();
+        }
+      } catch (sdkError) {
+        console.error("SDK error:", sdkError);
+        throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
       }
     } catch (err) {
       console.error("Payment error:", err);
@@ -127,10 +171,13 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   };
 
   const handlePayAndContribute = () => {
-    animateSuccess();
+    handlePayment();
 
     setTimeout(() => {
-      router.push('/(tabs)/contribute?contestId=' + contest.id);
+      router.push({
+        pathname: '/(tabs)/contribute',
+        params: { contestId: contest.id }
+      });
     }, 1800);
   };
 
