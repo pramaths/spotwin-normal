@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
+import { Slot, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useAuthStore } from '../store/authstore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PrivyProvider, PrivyElements } from '@privy-io/expo';
-import { PrivyWalletCheck } from '../components/PrivyWalletCheck';
 
 SplashScreen.preventAutoHideAsync();
 

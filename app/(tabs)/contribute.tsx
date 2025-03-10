@@ -16,13 +16,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Check, Upload, Video as VideoIcon, X } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../../utils/api';
 import { SUBMISSION } from '../../routes/api';
 import { useUserStore } from '../../store/userStore';
 
 const ContributePage = () => {
+  const { contestId } = useLocalSearchParams<{ contestId: string }>();
   const [question, setQuestion] = useState('');
   const [videoUploaded, setVideoUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,6 +35,7 @@ const ContributePage = () => {
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const checkmarkOpacity = useRef(new Animated.Value(0)).current;
   const { user } = useUserStore();
+
 
   useEffect(() => {
     (async () => {
@@ -108,7 +110,7 @@ const ContributePage = () => {
     try{
       const response = await apiClient(SUBMISSION, 'POST', {
         userId: user?.id,
-        contestId: '1',
+        contestId: contestId,
         question,
         videoUri
       });

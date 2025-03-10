@@ -1,6 +1,5 @@
 import { View, StyleSheet, ScrollView, Text, Platform, RefreshControl } from 'react-native';
 import MyQuestionCard from '../../components/MyQuestionCard';
-import { Shield } from 'lucide-react-native';
 import HeaderProfile from '@/components/HeaderProfile';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';

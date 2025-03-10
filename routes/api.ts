@@ -1,5 +1,4 @@
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-console.log(backendUrl);
 export const LOGIN = `${backendUrl}/auth/login`;
 export const LOGOUT = `${backendUrl}/auth/logout`;
 
@@ -9,7 +8,6 @@ export const SPORTS_BY_ID = `${backendUrl}/api/sports/:id`;
 
 //contests
 export const CONTESTS = `${backendUrl}/contests`;
-
 export const CONTESTS_BY_ID = `${backendUrl}/api/contests/:id`;
 
 
@@ -24,3 +22,5 @@ export const USER =(publicAddress: string) => `${backendUrl}/users/address/${pub
 //submission
 export const SUBMISSION = `${backendUrl}/submission`;
 
+//UserContests
+export const USER_CONTESTS = `${backendUrl}/user-contests`;

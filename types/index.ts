@@ -1,29 +1,4 @@
-export interface Contest {
-    id: string;
-    league: string;
-    match: string;
-    teams: {
-      home: string;
-      away: string;
-    };
-    logo?: string;
-  }
-  
-  export interface Question {
-    id: string;
-    contestId: string;
-    question: string;
-    endsAt: string;
-    imageUrl: string;
-  }
-  
-  export interface User {
-    id: string;
-    name: string;
-    avatar: string;
-  }
-
-  export interface ITeam{
+export interface ITeam{
     id: string;
     name: string;
     imageUrl: string;
@@ -62,6 +37,8 @@ export interface Contest {
     currency: string;
     description: string;
     status: string;
+    solanaContestId: string;
+    contestPublicKey:string;
     createdAt: string;
     updatedAt: string;
     event: IEvent;
@@ -97,3 +74,5 @@ export interface Contest {
     publicAddress: string;
     imageUrl: string; 
   }
+
+

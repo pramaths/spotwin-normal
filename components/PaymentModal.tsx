@@ -14,6 +14,11 @@ import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+import { AnchorProvider, Program, web3 } from "@project-serum/anchor";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import idl from "../program/shoot_9_solana.json"; // Replace with your Anchor IDL JSON
+
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -29,10 +34,16 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const { wallets } = useEmbeddedSolanaWallet();
+  const wallet = wallets[0];
+
+  const provider = await wallet.getProvider();
+  const connection = new Connection(process.env.EXPO_PUBLIC_CONNECTION_URL);
+
 
   const animateSuccess = () => {
     setShowSuccess(true);
-    
+
     // Reset animation values
     successScale.setValue(0);
     successOpacity.setValue(0);
@@ -79,15 +90,47 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
     }, 1800);
   };
 
-  const handlePayment = () => {
-    animateSuccess();
+  const handlePayment = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!wallets || wallets.length === 0) {
+        throw new Error("No wallet connected");
+      }
+      
+      const wallet = wallets[0];
+      const provider = await wallet.getProvider();
+      
+      const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com');
+      
+      const sdk = new Shoot9SDK(connection, wallet);
+      
+      const contestCreator = new PublicKey(contest.contestPublicKey);
+      
+      const contestId = parseInt(contest.solanaContestId);
+      
+      const txId = await sdk.enterContest(contestCreator, contestId);
+      console.log("Transaction successful:", txId);
+      
+      animateSuccess();
+      
+      if (onConfirm) {
+        onConfirm();
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(err instanceof Error ? err.message : "Failed to process payment");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePayAndContribute = () => {
     animateSuccess();
-    
+
     setTimeout(() => {
-      router.push('/(tabs)/contribute');
+      router.push('/(tabs)/contribute?contestId=' + contest.id);
     }, 1800);
   };
 
@@ -189,7 +232,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
                   <Check color="#fff" size={40} strokeWidth={3} />
                 </Animated.View>
               </Animated.View>
-              <Animated.Text 
+              <Animated.Text
                 style={[
                   styles.successTitle,
                   { opacity: successOpacity }
@@ -218,7 +261,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     width: '100%',
     minHeight: 300,
-    position: 'relative', 
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
