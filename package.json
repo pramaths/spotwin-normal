@@ -15,7 +15,6 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "nineshoot-mobile": "file:",
     "@coinbase/wallet-sdk": "^3.9.3",
     "@coral-xyz/anchor": "0.28.0",
     "@ethersproject/shims": "^5.8.0",
@@ -55,6 +54,7 @@
     "fast-text-encoding": "^1.0.6",
     "lit": "^3.2.1",
     "lucide-react-native": "^0.477.0",
+    "nineshoot-mobile": "file:",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.7",

@@ -1,5 +1,3 @@
-import axios, { AxiosRequestConfig, AxiosError } from "axios";
-
 interface RequestBody {
   [key: string]: any;
 }
@@ -20,7 +18,7 @@ export interface ErrorResponse {
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-
+console.log("API_BASE_URL:", API_BASE_URL);
 
 const apiClient = async <T,>(
   endpoint: string,
@@ -28,31 +26,35 @@ const apiClient = async <T,>(
   body: RequestBody | FormData | null = null,
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
-
+  console.log("endpoint:", endpoint);
   const headers: Record<string, string> = {};
   if (!(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
-  const axiosConfig: AxiosRequestConfig = {
-    url: endpoint,
+  const options: RequestInit = {
     method,
-    data: body,
     headers,
+    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   };
 
   try {
-    const response = await axios(axiosConfig);
+    console.log("Sending request with options:", JSON.stringify(options));
+    const response = await fetch(endpoint, options);
+    console.log("Received response status:", response.status);
+    
+    if (!response.ok) {
+      return handleErrorResponse(response);
+    }
+    
+    const data = await response.json();
     return { 
       success: true, 
-      data: response.data, 
-      message: response.data.message || "Request successful" 
+      data, 
+      message: data.message || "Request successful" 
     };
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      return handleSpecificError(error);
-    }
-    console.error("Unknown error:", error);
+    console.error("API request failed:", error);
     return {
       success: false,
       type: "UnknownError",
@@ -63,10 +65,19 @@ const apiClient = async <T,>(
   }
 };
 
-const handleSpecificError = (error: AxiosError): ErrorResponse => {
-  const status = error.response?.status || 0;
-  const serverMessage = (error.response?.data as { message?: string })?.message || "No message provided by the server";
-  const details = (error.response?.data as { details?: any })?.details || null;
+const handleErrorResponse = async (response: Response): Promise<ErrorResponse> => {
+  const status = response.status;
+  let serverMessage = "No message provided by the server";
+  let details = null;
+  
+  try {
+    const errorData = await response.json();
+    serverMessage = errorData.message || serverMessage;
+    details = errorData.details || null;
+  } catch (e) {
+    // If we can't parse the JSON, just use the status text
+    serverMessage = response.statusText;
+  }
 
   switch (status) {
     case 400:
@@ -79,7 +90,6 @@ const handleSpecificError = (error: AxiosError): ErrorResponse => {
         details,
       };
     case 401:
-      // For mobile, we'll handle navigation in the component that uses this
       return {
         success: false,
         type: "Unauthorized",
@@ -114,6 +124,5 @@ const handleSpecificError = (error: AxiosError): ErrorResponse => {
       };
   }
 };
-
 
 export default apiClient;

@@ -19,13 +19,7 @@ import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 import * as web3 from '@solana/web3.js';
 import { useFundSolanaWallet } from "@privy-io/expo";
 import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
-
-// Default user if none provided
-const defaultUser: User = {
-  id: '1',
-  name: 'toly',
-  avatar: 'https://pbs.twimg.com/profile_images/1896990528748593152/jU2rStOc_200x200.jpg'
-};
+import { useUserStore } from '../store/userStore';
 
 interface HeaderProfileProps {
   user?: User;
@@ -33,7 +27,6 @@ interface HeaderProfileProps {
 }
 
 const HeaderProfile: React.FC<HeaderProfileProps> = ({
-  user = defaultUser,
   onProfilePress,
 }) => {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -42,6 +35,8 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const { fundWallet } = useFundSolanaWallet();
   const { wallets } = useEmbeddedSolanaWallet();
   const [solBalance, setSolBalance] = useState<number>(0);
+  const { user } = useUserStore();
+  
   useEffect(() => {
     if (!wallets || wallets.length === 0) {
       setSolBalance(0);
@@ -50,6 +45,8 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
     const solBalance = fetchSolanaBalance(wallets[0]?.address || '');
     setSolBalance(Number(solBalance));
   }, [wallets])
+
+
   const handleFundwallet = async () => {
     if (!wallets || wallets.length === 0) return;
 
@@ -89,11 +86,11 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
           activeOpacity={0.7}
         >
           <Image
-            source={{ uri: user.avatar }}
+            source={{ uri: user?.imageUrl }}
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>gm, {user.name}</Text>
+            <Text style={styles.userName}>gm, {user?.twitterUsername}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>

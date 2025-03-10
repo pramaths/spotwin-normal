@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
 import HeaderProfile from '@/components/HeaderProfile';
@@ -17,60 +17,69 @@ const FeedsScreen = () => {
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isContestsLoading, setIsContestsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
   useEffect(() => {
-    const loadContests = async () => {
-      setIsContestsLoading(true);
-      try {
-        const contestsData = await fetchContests();
-        setContests(contestsData);
-        
-        // Select the first contest by default
-        if (contestsData.length > 0) {
-          setSelectedContest(contestsData[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching contests:', error);
-      } finally {
-        setIsContestsLoading(false);
-      }
-    };
-    
     loadContests();
   }, []);
 
+  const loadContests = async () => {
+    setIsContestsLoading(true);
+    try {
+      const contestsData = await fetchContests();
+      setContests(contestsData);
+      
+      // Select the first contest by default
+      if (contestsData.length > 0) {
+        setSelectedContest(contestsData[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching contests:', error);
+    } finally {
+      setIsContestsLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadContests();
+    if (selectedContest) {
+      await loadContestVideos();
+    }
+    setRefreshing(false);
+  };
+
+  // Function to load contest videos
+  const loadContestVideos = async () => {
+    if (selectedContest) {
+      setIsLoading(true);
+      try {
+        const videos = await fetchContestVideos(selectedContest.id);
+        
+        // Transform contest videos to match the expected question format
+        const formattedQuestions = videos.map(video => ({
+          id: video.id,
+          question: video.question,
+          matchImage: video.thumbnailUrl,
+          league: selectedContest.event.title,
+          teams: `${selectedContest.event.teamA.name} vs ${selectedContest.event.teamB.name}`,
+          timeRemaining: '5:00', // Default time remaining
+        }));
+        
+        setContestVideos(formattedQuestions);
+      } catch (error) {
+        console.error('Error fetching contest videos:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   // Fetch videos for the selected contest
   useEffect(() => {
-    const loadContestVideos = async () => {
-      if (selectedContest) {
-        setIsLoading(true);
-        try {
-          const videos = await fetchContestVideos(selectedContest.id);
-          
-          // Transform contest videos to match the expected question format
-          const formattedQuestions = videos.map(video => ({
-            id: video.id,
-            question: video.question,
-            matchImage: video.thumbnailUrl,
-            league: selectedContest.event.title,
-            teams: `${selectedContest.event.teamA.name} vs ${selectedContest.event.teamB.name}`,
-            timeRemaining: '5:00', // Default time remaining
-            videoUrl: video.videoUrl,
-            contestId: video.contestId
-          }));
-          
-          setContestVideos(formattedQuestions);
-        } catch (error) {
-          console.error('Error fetching contest videos:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    
     loadContestVideos();
   }, [selectedContest]);
 
@@ -193,6 +202,14 @@ const FeedsScreen = () => {
               paddingBottom: tabBarHeight + 16 // Add padding to the bottom to avoid tab bar overlap
             }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#3498db']}
+                tintColor="#3498db"
+              />
+            }
           >
             {renderPredictionContent()}
           </ScrollView>

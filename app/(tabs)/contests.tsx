@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import HeaderProfile from '../../components/HeaderProfile';
 import { UserContestCard } from '../../components/UserContest';
@@ -146,6 +146,7 @@ type TabOption = 'ACTIVE' | 'COMPLETED';
 
 export default function ContestsScreen() {
   const [selectedTab, setSelectedTab] = useState<TabOption>('ACTIVE');
+  const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
@@ -158,6 +159,19 @@ export default function ContestsScreen() {
   const getContests = () => {
     return selectedTab === 'ACTIVE' ? activeContests : completedContests;
   }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // In a real app, you would fetch fresh data here
+    // For example:
+    // const freshContests = await fetchContests();
+    // updateContests(freshContests);
+    
+    // Simulate a network request
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
 
   const handleLeaderboardPress = (id: string) => {
     router.push({
@@ -198,15 +212,19 @@ export default function ContestsScreen() {
           renderItem={({ item }) => (
             <UserContestCard 
               contest={item} 
-              onLeaderboardPress={handleLeaderboardPress}
+              onLeaderboardPress={() => handleLeaderboardPress(item.id)}
             />
           )}
-          keyExtractor={item => item.id}
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingBottom: tabBarHeight + 16 }
-          ]}
-          showsVerticalScrollIndicator={false}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: tabBarHeight }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#3498db']}
+              tintColor="#3498db"
+            />
+          }
         />
       </View>
     </SafeAreaView>

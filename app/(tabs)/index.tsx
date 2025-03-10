@@ -9,7 +9,8 @@ import {
   Image,
   StatusBar,
   FlatList,
-  Dimensions
+  Dimensions,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight } from 'lucide-react-native';
@@ -23,6 +24,10 @@ import { IContest } from '../../types';
 import { useContestsStore } from '../../store/contestsStore';
 import apiClient from '../../utils/api';
 import { CONTESTS } from '../../routes/api';
+import { useUserStore } from '../../store/userStore';
+import { IUser } from '../../types';
+import { USER } from '../../routes/api';
+import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 
 const sportsCategories = [
   { id: '1', name: 'Football', icon: '⚽' },
@@ -35,28 +40,50 @@ export default function HomeScreen() {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const [filteredContests, setFilteredContests] = useState<IContest[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const { contests, setContests } = useContestsStore();
+  const { wallets } = useEmbeddedSolanaWallet();
   const router = useRouter();
   const featuredListRef = useRef<FlatList>(null);
+  const { user: PrivyUser } = usePrivy();
+  const { user } = useUserStore();
+  const setUser = useUserStore((state) => state.setUser);
 
   useEffect(() => {
-    const fetchContests = async () => {
-      try {
-        const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-        
-        if (response.success && response.data) {
-          console.log("Fetched contests:", response.data);
-          setContests(response.data);
-        } else {
-          console.log("API response not successful:", response);
-        }
-      } catch (error) {
-        console.error("Error fetching contests:", error);
-      }
-    };
-    
     fetchContests();
+    fetchUser();
   }, []);
+
+  const fetchUser = async () => {
+    if (!wallets || wallets.length === 0) {
+      return;
+    }
+    const response = await apiClient<IUser>(USER(wallets[0].address), 'GET');
+    if (response.success && response.data) {
+      setUser(response.data);
+    }
+  };
+
+  const fetchContests = async () => {
+    try {
+      const response = await apiClient<IContest[]>(CONTESTS, 'GET');
+
+      if (response.success && response.data) {
+        console.log("Fetched contests:", response.data);
+        setContests(response.data);
+      } else {
+        console.error("Failed to fetch contests:", response.message);
+      }
+    } catch (error) {
+      console.error("Error fetching contests:", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchContests();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     filterContestsBySport(activeSport);
@@ -64,7 +91,7 @@ export default function HomeScreen() {
 
   const filterContestsBySport = (sportId: string) => {
     const sportName = sportsCategories.find(sport => sport.id === sportId)?.name;
-    
+
     if (!sportName || contests.length === 0) {
       setFilteredContests([]);
       return;
@@ -192,10 +219,19 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#3498db']}
+            tintColor="#3498db"
+          />
+        }
       >
         <HeaderProfile />
 
@@ -211,6 +247,14 @@ export default function HomeScreen() {
             decelerationRate="fast"
             pagingEnabled
             snapToInterval={width * 0.9 + width * 0.05 * 2} // Card width + horizontal margins
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#3498db']}
+                tintColor="#3498db"
+              />
+            }
           />
         </View>
 

@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SignupBg from '../../assets/images/signupbg.svg';
 import Logo from '../../assets/logo.svg';
 import XIcon from '../../assets/icons/x.svg';
+import apiClient from '@/utils/api';
+import { LOGIN } from '@/routes/api';
 
 import { useLoginWithOAuth, useOAuthTokens } from '@privy-io/expo';
 
@@ -74,9 +76,27 @@ export default function SignupScreen() {
   }, []);
 
   const { login, state: oauthState } = useLoginWithOAuth({
-    onSuccess: (user, isNewUser) => {
+    onSuccess: async (user, isNewUser) => {
       console.log('Login successful', { user, isNewUser });
       console.log('User:', JSON.stringify(user));
+      try {
+        const userAny = user as any;
+        
+        const twitterAccount = userAny.linked_accounts?.find((account: any) => account.type === 'twitter_oauth');
+        const walletAccount = userAny.linked_accounts?.find((account: any) => account.type === 'wallet');
+        
+        const response = await apiClient(LOGIN, 'POST', {
+          twitterUsername: twitterAccount?.username || '',
+          address: walletAccount?.address || '',
+        });
+        
+        if(response.success){
+          setAuthenticated(true);
+          router.replace('/(tabs)');
+        }
+      }catch(error){
+        console.log('Login error:', error);
+      }
       setAuthenticated(true);
       router.replace('/(tabs)');
     },

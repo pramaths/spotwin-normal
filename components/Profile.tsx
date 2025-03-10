@@ -11,6 +11,7 @@ import {
   usePrivy,
 } from '@privy-io/expo';
 import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
+import { useUserStore } from '../store/userStore';
 
 interface ProfileScreenProps {
   onClose?: () => void;
@@ -22,6 +23,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const solanaWallet = useEmbeddedSolanaWallet();
   const { recover } = useRecoverEmbeddedWallet();
   const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
+  const { user: Zuser } = useUserStore();
 
   const [balance, setBalance] = useState<number>(0);
 
@@ -82,11 +84,11 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
         <View style={styles.header}>
           <View style={styles.profileContainer}>
             <Image
-              source={{ uri: 'https://pbs.twimg.com/profile_images/1896990528748593152/jU2rStOc_200x200.jpg' }}
+              source={{ uri: Zuser?.imageUrl }}
               style={styles.profileImage}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>Toly</Text>
+              <Text style={styles.profileName}>{Zuser?.twitterUsername}</Text>
               <Text style={styles.profileUsername}>{solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString().slice(0, 6) + '...' + solanaWallet.publicKey.toString().slice(-4) : 'Not created'}</Text>
             </View>
           </View>

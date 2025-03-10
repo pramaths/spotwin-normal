@@ -9,9 +9,6 @@ import { PrivyWalletCheck } from '../components/PrivyWalletCheck';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { isAuthenticated } = useAuthStore();
-  const router = useRouter();
-  const segments = useSegments();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,9 +42,7 @@ export default function RootLayout() {
           },
         }}
       >
-        <PrivyWalletCheck>
-          <Slot />
-        </PrivyWalletCheck>
+        <Slot />
         <PrivyElements config={{ appearance: { accentColor: '#00AF55' } }} />
       </PrivyProvider>
       <StatusBar style="dark" backgroundColor="transparent" translucent />

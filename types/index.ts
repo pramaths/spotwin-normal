@@ -90,3 +90,10 @@ export interface Contest {
     question: string;
     videoUrl: string;
   }
+
+  export interface IUser{
+    id: string;
+    twitterUsername: string;
+    publicAddress: string;
+    imageUrl: string; 
+  }
