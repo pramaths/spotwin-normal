@@ -97,7 +97,7 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
   if (!contest) return null;
 
   // Get thumbnail from the first video if available
-  const thumbnailUrl = contest.event?.eventImageUrl || 'https://nineshootnew.s3.us-east-1.amazonaws.com/ss1.png';
+  const thumbnailUrl = contest.event?.eventImageUrl || 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png';
 
   return (
     <Modal

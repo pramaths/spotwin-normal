@@ -51,7 +51,7 @@ const PredictionQuestionGrid = ({
         fixedQuestions.push({
           id: `placeholder-${fixedQuestions.length}`,
           question: "No question available",
-          matchImage: "https://nineshootnew.s3.us-east-1.amazonaws.com/blur_img.png",
+          matchImage: "https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png",
           league: "",
           teams: "",
           timeRemaining: "0:00"

@@ -6,6 +6,7 @@ import { UserContestCard } from '../../components/UserContest';
 import { IContest} from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export type ContestStatus = 'LIVE' | 'OPEN' | 'COMPLETED' | 'UPCOMING';
 
@@ -23,7 +24,7 @@ const activeContests: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
       title: 'Europa League',
       description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -33,7 +34,7 @@ const activeContests: IContest[] = [
         id: '3dc44aff-9748-44fc-aa74-1379213a4363',
         name: 'Cricket',
         description: 'A team sport played with a ball',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
         isActive: true,
         createdAt: '2025-03-02T18:07:04.227Z',
         updatedAt: '2025-03-02T18:07:04.227Z',
@@ -41,13 +42,13 @@ const activeContests: IContest[] = [
       teamA: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Manchester United',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
         country: 'Manchester United',
       },
       teamB: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Real Sociedad',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
         country: 'Real Sociedad',
       },
     },
@@ -65,7 +66,7 @@ const activeContests: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
       title: 'NBA',
       description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -75,7 +76,7 @@ const activeContests: IContest[] = [
         id: '3dc44aff-9748-44fc-aa74-1379213a4363',
         name: 'Basketball',
         description: 'A team sport played with a ball',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
         isActive: true,
         createdAt: '2025-03-02T18:07:04.227Z',
         updatedAt: '2025-03-02T18:07:04.227Z',
@@ -83,13 +84,13 @@ const activeContests: IContest[] = [
       teamA: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Houston Rockets ',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/arsenal.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/arsenal.png',
         country: 'Arsenal ',
       },
       teamB: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Houston Rockets',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/mavericks.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/mavericks.png',
         country: 'Houston Rockets',
       },
     },
@@ -110,7 +111,7 @@ const completedContests: IContest[] = [
       id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
       title: 'Europa League',
       description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/ucl.png ',
+      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
       startDate: '2025-03-05T08:58:46.130Z',
       endDate: '2025-03-05T08:58:46.130Z',
       status: 'OPEN',
@@ -120,7 +121,7 @@ const completedContests: IContest[] = [
         id: '3dc44aff-9748-44fc-aa74-1379213a4363',
         name: 'Cricket',
         description: 'A team sport played with a ball',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
         isActive: true,
         createdAt: '2025-03-02T18:07:04.227Z',
         updatedAt: '2025-03-02T18:07:04.227Z',
@@ -128,13 +129,13 @@ const completedContests: IContest[] = [
       teamA: {
         id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
         name: 'Manchester United',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/manutd.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
         country: 'Manchester United',
       },
       teamB: {
         id: '59217b82-77ae-4340-ba13-483bea11a7d6',
         name: 'Real Sociedad',
-        imageUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
+        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
         country: 'Real Sociedad',
       },
     },
@@ -146,6 +147,7 @@ type TabOption = 'ACTIVE' | 'COMPLETED';
 export default function ContestsScreen() {
   const [selectedTab, setSelectedTab] = useState<TabOption>('ACTIVE');
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
@@ -156,6 +158,13 @@ export default function ContestsScreen() {
   const getContests = () => {
     return selectedTab === 'ACTIVE' ? activeContests : completedContests;
   }
+
+  const handleLeaderboardPress = (id: string) => {
+    router.push({
+      pathname: "/contest-detail/[id]",
+      params: { id }
+    });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -186,11 +195,16 @@ export default function ContestsScreen() {
         
         <FlatList
           data={getContests()}
-          renderItem={({ item }) => <UserContestCard contest={item} />}
+          renderItem={({ item }) => (
+            <UserContestCard 
+              contest={item} 
+              onLeaderboardPress={handleLeaderboardPress}
+            />
+          )}
           keyExtractor={item => item.id}
           contentContainerStyle={[
             styles.listContainer,
-            { paddingBottom: tabBarHeight + 16 } // Add padding to the bottom to avoid tab bar overlap
+            { paddingBottom: tabBarHeight + 16 }
           ]}
           showsVerticalScrollIndicator={false}
         />

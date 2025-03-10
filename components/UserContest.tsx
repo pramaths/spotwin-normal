@@ -1,14 +1,16 @@
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { router } from 'expo-router';
 
-interface ContestCardProps {
+interface UserContestCardProps {
   contest: IContest;
   onPress?: (contest: IContest) => void;
+  onLeaderboardPress?: (contestId: string) => void;
 }
 
-export const UserContestCard = ({ contest, onPress }: ContestCardProps) => {
+export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPress, onLeaderboardPress }) => {
   const { event, entryFee, name, currency, id } = contest;
   
   const handlePress = () => {
@@ -23,7 +25,8 @@ export const UserContestCard = ({ contest, onPress }: ContestCardProps) => {
   };
   
   const { formattedTime, formattedDate } = formatDateTime(event.startDate);
-  
+  const isCompleted = contest.status === 'COMPLETED';
+
   return (
     <TouchableOpacity 
       style={styles.container}
@@ -32,9 +35,13 @@ export const UserContestCard = ({ contest, onPress }: ContestCardProps) => {
     >
       <View style={styles.header}>
         <Text style={styles.leagueName}>{event.title}</Text>
-        <View style={styles.statusContainer}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>{event.status}</Text>
+        <View style={[
+          styles.statusContainer, 
+          { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
+        ]}>
+          <Text style={styles.statusText}>
+            {isCompleted ? 'Completed' : 'Active'}
+          </Text>
         </View>
       </View>
       
@@ -85,6 +92,17 @@ export const UserContestCard = ({ contest, onPress }: ContestCardProps) => {
           <Text style={styles.dateText}>{formattedDate}</Text>
         </View>
       </View>
+      
+      <View style={styles.footer}>
+        {isCompleted && onLeaderboardPress && (
+          <TouchableOpacity 
+            style={styles.leaderboardButton}
+            onPress={() => onLeaderboardPress(id)}
+          >
+            <Text style={styles.leaderboardButtonText}>Leaderboard</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -122,23 +140,13 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4CAF50',
-    marginRight: 4,
-  },
   statusText: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   teamsContainer: {
@@ -221,5 +229,24 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 12,
     color: '#666',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  leaderboardButton: {
+    backgroundColor: '#0504dc',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  leaderboardButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

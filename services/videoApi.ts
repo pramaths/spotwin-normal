@@ -11,27 +11,27 @@ const SAMPLE_VIDEOS: IFeaturedVideo[] = [
   {
     id: '1',
     question: 'Will Rodrygo score atleast one goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
   },
   {
     id: '2',
     question: 'Will AM score in the first half?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
   },
   {
     id: '3',
     question: 'Will Julian Alvarez score atleast one goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
   },
   {
     id: '4',
     question: 'Will Brahim Triaz score atleast one goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
   },
   {
     id: '5',
     question: 'Will Mbappé score a goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/amrm5.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm5.mp4',
   },
 ];
 
@@ -40,22 +40,22 @@ const SAMPLE_VIDEOS_2 = [
   {
     id: '1',
     question: 'Will Bruno Fernandes score a goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
   },
   {
     id: '2',
     question: 'Will Amad score a goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
   },
   {
     id: '3',
     question: 'Will Garnacho score a goal?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
   },
   {
     id: '4',
     question: 'Will Manchester United get a Red Card?',
-    videoUrl: 'https://nineshootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
+    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
   }
 ]
 
