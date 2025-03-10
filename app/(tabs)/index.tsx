@@ -20,306 +20,9 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatDateTime } from '../../utils/dateUtils';
 import { IContest } from '../../types';
-
-const featuredContests: IContest[] = [
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f5125604',
-    name: 'UEFA Champions League',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-13T1:30:19.895Z',
-    updatedAt: '2025-03-13T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'UEFA Champions League',
-      description: 'UEFA Champions League',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-12T20:00:00.000Z',
-      endDate: '2025-03-12T20:00:00.000Z',
-      status: 'OPEN',
-      createdAt: '2025-03-13T09:04:41.701Z',
-      updatedAt: '2025-03-13T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamB: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Real Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
-        country: 'Spain',
-      },
-      teamA: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Atletico Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/athletico.png',
-        country: 'Spain',
-      },
-    },
-  },
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f51256045',
-    name: 'Europa League',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'Europa League',
-      description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-12T20:00:00.000Z',
-      endDate: '2025-03-12T20:00:00.000Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamA: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Manchester United',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        country: 'Manchester United',
-      },
-      teamB: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Real Sociedad',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
-        country: 'Real Sociedad',
-      },
-    },
-  },
-];
-
-const allContests: IContest[] = [
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f5125604',
-    name: 'UEFA Champions League',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'UEFA Champions League',
-      description: 'UEFA Champions League',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-12T20:00:00.000Z',
-      endDate: '2025-03-12T20:00:00.000Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamB: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Real Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realmadrid.png',
-        country: 'Real Madrid',
-      },
-      teamA: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Atletico Madrid',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/athletico.png',
-        country: 'PAKISTAN',
-      },
-    },
-  },
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f51256045',
-    name: 'Europa League',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'Europa League',
-      description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-12T20:00:00.000Z',
-      endDate: '2025-03-12T20:00:00.000Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamA: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Manchester United',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        country: 'Manchester United',
-      },
-      teamB: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Real Sociedad',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/realsociedad.png',
-        country: 'Real Sociedad',
-      },
-    },
-  },
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f51256045avf',
-    name: 'EFL Cup',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'Europa League',
-      description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-05T08:58:46.130Z',
-      endDate: '2025-03-05T08:58:46.130Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamA: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'LiverPool',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/liverpool.png',
-        country: 'LiverPool',
-      },
-      teamB: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Newcastle United',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/newcastle.png',
-        country: 'Newcastle United',
-      },
-    },
-  },
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f51256045999',
-    name: 'Europa League',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'Europa League',
-      description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-05T08:58:46.130Z',
-      endDate: '2025-03-05T08:58:46.130Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Football',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamA: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Arsenal ',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/arsenal.png',
-        country: 'Arsenal ',
-      },
-      teamB: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Chelsea',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/chelsea.png',
-        country: 'Chelsea',
-      },
-    },
-  },
-  {
-    id: 'f984ea94-a07e-4bff-a802-1694f51256045999hhh',
-    name: 'NBA',
-    entryFee: 0.2,
-    currency: 'SOL',
-    description: 'A contest where two teams compete in basketball',
-    status: 'OPEN',
-    createdAt: '2025-03-05T10:32:19.895Z',
-    updatedAt: '2025-03-05T10:32:19.895Z',
-    event: {
-      id: '077e38f3-6275-4c68-920f-3a7de8ba9bbf',
-      title: 'NBA',
-      description: 'ICC MENS TROPHY',
-      eventImageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/ucl.png ',
-      startDate: '2025-03-05T08:58:46.130Z',
-      endDate: '2025-03-05T08:58:46.130Z',
-      status: 'OPEN',
-      createdAt: '2025-03-05T09:04:41.701Z',
-      updatedAt: '2025-03-05T09:27:20.389Z',
-      sport: {
-        id: '3dc44aff-9748-44fc-aa74-1379213a4363',
-        name: 'Basketball',
-        description: 'A team sport played with a ball',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/manutd.png',
-        isActive: true,
-        createdAt: '2025-03-02T18:07:04.227Z',
-        updatedAt: '2025-03-02T18:07:04.227Z',
-      },
-      teamA: {
-        id: '4ec72fe7-263b-42e5-af1f-b0c26fed97a7',
-        name: 'Houston Rockets ',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/arsenal.png',
-        country: 'Arsenal ',
-      },
-      teamB: {
-        id: '59217b82-77ae-4340-ba13-483bea11a7d6',
-        name: 'Houston Rockets',
-        imageUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/mavericks.png',
-        country: 'Houston Rockets',
-      },
-    },
-  },
-];
+import { useContestsStore } from '../../store/contestsStore';
+import apiClient from '../../utils/api';
+import { CONTESTS } from '../../routes/api';
 
 const sportsCategories = [
   { id: '1', name: 'Football', icon: '⚽' },
@@ -331,23 +34,43 @@ export default function HomeScreen() {
   const [activeSport, setActiveSport] = useState(sportsCategories[0].id);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
-  const [filteredContests, setFilteredContests] = useState<IContest[]>(allContests);
+  const [filteredContests, setFilteredContests] = useState<IContest[]>([]);
+  const { contests, setContests } = useContestsStore();
   const router = useRouter();
   const featuredListRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const response = await apiClient<IContest[]>(CONTESTS, 'GET');
+        
+        if (response.success && response.data) {
+          console.log("Fetched contests:", response.data);
+          setContests(response.data);
+        } else {
+          console.log("API response not successful:", response);
+        }
+      } catch (error) {
+        console.error("Error fetching contests:", error);
+      }
+    };
+    
+    fetchContests();
+  }, []);
+
+  useEffect(() => {
     filterContestsBySport(activeSport);
-  }, [activeSport]);
+  }, [activeSport, contests]);
 
   const filterContestsBySport = (sportId: string) => {
     const sportName = sportsCategories.find(sport => sport.id === sportId)?.name;
-
-    if (!sportName) {
+    
+    if (!sportName || contests.length === 0) {
       setFilteredContests([]);
       return;
     }
 
-    const filtered = allContests.filter(contest =>
+    const filtered = contests.filter(contest =>
       contest.event.sport?.name.toLowerCase() === sportName.toLowerCase()
     );
 
@@ -388,7 +111,7 @@ export default function HomeScreen() {
               style={styles.slideArrowContainer}
               onPress={() => {
                 // Scroll to the next card
-                const nextIndex = (index + 1) % featuredContests.length;
+                const nextIndex = (index + 1) % contests.slice(0, 3).length;
                 featuredListRef.current?.scrollToIndex({
                   index: nextIndex,
                   animated: true
@@ -479,7 +202,7 @@ export default function HomeScreen() {
         <View style={styles.featuredSection}>
           <FlatList
             ref={featuredListRef}
-            data={featuredContests}
+            data={contests.slice(0, 3)} // Use first 3 contests as featured
             renderItem={renderFeaturedCard}
             keyExtractor={(item) => item.id}
             horizontal

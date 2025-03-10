@@ -7,6 +7,7 @@ export const SPORTS = `${backendUrl}/api/sports`;
 export const SPORTS_BY_ID = `${backendUrl}/api/sports/:id`;
 
 //contests
-export const CONTESTS = `${backendUrl}/api/contests`;
+export const CONTESTS = `${backendUrl}/contests`;
+
 export const CONTESTS_BY_ID = `${backendUrl}/api/contests/:id`;
 

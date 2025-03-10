@@ -28,10 +28,6 @@ const apiClient = async <T,>(
   body: RequestBody | FormData | null = null,
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
-  // Construct full URL if endpoint doesn't include http
-  const url = endpoint.startsWith('http') 
-    ? endpoint 
-    : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
   const headers: Record<string, string> = {};
   if (!(body instanceof FormData)) {
@@ -39,11 +35,10 @@ const apiClient = async <T,>(
   }
 
   const axiosConfig: AxiosRequestConfig = {
-    url,
+    url: endpoint,
     method,
     data: body,
     headers,
-    withCredentials: false, 
   };
 
   try {
