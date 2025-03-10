@@ -23,15 +23,15 @@ config.watchFolders = config.watchFolders || [];
 // Add Node.js module polyfills
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
-  assert: require.resolve('./node_modules/assert'),
-  stream: require.resolve('stream-browserify'),
-  crypto: require.resolve('crypto-browserify'),
-  http: require.resolve('stream-http'),
-  https: require.resolve('https-browserify'),
-  os: require.resolve('os-browserify/browser'),
-  path: require.resolve('path-browserify'),
-  fs: require.resolve('react-native-fs'),
-  zlib: require.resolve('browserify-zlib'),
+  assert: path.resolve(__dirname, 'node_modules/assert'),
+  stream: path.resolve(__dirname, 'node_modules/stream-browserify'),
+  crypto: path.resolve(__dirname, 'node_modules/crypto-browserify'),
+  http: path.resolve(__dirname, 'node_modules/stream-http'),
+  https: path.resolve(__dirname, 'node_modules/https-browserify'),
+  os: path.resolve(__dirname, 'node_modules/os-browserify/browser'),
+  path: path.resolve(__dirname, 'node_modules/path-browserify'),
+  fs: path.resolve(__dirname, 'node_modules/react-native-fs'),
+  zlib: path.resolve(__dirname, 'node_modules/browserify-zlib'),
 };
 
 // Add additional configurations for TypeScript

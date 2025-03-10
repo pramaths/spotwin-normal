@@ -73,6 +73,7 @@ export interface ITeam{
     twitterUsername: string;
     publicAddress: string;
     imageUrl: string; 
+    balance?: number;
   }
 
 

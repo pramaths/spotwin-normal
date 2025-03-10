@@ -26,8 +26,6 @@ if (typeof global.crypto === 'undefined') {
     global.crypto = new Crypto();
 }
 
-const webCrypto = typeof crypto !== "undefined" ? crypto : new Crypto();
-
 // Ensure crypto is available in the window object
 (() => {
     if (typeof crypto === "undefined") {

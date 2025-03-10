@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,7 +11,7 @@ import {
   Platform,
   Alert
 } from 'react-native';
-import { User } from '../types';
+import { IUser } from '../types';
 import EmptyWalletIcon from '../assets/icons/empty-wallet.svg';
 import ProfileScreen from './Profile';
 import HowItWorksModal from './HowItWorksModal';
@@ -22,7 +23,7 @@ import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
 
 interface HeaderProfileProps {
-  user?: User;
+  user?: IUser;
   onProfilePress?: () => void;
 }
 
@@ -35,17 +36,38 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const { fundWallet } = useFundSolanaWallet();
   const { wallets } = useEmbeddedSolanaWallet();
   const [solBalance, setSolBalance] = useState<number>(0);
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
+  const balanceUpdatedRef = useRef(false);
   
   useEffect(() => {
-    if (!wallets || wallets.length === 0) {
-      setSolBalance(0);
-      return;
-    }
-    const solBalance = fetchSolanaBalance(wallets[0]?.address || '');
-    setSolBalance(Number(solBalance));
-  }, [wallets])
-
+    const fetchBalance = async () => {
+      if (!wallets || wallets.length === 0) {
+        setSolBalance(0);
+        balanceUpdatedRef.current = false;
+        return;
+      }
+      
+      try {
+        const solBalance = await fetchSolanaBalance(wallets[0]?.address || '');
+        const numBalance = Number(solBalance);
+        setSolBalance(numBalance);
+        
+        // Only update user if we have a user and the balance hasn't been updated yet
+        // or if the balance has changed
+        if (user && (!balanceUpdatedRef.current || user.balance !== numBalance)) {
+          setUser({
+            ...user,
+            balance: numBalance
+          });
+          balanceUpdatedRef.current = true;
+        }
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+      }
+    };
+    
+    fetchBalance();
+  }, [wallets, setUser]); // Remove user from dependencies
 
   const handleFundwallet = async () => {
     if (!wallets || wallets.length === 0) return;
