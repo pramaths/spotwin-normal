@@ -15,9 +15,12 @@ export const CONTESTS_BY_ID = `${backendUrl}/api/contests/:id`;
 
 
 //questions
-export const QUESTIONS =(id: string) => `${backendUrl}/questions/${id}`;
+export const QUESTIONS =(id: string) => `${backendUrl}/submission/user/${id}`;
 
 //user
 export const USER =(publicAddress: string) => `${backendUrl}/users/address/${publicAddress}`;
 
+
+//submission
+export const SUBMISSION = `${backendUrl}/submission`;
 
