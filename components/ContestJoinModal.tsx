@@ -13,8 +13,11 @@ import {
 } from 'react-native';
 import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
-import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Shoot9SDK } from '../program/contract-sdk';
+import { Wallet } from '@coral-xyz/anchor';
 
 interface ContestJoinModalProps {
   isVisible: boolean;
@@ -24,6 +27,104 @@ interface ContestJoinModalProps {
   isUserParticipating: boolean;
 }
 
+const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
+  console.log("Privy wallet details:", {
+    wallet: privyWallet,
+    hasAddress: !!privyWallet?.address,
+    hasSignTransaction: !!privyWallet?.signTransaction,
+    signTransactionType: typeof privyWallet?.signTransaction,
+    methods: Object.keys(privyWallet || {})
+  });
+
+  if (!privyWallet || !privyWallet.address) {
+    throw new Error("Privy wallet missing address");
+  }
+  
+  const dummyPayer = Keypair.generate();
+
+  return {
+    publicKey: new PublicKey(privyWallet.address),
+    payer: dummyPayer,
+    signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+      console.log("Signing transaction with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      if (tx instanceof Transaction) {
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.lastValidBlockHeight = lastValidBlockHeight;
+        
+        // Send without simulation
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Transaction sent with signature:", signature);
+        return tx as T;
+      } else if (tx instanceof VersionedTransaction) {
+        // For versioned transactions
+        // Send without simulation
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Versioned transaction sent with signature:", signature);
+        return tx as T;
+      }
+      
+      throw new Error("Unsupported transaction type");
+    },
+    signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+      console.log("Signing multiple transactions with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      return await Promise.all(txs.map(async (tx) => {
+        if (tx instanceof Transaction) {
+          // Get a fresh blockhash before sending
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+          tx.recentBlockhash = blockhash;
+          tx.lastValidBlockHeight = lastValidBlockHeight;
+        }
+        
+        if (tx instanceof Transaction || tx instanceof VersionedTransaction) {
+          await provider.request({
+            method: 'signAndSendTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true, // Skip simulation
+                preflightCommitment: 'confirmed'
+              }
+            },
+          });
+        }
+        return tx;
+      }));
+    },
+  };
+};
+
 const { height } = Dimensions.get('window');
 
 const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating }: ContestJoinModalProps) => {
@@ -32,6 +133,9 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { wallets } = useEmbeddedSolanaWallet();
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -81,15 +185,108 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
       }
     }, 1800);
   };
+  const handleSolanaPayment = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!wallets || wallets.length === 0) {
+        throw new Error("No wallet connected");
+      }
+      
+      const privyWallet = wallets[0];
+      console.log("Privy wallet:", {
+        address: privyWallet.address,
+        hasAddress: !!privyWallet.address,
+        addressType: typeof privyWallet.address,
+        hasPublicKey: !!privyWallet.publicKey,
+      });
+      
+      // Create connection to Solana network
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      try {
+        const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
+        console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
+        
+        try {
+          console.log("Creating SDK with:", {
+            connection: connection.rpcEndpoint,
+            wallet: anchorWallet.publicKey.toString(),
+          });
+          console.log("Creating SDK instance...");
+          const sdk = new Shoot9SDK(connection, anchorWallet);
 
+          const contestId = parseInt(contest.solanaContestId);
+          
+          console.log("Contest ID:", contest.solanaContestId);
+          
+          // Log contest creator for debugging
+          console.log("Contest creator (raw):", contest.contestCreator);
+          
+          // Validate the contest creator address before passing it to PublicKey
+          if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
+              !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
+            throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
+          }
+          
+          // Create PublicKey instance with validation
+          let creatorPublicKey;
+          try {
+            creatorPublicKey = new PublicKey(contest.contestCreator);
+            console.log("Creator public key created successfully:", creatorPublicKey.toString());
+          } catch (pkError) {
+            console.error("Failed to create PublicKey from contest creator:", pkError);
+            throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
+          }
+          
+          // Call enterContest with detailed logging
+          console.log("Entering contest with params:", {
+            creator: creatorPublicKey.toString(),
+            contestId: contestId
+          });
+          
+          const txId = await sdk.enterContest(creatorPublicKey, contestId);
+          console.log("Transaction successful:", txId);
+          
+          // Show success animation
+          animateSuccess();
+          
+        } catch (sdkError) {
+          console.error("SDK error:", sdkError);
+          // Log more details about the error
+          if (sdkError instanceof Error) {
+            console.error("Error name:", sdkError.name);
+            console.error("Error message:", sdkError.message);
+            console.error("Error stack:", sdkError.stack);
+            
+            // Check if it's a Shoot9SDKError with a cause
+            if (sdkError.hasOwnProperty('cause')) {
+              console.error("Error cause:", (sdkError as any).cause);
+            }
+          }
+          throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
+        }
+      } catch (adapterError) {
+        console.error("Wallet adapter error:", adapterError);
+        throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(err instanceof Error ? err.message : "Failed to process payment");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handlePayment = () => {
+    handleSolanaPayment();
     animateSuccess();
     setTimeout(() => {
       router.push({
-        pathname: '/(tabs)/video-prediction',
-        params: { 
-          contestId: contest.id,
-        }
+        pathname: "/video-prediction",
+        params: { contestId: contest.id },
       });
     }, 1500);
   };
@@ -102,7 +299,6 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
 
   if (!contest) return null;
 
-  // Get thumbnail from the first video if available
   const thumbnailUrl = contest.event?.eventImageUrl || 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png';
 
   return (
