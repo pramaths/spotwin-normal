@@ -63,14 +63,6 @@ export default function ContestsScreen() {
       setRefreshing(false);
     }, 1000);
   };
-
-  const handleLeaderboardPress = (id: string) => {
-    router.push({
-      pathname: "/contest-detail/[id]",
-      params: { id }
-    });
-  };
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -103,7 +95,6 @@ export default function ContestsScreen() {
           renderItem={({ item }) => (
             <UserContestCard
               contest={item}
-              onLeaderboardPress={() => handleLeaderboardPress(item.id)}
             />
           )}
           keyExtractor={(item) => item.id}

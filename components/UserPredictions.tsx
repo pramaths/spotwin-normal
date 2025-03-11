@@ -73,8 +73,6 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
-  console.log('contestId', contestId);
-  console.log('userId', userId);
 
   useEffect(() => {
     const loadPredictions = async () => {

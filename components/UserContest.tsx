@@ -1,118 +1,112 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, GestureResponderEvent } from 'react-native';
 import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { router } from 'expo-router';
 
 interface UserContestCardProps {
   contest: IContest;
-  onPress?: (contest: IContest) => void;
-  onLeaderboardPress?: (contestId: string) => void;
 }
 
-export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPress, onLeaderboardPress }) => {
+export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => {
   const { event, entryFee, currency, id } = contest;
 
   const handlePress = () => {
-    if (onPress) {
-      onPress(contest);
-    } else {
-      router.push({
-        pathname: "/contest-detail/[id]",
-        params: { id }
-      });
-    }
+    router.push({
+      pathname: "/contest-detail/[id]",
+      params: { id }
+    });
+
+  };
+
+  const handleLeaderboardPress = (e: GestureResponderEvent) => {
+    // Prevent the card press event from firing
+    e.stopPropagation();
+    router.push({
+      pathname: "/leaderboard/[id]",
+      params: { id }
+    });
+
   };
 
   const { formattedTime, formattedDate } = formatDateTime(event.startDate);
   const isCompleted = contest.status === 'COMPLETED';
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={handlePress}
-      activeOpacity={0.8}
-    >
-      <View style={styles.header}>
-        <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{event.title}</Text>
-        <View style={[
-          styles.statusContainer,
-          { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
-        ]}>
-          <Text style={styles.statusText}>
-            {isCompleted ? 'Completed' : 'Active'}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.teamsContainer}>
-        <View style={styles.teamContainer}>
-          <Image
-            source={{ uri: event.teamA.imageUrl }}
-            style={styles.teamLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamA.name}</Text>
+    <View style={styles.outerContainer}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={handlePress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.header}>
+          <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{event.title}</Text>
+          <View style={[
+            styles.statusContainer,
+            { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
+          ]}>
+            <Text style={styles.statusText}>
+              {isCompleted ? 'Completed' : 'Active'}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.timeContainer}>
-          <Text style={styles.vsText}>VS</Text>
+        <View style={styles.teamsContainer}>
+          <View style={styles.teamContainer}>
+            <Image
+              source={{ uri: event.teamA.imageUrl }}
+              style={styles.teamLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamA.name}</Text>
+          </View>
+
+          <View style={styles.timeContainer}>
+            <Text style={styles.vsText}>VS</Text>
+          </View>
+
+          <View style={styles.teamContainer}>
+            <Image
+              source={{ uri: event.teamB.imageUrl }}
+              style={styles.teamLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamB.name}</Text>
+          </View>
         </View>
 
-        <View style={styles.teamContainer}>
-          <Image
-            source={{ uri: event.teamB.imageUrl }}
-            style={styles.teamLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamB.name}</Text>
-        </View>
-      </View>
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Entry Fee</Text>
+            <Text style={styles.statValue}>{entryFee} {currency}</Text>
+          </View>
 
-      {/* Team country flags below team names */}
-      <View style={styles.teamFlagsContainer}>
-        <View style={styles.teamFlagItem}>
+          <View style={styles.dateTimeContainer}>
+            <Text style={styles.timeText}>{formattedTime}</Text>
+            <Text style={styles.dateText}>{formattedDate}</Text>
+          </View>
         </View>
+      </TouchableOpacity>
 
-        <View style={styles.teamFlagItem}>
-        </View>
-
-        <View style={styles.teamFlagItem}>
-        </View>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Entry Fee</Text>
-          <Text style={styles.statValue}>{entryFee} {currency}</Text>
-        </View>
-
-        <View style={styles.dateTimeContainer}>
-          <Text style={styles.timeText}>{formattedTime}</Text>
-          <Text style={styles.dateText}>{formattedDate}</Text>
-        </View>
-      </View>
-      {isCompleted && onLeaderboardPress && (
+      {isCompleted && (
         <View style={styles.footer}>
-
           <TouchableOpacity
             style={styles.leaderboardButton}
-            onPress={() => onLeaderboardPress(id)}
+            onPress={handleLeaderboardPress}
+            activeOpacity={0.7}
           >
             <Text style={styles.leaderboardButtonText}>Leaderboard</Text>
           </TouchableOpacity>
-
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
     marginHorizontal: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -120,6 +114,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    overflow: 'hidden',
+  },
+  container: {
+    padding: 16,
   },
   header: {
     flexDirection: 'row',
@@ -148,7 +146,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   teamContainer: {
     flex: 2,
@@ -165,21 +163,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
     width: '100%',
-  },
-  teamFlagsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  teamFlagItem: {
-    alignItems: 'center',
-    width: '40%',
-  },
-  countryText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
   },
   timeContainer: {
     flex: 1,
@@ -227,17 +210,18 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 16,
+    justifyContent: 'center',
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
   leaderboardButton: {
     backgroundColor: '#0504dc',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
+    width: '80%',
+    alignItems: 'center',
   },
   leaderboardButtonText: {
     color: '#FFFFFF',
