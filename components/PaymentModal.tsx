@@ -8,49 +8,117 @@ import {
   Platform,
   Animated,
   Image,
-  Easing
+  Easing,
+  ActivityIndicator
 } from 'react-native';
 import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
 import { useEmbeddedSolanaWallet } from '@privy-io/expo';
-import { Connection, PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Shoot9SDK } from '../program/contract-sdk';
+import { Wallet } from '@coral-xyz/anchor';
 
-// Create a proper adapter for Privy wallet to work with Anchor
-class PrivyWalletAdapter {
-  constructor(private privyWallet: any, private provider: any) {
-    this.privyWallet = privyWallet;
-    this.provider = provider;
-  }
+const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
+  console.log("Privy wallet details:", {
+    wallet: privyWallet,
+    hasAddress: !!privyWallet?.address,
+    hasSignTransaction: !!privyWallet?.signTransaction,
+    signTransactionType: typeof privyWallet?.signTransaction,
+    methods: Object.keys(privyWallet || {})
+  });
 
-  // Required by Anchor Wallet interface
-  get publicKey(): PublicKey {
-    return new PublicKey(this.privyWallet.publicKey);
+  if (!privyWallet || !privyWallet.address) {
+    throw new Error("Privy wallet missing address");
   }
+  
+  const dummyPayer = Keypair.generate();
 
-  // Required by NodeWallet which Anchor uses internally
-  get payer(): Keypair {
-    // This is a dummy keypair since Privy manages the actual keypair
-    // It won't be used for signing, just to satisfy the interface
-    return Keypair.generate();
-  }
+  return {
+    publicKey: new PublicKey(privyWallet.address),
+    payer: dummyPayer,
+    signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+      console.log("Signing transaction with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      if (tx instanceof Transaction) {
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.lastValidBlockHeight = lastValidBlockHeight;
+        
+        // Send without simulation
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Transaction sent with signature:", signature);
+        return tx as T;
+      } else if (tx instanceof VersionedTransaction) {
+        // For versioned transactions
+        // Send without simulation
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Versioned transaction sent with signature:", signature);
+        return tx as T;
+      }
+      
+      throw new Error("Unsupported transaction type");
+    },
+    signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+      console.log("Signing multiple transactions with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      return await Promise.all(txs.map(async (tx) => {
+        if (tx instanceof Transaction) {
+          // Get a fresh blockhash before sending
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+          tx.recentBlockhash = blockhash;
+          tx.lastValidBlockHeight = lastValidBlockHeight;
+        }
+        
+        if (tx instanceof Transaction || tx instanceof VersionedTransaction) {
+          await provider.request({
+            method: 'signAndSendTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true, // Skip simulation
+                preflightCommitment: 'confirmed'
+              }
+            },
+          });
+        }
+        return tx;
+      }));
+    },
+  };
+};
 
-  // Required by Anchor Wallet interface
-  async signTransaction<T extends Transaction>(tx: T): Promise<T> {
-    // Use the provider to sign the transaction
-    const signedTx = await this.provider.signTransaction(tx);
-    return signedTx as T;
-  }
 
-  // Required by Anchor Wallet interface
-  async signAllTransactions<T extends Transaction>(txs: T[]): Promise<T[]> {
-    // Use the provider to sign all transactions
-    const signedTxs = await Promise.all(txs.map(tx => this.provider.signTransaction(tx)));
-    return signedTxs as T[];
-  }
-}
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -62,14 +130,13 @@ interface PaymentModalProps {
 const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalProps) => {
   const [amount, setAmount] = useState(contest?.entryFee || 1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const { wallets } = useEmbeddedSolanaWallet();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -130,37 +197,83 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       }
       
       const privyWallet = wallets[0];
-      const provider = await privyWallet.getProvider();
+      console.log("Privy wallet:", {
+        address: privyWallet.address,
+        hasAddress: !!privyWallet.address,
+        addressType: typeof privyWallet.address,
+        hasPublicKey: !!privyWallet.publicKey,
+      });
       
       // Create connection to Solana network
       const connection = new Connection(
         process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
       );
       
-      const walletAdapter = new PrivyWalletAdapter(privyWallet, provider);
-      
       try {
-        const sdk = new Shoot9SDK(connection, walletAdapter as any);
+        const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
+        console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
         
-        // Get contest creator public key
-        const contestCreator = new PublicKey(contest.contestPublicKey);
-        
-        // Get contest ID
-        const contestId = parseInt(contest.solanaContestId);
-        
-        // Call enterContest
-        const txId = await sdk.enterContest(contestCreator, contestId);
-        console.log("Transaction successful:", txId);
-        
-        // Show success animation
-        animateSuccess();
-        
-        if (onConfirm) {
-          onConfirm();
+        try {
+          console.log("Creating SDK with:", {
+            connection: connection.rpcEndpoint,
+            wallet: anchorWallet.publicKey.toString(),
+          });
+          console.log("Creating SDK instance...");
+          const sdk = new Shoot9SDK(connection, anchorWallet);
+
+          // Get contest ID
+          const contestId = parseInt(contest.solanaContestId);
+          console.log("Contest ID:", contestId);
+          
+          // Log contest creator for debugging
+          console.log("Contest creator (raw):", contest.contestCreator);
+          
+          // Validate the contest creator address before passing it to PublicKey
+          if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
+              !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
+            throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
+          }
+          
+          // Create PublicKey instance with validation
+          let creatorPublicKey;
+          try {
+            creatorPublicKey = new PublicKey(contest.contestCreator);
+            console.log("Creator public key created successfully:", creatorPublicKey.toString());
+          } catch (pkError) {
+            console.error("Failed to create PublicKey from contest creator:", pkError);
+            throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
+          }
+          
+          // Call enterContest with detailed logging
+          console.log("Entering contest with params:", {
+            creator: creatorPublicKey.toString(),
+            contestId: contestId
+          });
+          
+          const txId = await sdk.enterContest(creatorPublicKey, contestId);
+          console.log("Transaction successful:", txId);
+          
+          // Show success animation
+          animateSuccess();
+          
+        } catch (sdkError) {
+          console.error("SDK error:", sdkError);
+          // Log more details about the error
+          if (sdkError instanceof Error) {
+            console.error("Error name:", sdkError.name);
+            console.error("Error message:", sdkError.message);
+            console.error("Error stack:", sdkError.stack);
+            
+            // Check if it's a Shoot9SDKError with a cause
+            if (sdkError.hasOwnProperty('cause')) {
+              console.error("Error cause:", (sdkError as any).cause);
+            }
+          }
+          throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
         }
-      } catch (sdkError) {
-        console.error("SDK error:", sdkError);
-        throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
+      } catch (adapterError) {
+        console.error("Wallet adapter error:", adapterError);
+        throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
       }
     } catch (err) {
       console.error("Payment error:", err);
@@ -255,6 +368,23 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
           >
             <Text style={styles.payButtonText}>Play</Text>
           </TouchableOpacity>
+
+          {/* Loading overlay */}
+          {isLoading && (
+            <View style={styles.loadingOverlay}>
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0504dc" />
+                <Text style={styles.loadingText}>Processing payment...</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Error message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           {/* Success overlay with animated checkmark */}
           {showSuccess && (
@@ -456,6 +586,49 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4CAF50',
     textAlign: 'center',
+  },
+  loadingOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    zIndex: 10,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  errorContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 14,
   },
 });
 

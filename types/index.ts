@@ -42,6 +42,23 @@ export interface ITeam{
     createdAt: string;
     updatedAt: string;
     event: IEvent;
+    contestCreator: string;
+  }
+
+  export interface IContestWithVideos extends IContest {
+    featuredVideos: Array<{
+      id: string;
+      submissionId: string;
+      videoUrl: string;
+      thumbnailUrl: string;
+      userId: string;
+      contestId: string;
+      correctOutcome: null | string;
+      numberOfBets: number;
+      question: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
   }
 
   export enum IQuestionStatus {
@@ -75,5 +92,4 @@ export interface ITeam{
     imageUrl: string; 
     balance?: number;
   }
-
 

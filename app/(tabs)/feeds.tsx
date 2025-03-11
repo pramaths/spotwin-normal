@@ -3,18 +3,28 @@ import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
 import HeaderProfile from '@/components/HeaderProfile';
-import { IContest } from '@/types';
+import { IContestWithVideos } from '@/types';
 import { formatDateTime } from '@/utils/dateUtils';
-import { fetchContests, fetchContestVideos, IContestVideo } from '@/services/contestApi';
 import { ContestCardSkeleton } from '@/components/SkeletonLoading';
+import { ACTIVE_CONTEST_WITH_VIDEOS } from '@/routes/api';
+import apiClient from '@/utils/api';
+import { useContestsStore } from '@/store/contestsStore';
+
+const BLUR_IMAGE_URL = 'https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png';
+
+
+interface PredictionQuestion {
+  id: string;
+  question: string;
+  matchImage?: string;
+  thumbnailUrl?: string;
+  timeRemaining?: string;
+}
 
 const FeedsScreen = () => {
-  const [selectedTab, setSelectedTab] = useState('all');
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
-  const [contests, setContests] = useState<IContest[]>([]);
-  const [contestVideos, setContestVideos] = useState<IContestVideo[]>([]);
-  const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
+  const [selectedContest, setSelectedContest] = useState<IContestWithVideos | null>(null);
+  const [contests, setContests] = useState<IContestWithVideos[]>([]);
+  const [contestVideos, setContestVideos] = useState<PredictionQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isContestsLoading, setIsContestsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -22,80 +32,90 @@ const FeedsScreen = () => {
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
-  useEffect(() => {
-    loadContests();
-  }, []);
-
-  const loadContests = async () => {
-    setIsContestsLoading(true);
-    try {
-      const contestsData = await fetchContests();
-      setContests(contestsData);
+  const processContestsWithVideos = (contestsData: IContestWithVideos[]) => {
+    return contestsData.map(contest => {
+      const processedContest = { ...contest };
       
-      // Select the first contest by default
-      if (contestsData.length > 0) {
-        setSelectedContest(contestsData[0]);
+      const featuredVideos = Array.isArray(contest.featuredVideos) 
+        ? [...contest.featuredVideos] 
+        : [];
+      
+      while (featuredVideos.length < 3) {
+        featuredVideos.push({
+          id: `placeholder-${contest.id}-${featuredVideos.length}`,
+          submissionId: '',
+          videoUrl: '',
+          thumbnailUrl: BLUR_IMAGE_URL,
+          userId: '',
+          contestId: contest.id,
+          correctOutcome: null,
+          numberOfBets: 0,
+          question: 'fun',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      featuredVideos.push({
+        id: `dummy-${contest.id}`,
+        submissionId: '',
+        videoUrl: '',
+        thumbnailUrl: BLUR_IMAGE_URL,
+        userId: '',
+        contestId: contest.id,
+        correctOutcome: null,
+        numberOfBets: 0,
+        question: 'fun',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      processedContest.featuredVideos = featuredVideos;
+      
+      return processedContest;
+    });
+  };
+
+  const fetchActiveContests = async () => {
+    try {
+      setIsContestsLoading(true);
+      const response = await apiClient<IContestWithVideos[]>(ACTIVE_CONTEST_WITH_VIDEOS, 'GET');
+      
+      if (response.success && response.data) {
+        console.log("response.data", response.data.map(contest => contest.featuredVideos));
+        const processedContests = processContestsWithVideos(response.data);
+        setContests(processedContests);
+        setSelectedContest(processedContests[0]);
       }
     } catch (error) {
-      console.error('Error fetching contests:', error);
+      console.error('Error fetching active contests:', error);
     } finally {
       setIsContestsLoading(false);
+      setIsLoading(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadContests();
-    if (selectedContest) {
-      await loadContestVideos();
-    }
+    await fetchActiveContests();
     setRefreshing(false);
   };
 
-  // Function to load contest videos
-  const loadContestVideos = async () => {
-    if (selectedContest) {
-      setIsLoading(true);
-      try {
-        const videos = await fetchContestVideos(selectedContest.id);
-        
-        // Transform contest videos to match the expected question format
-        const formattedQuestions = videos.map(video => ({
-          id: video.id,
-          question: video.question,
-          matchImage: video.thumbnailUrl,
-          league: selectedContest.event.title,
-          teams: `${selectedContest.event.teamA.name} vs ${selectedContest.event.teamB.name}`,
-          timeRemaining: '5:00', // Default time remaining
-        }));
-        
-        setContestVideos(formattedQuestions);
-      } catch (error) {
-        console.error('Error fetching contest videos:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  // Fetch videos for the selected contest
   useEffect(() => {
-    loadContestVideos();
+    fetchActiveContests();
+  }, []);
+
+  useEffect(() => {
+    if (selectedContest) {
+      setContestVideos(selectedContest.featuredVideos || []);
+    }
   }, [selectedContest]);
 
-  const handleAnswer = (id: string, answer: 'YES' | 'NO') => {
-    console.log(`Question ${id} answered with: ${answer}`);
-    setAnsweredQuestions([...answeredQuestions, id]);
-    setTimeout(() => {
-      setContestVideos(contestVideos.filter(q => q.id !== id));
-    }, 500);
-  };
-
-  const handleContestSelect = (contest: IContest) => {
+  const handleContestSelect = (contest: IContestWithVideos) => {
     setSelectedContest(contest);
   };
 
-  const renderContestItem = ({ item }: { item: IContest }) => {
+  const renderContestItem = ({ item }: { item: IContestWithVideos }) => {
     const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
     return (
       <TouchableOpacity 
@@ -108,28 +128,34 @@ const FeedsScreen = () => {
         <View style={styles.teamsContainer}>
           <View style={styles.teamSection}>
             <Image 
-              source={{uri: item.event.teamA.imageUrl}} 
+              source={{uri: item.event.teamA?.imageUrl}} 
               style={styles.teamLogo} 
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamA.name}</Text>
+            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamA?.name || ''}</Text>
           </View>
           
           <Text style={styles.vsText}>VS</Text>
           
           <View style={styles.teamSection}>
             <Image 
-              source={{uri: item.event.teamB.imageUrl}} 
+              source={{uri: item.event.teamB?.imageUrl}} 
               style={styles.teamLogo}
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamB.name}</Text>
+            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamB?.name || ''}</Text>
           </View>
         </View>
 
         <View style={styles.contestInfo}>
-          <Text style={styles.contestName}>{item.event.title}</Text>
-          <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
+          <View style={styles.contestTimeContainer}>
+            <Text style={styles.contestName}>{item.event.title}</Text>
+            <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
+          </View>
+          <View style={styles.priceContainer}>
+            <Text style={styles.contestTime}>{item.entryFee} Sol</Text>
+            <Text style={styles.entryFeeText}>Entry Fee</Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -138,7 +164,7 @@ const FeedsScreen = () => {
   const renderContestSkeletons = () => {
     return (
       <FlatList
-        data={[1, 2, 3]} // Show 3 skeleton items
+        data={[1, 2, 3]} 
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.contestList}
@@ -147,35 +173,6 @@ const FeedsScreen = () => {
         keyExtractor={(item) => `skeleton-${item}`}
       />
     );
-  };
-
-  // Render content based on loading state and data availability
-  const renderPredictionContent = () => {
-    if (isLoading) {
-      return (
-        <PredictionQuestionGrid
-          questions={[]}
-          onAnswer={handleAnswer}
-          contests={contests}
-          isLoading={true}
-        />
-      );
-    } else if (contestVideos.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No predictions available for this contest</Text>
-        </View>
-      );
-    } else {
-      return (
-        <PredictionQuestionGrid
-          questions={contestVideos}
-          onAnswer={handleAnswer}
-          contests={contests}
-          isLoading={false}
-        />
-      );
-    }
   };
 
   return (
@@ -211,7 +208,11 @@ const FeedsScreen = () => {
               />
             }
           >
-            {renderPredictionContent()}
+            <PredictionQuestionGrid
+              questions={contestVideos}
+              selectedContest={selectedContest}
+              isLoading={isLoading}
+            />
           </ScrollView>
         </View>
       </View>
@@ -288,6 +289,12 @@ const styles = StyleSheet.create({
     borderTopColor: '#EEEEEE',
     paddingTop: 8,
     marginTop: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  contestTimeContainer: {
+    flex: 1,
   },
   contestName: {
     fontSize: 14,
@@ -298,6 +305,14 @@ const styles = StyleSheet.create({
   contestTime: {
     fontSize: 12,
     color: '#666',
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  entryFeeText: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,

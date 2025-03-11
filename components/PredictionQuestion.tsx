@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ContestJoinModal from './ContestJoinModal';
-import { IContest } from '@/types';
+import { IContest, IContestWithVideos } from '@/types';
+import { useContestsStore } from '@/store/contestsStore';
 
 interface PredictionQuestionProps {
     id: string;
     question: string;
     matchImage: string;
-    league: string;
-    teams: string;
     timeRemaining: string;
-    onAnswer: (id: string, answer: 'YES' | 'NO') => void;
-    onQuestionPress?: (id: string) => void;
-    contest?: IContest;
+    contest: IContestWithVideos | null;
+    isUserParticipating: boolean;
 }
 
 const PredictionQuestion = ({
@@ -22,67 +20,28 @@ const PredictionQuestion = ({
     question,
     matchImage,
     timeRemaining,
-    onAnswer,
-    onQuestionPress,
     contest,
+    isUserParticipating
 }: PredictionQuestionProps) => {
     const [modalVisible, setModalVisible] = useState(false);
-    const [selectedAnswer, setSelectedAnswer] = useState<'YES' | 'NO' | null>(null);
+    const { userContests } = useContestsStore();
     
-    // Default contest if none provided
-    const defaultContest: IContest = {
-        id: "default-contest",
-        name: question,
-        entryFee: 49,
-        currency: "USD",
-        description: "Answer prediction questions to win prizes",
-        status: "OPEN",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        event: {
-            id: "default-event",
-            title: "Sports Prediction",
-            description: "Sports prediction event",
-            eventImageUrl: matchImage,
-            startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + 3600000).toISOString(),
-            status: "OPEN",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            sport: {
-                id: "default-sport",
-                name: "Mixed Sports",
-                description: "Various sports predictions",
-                imageUrl: "",
-                isActive: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            teamA: {
-                id: "team-a",
-                name: "Team A",
-                imageUrl: "",
-                country: "Country A"
-            },
-            teamB: {
-                id: "team-b",
-                name: "Team B",
-                imageUrl: "",
-                country: "Country B"
+    const handleContainerPress = () => {
+        if (contest) {
+            const isAlreadyParticipating = userContests.some(
+                userContest => userContest.id === contest.id
+            );
+            
+            if (isAlreadyParticipating) {
+                Alert.alert(
+                    "Already Participating",
+                    "You're already participating in this contest.",
+                    [{ text: "OK" }]
+                );
+            } else {
+                setModalVisible(true);
             }
         }
-    };
-    
-    const handleAnswerPress = (answer: 'YES' | 'NO') => {
-        setSelectedAnswer(answer);
-        setModalVisible(true);
-    };
-    
-    const handleConfirmAnswer = () => {
-        if (selectedAnswer) {
-            onAnswer(id, selectedAnswer);
-        }
-        setModalVisible(false);
     };
     
     const handleCloseModal = () => {
@@ -90,7 +49,11 @@ const PredictionQuestion = ({
     };
     
     return (
-        <View style={styles.container}>
+        <TouchableOpacity 
+            style={styles.container} 
+            activeOpacity={0.9}
+            onPress={handleContainerPress}
+        >
             <Image source={{ uri: matchImage }} style={styles.image} />
 
             <View style={styles.overlay}>
@@ -100,60 +63,25 @@ const PredictionQuestion = ({
 
                 <View style={styles.bottomContent}>
                     {question ? (
-                        <TouchableOpacity
-                            style={styles.questionContainer}
-                            onPress={() => onQuestionPress && onQuestionPress(id)}
-                            activeOpacity={0.8}
-                        >
+                        <View style={styles.questionContainer}>
                             <View style={styles.blurContainer}>
                                 <Text style={styles.questionText}>{question}</Text>
                             </View>
-                        </TouchableOpacity>
+                        </View>
                     ) : null}
-
-                    <View style={styles.buttonsContainer}>
-                        <TouchableOpacity
-                            style={styles.buttonWrapper}
-                            activeOpacity={0.8}
-                            onPress={() => handleAnswerPress('YES')}
-                        >
-                            <LinearGradient
-                                colors={['#00E676', '#00C853']}
-                                style={styles.button}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-                                <Text style={styles.buttonText}>YES</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.buttonWrapper}
-                            activeOpacity={0.8}
-                            onPress={() => handleAnswerPress('NO')}
-                        >
-                            <LinearGradient
-                                colors={['#FF5252', '#D50000']}
-                                style={styles.button}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Ionicons name="close-circle" size={18} color="#FFFFFF" />
-                                <Text style={styles.buttonText}>NO</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
                 </View>
             </View>
             
-            <ContestJoinModal
-                isVisible={modalVisible}
-                onClose={handleCloseModal}
-                contest={contest || defaultContest}
-                onConfirm={handleConfirmAnswer}
-            />
-        </View>
+            {contest && (
+                <ContestJoinModal
+                    isVisible={modalVisible}
+                    onClose={handleCloseModal}
+                    contest={contest}
+                    onConfirm={handleCloseModal}
+                    isUserParticipating={isUserParticipating}
+                />
+            )}
+        </TouchableOpacity>
     );
 };
 
@@ -179,7 +107,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: 260,
-        // resizeMode: 'cover',
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
@@ -214,29 +141,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
         color: '#fff',
-        padding:4,
-        borderRadius:12,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    },
-    buttonsContainer: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    buttonWrapper: {
-        flex: 1,
-    },
-    button: {
-        paddingVertical: 8,
+        padding: 4,
         borderRadius: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginLeft: 5,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
 });
 

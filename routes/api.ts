@@ -23,4 +23,7 @@ export const USER =(publicAddress: string) => `${backendUrl}/users/address/${pub
 export const SUBMISSION = `${backendUrl}/submission`;
 
 //UserContests
-export const USER_CONTESTS = `${backendUrl}/user-contests`;
+export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
+
+// ative contest with videos
+export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;

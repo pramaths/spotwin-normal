@@ -7,8 +7,8 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { Shoot9Solana } from "./shoot_9_solana";
 import * as IDL from "./shoot_9_solana.json";
+import { Shoot9Solana } from "./shoot_9_solana";
 
 export type ContestAccount = IdlAccounts<Shoot9Solana>["contestAccount"];
 export type AuthStore = IdlAccounts<Shoot9Solana>["authStore"];
@@ -201,9 +201,13 @@ export class Shoot9SDK {
     contestCreator: PublicKey,
     contestId: number
   ): Promise<string> {
+    console.log("Entering contest...");
+    console.log("Contest creator:", contestCreator.toString());
+    console.log("Contest ID:", contestId);
     const contest = await this.findContestPDA(contestCreator, contestId);
     const contestAccount = await this.getContest(contestCreator, contestId);
-
+    console.log("Contest account:", contestAccount);
+    console.log("Contest:", contest);
     try {
       const tx = await this.program.methods
         .enterContest(contestAccount.entryFee)

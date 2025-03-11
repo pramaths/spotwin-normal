@@ -21,11 +21,12 @@ interface ContestJoinModalProps {
   onClose: () => void;
   contest: IContest;
   onConfirm?: () => void;
+  isUserParticipating: boolean;
 }
 
 const { height } = Dimensions.get('window');
 
-const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoinModalProps) => {
+const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating }: ContestJoinModalProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -112,7 +113,11 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
             <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <ChevronLeft color="#000" size={24} />
             </TouchableOpacity>
+            {isUserParticipating ? (
             <Text style={styles.headerTitle}>Join Contest</Text>
+            ) : (
+              <Text style={styles.headerTitle}>Already Joined</Text>
+            )}
             <View style={{ width: 24 }} />
           </View>
 

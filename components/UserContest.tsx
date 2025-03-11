@@ -34,7 +34,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
       activeOpacity={0.8}
     >
       <View style={styles.header}>
-        <Text style={styles.leagueName}>{event.title}</Text>
+        <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{event.title}</Text>
         <View style={[
           styles.statusContainer, 
           { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
@@ -52,7 +52,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
             style={styles.teamLogo}
             resizeMode="contain" 
           />
-          <Text style={styles.teamName} numberOfLines={1}>{event.teamA.name}</Text>
+          <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamA.name}</Text>
         </View>
         
         <View style={styles.timeContainer}>
@@ -65,7 +65,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
             style={styles.teamLogo}
             resizeMode="contain" 
           />
-          <Text style={styles.teamName} numberOfLines={1}>{event.teamB.name}</Text>
+          <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamB.name}</Text>
         </View>
       </View>
       
@@ -109,67 +109,61 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
     marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   leagueName: {
+    fontFamily: 'Inter-SemiBold',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    color: '#1F2937',
+    flex: 1,
+    marginRight: 8,
   },
   statusContainer: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
   },
   statusText: {
+    fontFamily: 'Inter-Medium',
     fontSize: 12,
     color: '#FFFFFF',
-    fontWeight: '500',
   },
   teamsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 12,
   },
   teamContainer: {
+    flex: 2,
     alignItems: 'center',
-    width: '40%',
   },
   teamLogo: {
     width: 48,
     height: 48,
-    borderRadius: 4,
     marginBottom: 8,
   },
   teamName: {
+    fontFamily: 'Inter-Medium',
     fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
+    color: '#1F2937',
     textAlign: 'center',
+    width: '100%',
   },
   teamFlagsContainer: {
     flexDirection: 'row',
@@ -187,13 +181,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   timeContainer: {
+    flex: 1,
     alignItems: 'center',
-    width: '20%',
   },
   vsText: {
+    fontFamily: 'Inter-Bold',
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0504dc',
+    color: '#6B7280',
   },
   statsContainer: {
     flexDirection: 'row',

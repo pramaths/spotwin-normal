@@ -26,7 +26,7 @@ import apiClient from '../../utils/api';
 import { CONTESTS } from '../../routes/api';
 import { useUserStore } from '../../store/userStore';
 import { IUser } from '../../types';
-import { USER } from '../../routes/api';
+import { USER, USER_CONTESTS } from '../../routes/api';
 import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 
 const sportsCategories = [
@@ -41,7 +41,7 @@ export default function HomeScreen() {
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const [filteredContests, setFilteredContests] = useState<IContest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { contests, setContests } = useContestsStore();
+  const { contests, setContests, setUserContests } = useContestsStore();
   const { wallets } = useEmbeddedSolanaWallet();
   const router = useRouter();
   const featuredListRef = useRef<FlatList>(null);
@@ -67,10 +67,15 @@ export default function HomeScreen() {
   const fetchContests = async () => {
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
+      const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user?.id || ''), 'GET');
 
-      if (response.success && response.data) {
-        console.log("Fetched contests:", response.data);
-        setContests(response.data);
+
+      if (response.success && response.data && userContestsResponse.success) {
+        console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
+        console.log("User contests:", userContestsResponse?.data?.map((contest: IContest) => contest.id));
+        let availableContests = response.data.filter((contest: IContest) => !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id));
+        setContests(availableContests);
+        setUserContests(userContestsResponse.data || []);
       } else {
         console.error("Failed to fetch contests:", response.message);
       }
