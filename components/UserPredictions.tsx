@@ -1,29 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
   ActivityIndicator,
   Platform
 } from 'react-native';
 import { router } from 'expo-router';
 import { Pencil } from 'lucide-react-native';
 import { IContest, IOutcomeType } from '@/types';
-import { IUserPrediction, fetchUserPredictions } from '@/api/predictionVideos';
 import { formatDateTime } from '@/utils/dateUtils';
+import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
+import apiClient from '@/utils/api';
 
 interface UserPredictionsProps {
   contestId: string;
   userId?: string;
 }
 
+interface IVideo {
+  id: string;
+  submissionId: string;
+  videoUrl: string;
+  question: string | null;
+  thumbnailUrl: string;
+  userId: string;
+  contestId: string;
+  correctOutcome: string | null;
+  numberOfBets: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface IUserPrediction {
+  id: string;
+  userId: string;
+  contestId: string;
+  videoId: string;
+  prediction: string;
+  isCorrect: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+  video: IVideo;
+  question?: string; // For backward compatibility with existing code
+  thumbnailUrl?: string; // For backward compatibility with existing code
+  outcome?: IOutcomeType; // For backward compatibility with existing code
+}
+
+const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
+  try {
+    const response = await apiClient<IUserPrediction[]>(GET_PREDICTION_BY_USER_AND_CONTEST(contestId, userId || ''), 'GET');
+    console.log('response', response);
+    if (response.success && response.data) {
+      return response.data.map((prediction: IUserPrediction) => ({
+        ...prediction,
+        question: prediction.video.question || '',
+        thumbnailUrl: prediction.video.thumbnailUrl,
+        outcome: prediction.prediction === 'YES' ? IOutcomeType.YES : IOutcomeType.NO
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching user predictions:', error);
+    throw new Error('Failed to fetch predictions');
+  }
+};
+
 const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  console.log('contestId', contestId);
+  console.log('userId', userId);
 
   useEffect(() => {
     const loadPredictions = async () => {
@@ -50,7 +101,7 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   const handleEditPrediction = (prediction: IUserPrediction) => {
     router.push({
       pathname: '/(tabs)/video-prediction',
-      params: { 
+      params: {
         predictionId: prediction.id,
         videoId: prediction.videoId,
         contestId: contestId,
@@ -86,24 +137,24 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   const renderItem = ({ item }: { item: IUserPrediction }) => {
     return (
       <View style={styles.predictionCard}>
-        <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
-        
+        <Image source={{ uri: item.thumbnailUrl || item.video.thumbnailUrl }} style={styles.thumbnail} />
+
         <View style={styles.contentContainer}>
           <View style={styles.questionContainer}>
-            <Text style={styles.questionText}>{item.question}</Text>
+            <Text style={styles.questionText}>{item.question || item.video.question || 'No question available'}</Text>
           </View>
-          
+
           <View style={styles.bottomSection}>
             <View style={[
               styles.outcomeContainer,
-              item.outcome === IOutcomeType.YES ? styles.yesContainer : styles.noContainer
+              (item.outcome === IOutcomeType.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
             ]}>
               <Text style={styles.outcomeText}>
-                {item.outcome === IOutcomeType.YES ? 'YES' : 'NO'}
+                {(item.outcome === IOutcomeType.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
               </Text>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.editButton}
               onPress={() => handleEditPrediction(item)}
             >

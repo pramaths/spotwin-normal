@@ -1,5 +1,6 @@
 import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION } from "../routes/api";
 import apiClient from "@/utils/api";
+import { OutcomeType } from "@/types";
 
 export interface IFeaturedVideo {
   id: string;
@@ -35,7 +36,7 @@ export const submitPrediction = async (
   videoId: string,
   contestId: string,
   userId: string,
-  prediction: 'yes' | 'no'
+  prediction: OutcomeType
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await apiClient(SUBMIT_PREDICTION, "POST", {

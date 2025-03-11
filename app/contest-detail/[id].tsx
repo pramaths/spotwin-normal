@@ -5,98 +5,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import UserPredictions from '@/components/UserPredictions';
 import { IContest } from '@/types';
-
-const getContestById = (id: string): IContest | undefined => {
-  const contests = [
-    {
-      "id": "f984ea94-a07e-4bff-a802-1694f5125604",
-      "name": "Premier League Prediction",
-      "entryFee": 0.2,
-      "currency": "SOL",
-      "description": "Manchester United vs Arsenal",
-      "status": "OPEN",
-      "createdAt": "2025-03-05T10:32:19.895Z",
-      "updatedAt": "2025-03-05T10:32:19.895Z",
-      "event": {
-        "id": "077e38f3-6275-4c68-920f-3a7de8ba9bbf",
-        "title": "Premier League",
-        "description": "Premier League match",
-        "eventImageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/5829da6d-3660-43b2-a6df-2d2e775a29b3-Men's_Champions_Trophy.png",
-        "startDate": "2025-03-05T08:58:46.130Z",
-        "endDate": "2025-03-05T08:58:46.130Z",
-        "status": "OPEN",
-        "createdAt": "2025-03-05T09:04:41.701Z",
-        "updatedAt": "2025-03-05T09:27:20.389Z",
-        "sport": {
-          "id": "3dc44aff-9748-44fc-aa74-1379213a4363",
-          "name": "Football",
-          "description": "The most popular sport in the world",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg",
-          "isActive": true,
-          "createdAt": "2025-03-02T18:07:04.227Z",
-          "updatedAt": "2025-03-02T18:07:04.227Z"
-        },
-        "teamA": {
-          "id": "4ec72fe7-263b-42e5-af1f-b0c26fed97a7",
-          "name": "Manchester United",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/2502a671-38ac-4ae0-a076-ad202300bfa1-india.png",
-          "country": "England"
-        },
-        "teamB": {
-          "id": "59217b82-77ae-4340-ba13-483bea11a7d6",
-          "name": "Arsenal",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/f105ff41-e9aa-4d90-b551-2f9b488b0e5b-pak.png",
-          "country": "England"
-        }
-      }
-    },
-  ];
-  
-  return contests.find(contest => contest.id === id);
-};
+import { useUserStore } from '@/store/userStore';
+import { CONTESTS_BY_ID } from '@/routes/api';
+import apiClient from '@/utils/api';
 
 export default function ContestDetailScreen() {
   const { id: contestId } = useLocalSearchParams<{ id: string }>();
-  const [loading, setLoading] = useState(true);
+  console.log('contestId', contestId);
+  const [loading, setLoading] = useState(false);
   const [contest, setContest] = useState<IContest | undefined>();
-  const [error, setError] = useState<string | null>(null);
-  
-  // In a real app, would use a global state for userId
-  const userId = 'current-user-id';
+  const { user } = useUserStore();
 
   useEffect(() => {
-    if (!contestId) {
-      setError('Contest ID is required');
-      setLoading(false);
-      return;
-    }
-
-    // Simulate API call to get contest details
     const loadContest = async () => {
-      try {
-        setLoading(true);
-        // In a real app, this would be an API call
-        const contestData = getContestById(contestId);
-        
-        if (!contestData) {
-          setError('Contest not found');
-          setLoading(false);
-          return;
-        }
-        
-        setContest(contestData);
-        setLoading(false);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load contest');
-        setLoading(false);
+      const response = await apiClient<IContest>(CONTESTS_BY_ID(contestId), 'GET');
+      if (response.success && response.data) {
+        setContest(response.data);
       }
     };
-
     loadContest();
   }, [contestId]);
-
   const handleBack = () => {
-    router.back();
+    router.push('/(tabs)/contests');
   };
 
   if (loading) {
@@ -117,7 +47,7 @@ export default function ContestDetailScreen() {
     );
   }
 
-  if (error || !contest) {
+  if (!contest) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -128,7 +58,7 @@ export default function ContestDetailScreen() {
             <Text style={styles.headerTitle}>Error</Text>
           </View>
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error || 'Contest not found'}</Text>
+            <Text style={styles.errorText}>{'Contest not found'}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -155,7 +85,7 @@ export default function ContestDetailScreen() {
         <Text style={styles.sectionTitle}>Your Predictions</Text>
         
         <View style={styles.predictionsContainer}>
-          <UserPredictions contestId={contestId} userId={userId} />
+          <UserPredictions contestId={contestId} userId={user?.id || ''} />
         </View>
       </View>
     </SafeAreaView>

@@ -11,7 +11,7 @@ interface UserContestCardProps {
 }
 
 export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPress, onLeaderboardPress }) => {
-  const { event, entryFee, name, currency, id } = contest;
+  const { event, entryFee, currency, id } = contest;
   
   const handlePress = () => {
     if (onPress) {

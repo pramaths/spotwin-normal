@@ -88,6 +88,8 @@ export default function HomeScreen() {
         if (response.success && response.data) {
           setContests(response.data);
           setUserContests([]);
+        } else {
+          console.error("Failed to fetch contests:", response.message);
         }
       }
     } catch (error) {

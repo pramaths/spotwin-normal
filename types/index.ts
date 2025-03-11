@@ -93,3 +93,32 @@ export interface ITeam{
     balance?: number;
   }
 
+
+  export enum OutcomeType{
+    YES = 'YES',
+    NO = 'NO'
+  }
+
+  export interface IPrediction {
+    id: string;
+    userId: string;
+    contestId: string;
+    videoId: string;
+    prediction: string;
+    isCorrect: boolean | null;
+    createdAt: string;
+    updatedAt: string;
+    video: {
+      id: string;
+      submissionId: string;
+      videoUrl: string;
+      question: string | null;
+      thumbnailUrl: string;
+      userId: string;
+      contestId: string;
+      correctOutcome: string | null;
+      numberOfBets: number;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }

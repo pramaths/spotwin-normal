@@ -10,6 +10,7 @@ import {
   Text,
   AppState,
   ActivityIndicator,
+  Platform
 } from 'react-native';
 import { Volume2, VolumeX, ChevronLeft } from 'lucide-react-native';
 import VideoItem from '../../components/VideoItem';
@@ -17,6 +18,7 @@ import { useRouter, useNavigation } from 'expo-router';
 import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo } from '../../services/videoApi';
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
+import { OutcomeType } from '@/types';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
@@ -43,6 +45,7 @@ export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
   const isMountedRef = useRef(true);
   const { user} = useUserStore();
+  const [predictionMessage, setPredictionMessage] = useState<{text: string, type: OutcomeType} | null>(null);
 
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -126,7 +129,7 @@ export default function HomeScreen() {
     };
   }, [loadVideos]);
 
-  const handlePrediction = async (prediction: 'yes' | 'no') => {
+  const handlePrediction = async (prediction: OutcomeType) => {
     if (videos.length === 0 || currentIndex >= videos.length) return;
     
     const currentVideoId = videos[currentIndex].id;
@@ -136,12 +139,22 @@ export default function HomeScreen() {
       setAnsweredQuestions(prev => [...prev, currentVideoId]);
     }
     
+    // Show prediction message
+    setPredictionMessage({
+      text: `You predicted ${prediction === OutcomeType.YES ? 'YES' : 'NO'}!`,
+      type: prediction
+    });
+    
+    // Hide message after 2 seconds
+    setTimeout(() => {
+      setPredictionMessage(null);
+    }, 2000);
+    
     // Submit prediction to API
     try {
-      await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction as 'yes' | 'no');
+      await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction);
     } catch (err) {
       console.error('Error submitting prediction:', err);
-      // Continue even if API call fails - we've already updated UI
     }
   };
 
@@ -246,12 +259,13 @@ export default function HomeScreen() {
                 isVisible={(visibleVideos[index] || false) && isScreenActive}
                 muteState={muteState}
                 onPrediction={handlePrediction}
+                contestId={contestId as string}
               />
             )}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            snapToInterval={WINDOW_HEIGHT}
+            snapToInterval={Platform.OS === 'ios' ? WINDOW_HEIGHT -120 : WINDOW_HEIGHT }
             decelerationRate="fast"
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
@@ -263,6 +277,15 @@ export default function HomeScreen() {
           />
         )}
       </SafeAreaView>
+      
+      {predictionMessage && (
+        <View style={[
+          styles.predictionMessage, 
+          predictionMessage.type === OutcomeType.YES ? styles.yesMessage : styles.noMessage
+        ]}>
+          <Text style={styles.predictionMessageText}>{predictionMessage.text}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -339,6 +362,27 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   questionCounterText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  predictionMessage: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    zIndex: 20,
+    opacity: 0.9,
+  },
+  yesMessage: {
+    backgroundColor: '#4CAF50',
+  },
+  noMessage: {
+    backgroundColor: '#F44336',
+  },
+  predictionMessageText: {
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,

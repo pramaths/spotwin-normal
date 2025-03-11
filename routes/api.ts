@@ -4,12 +4,10 @@ export const LOGOUT = `${backendUrl}/auth/logout`;
 
 //sports
 export const SPORTS = `${backendUrl}/api/sports`;
-export const SPORTS_BY_ID = `${backendUrl}/api/sports/:id`;
 
 //contests
 export const CONTESTS = `${backendUrl}/contests`;
-export const CONTESTS_BY_ID = `${backendUrl}/api/contests/:id`;
-
+export const CONTESTS_BY_ID = (id: string) => `${backendUrl}/contests/${id}`;
 
 
 //questions
@@ -32,5 +30,6 @@ export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
 //Prediction
 export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;
 export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
-export const EDIT_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
+export const REMOVE_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
+export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;
