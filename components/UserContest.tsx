@@ -12,7 +12,7 @@ interface UserContestCardProps {
 
 export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPress, onLeaderboardPress }) => {
   const { event, entryFee, currency, id } = contest;
-  
+
   const handlePress = () => {
     if (onPress) {
       onPress(contest);
@@ -23,12 +23,12 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
       });
     }
   };
-  
+
   const { formattedTime, formattedDate } = formatDateTime(event.startDate);
   const isCompleted = contest.status === 'COMPLETED';
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.container}
       onPress={handlePress}
       activeOpacity={0.8}
@@ -36,7 +36,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
       <View style={styles.header}>
         <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{event.title}</Text>
         <View style={[
-          styles.statusContainer, 
+          styles.statusContainer,
           { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
         ]}>
           <Text style={styles.statusText}>
@@ -44,65 +44,66 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest, onPre
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.teamsContainer}>
         <View style={styles.teamContainer}>
-          <Image 
-            source={{ uri: event.teamA.imageUrl }} 
+          <Image
+            source={{ uri: event.teamA.imageUrl }}
             style={styles.teamLogo}
-            resizeMode="contain" 
+            resizeMode="contain"
           />
           <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamA.name}</Text>
         </View>
-        
+
         <View style={styles.timeContainer}>
           <Text style={styles.vsText}>VS</Text>
         </View>
-        
+
         <View style={styles.teamContainer}>
-          <Image 
-            source={{ uri: event.teamB.imageUrl }} 
+          <Image
+            source={{ uri: event.teamB.imageUrl }}
             style={styles.teamLogo}
-            resizeMode="contain" 
+            resizeMode="contain"
           />
           <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamB.name}</Text>
         </View>
       </View>
-      
+
       {/* Team country flags below team names */}
       <View style={styles.teamFlagsContainer}>
         <View style={styles.teamFlagItem}>
         </View>
-        
+
         <View style={styles.teamFlagItem}>
         </View>
-        
+
         <View style={styles.teamFlagItem}>
         </View>
       </View>
-      
+
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Entry Fee</Text>
           <Text style={styles.statValue}>{entryFee} {currency}</Text>
         </View>
-        
+
         <View style={styles.dateTimeContainer}>
           <Text style={styles.timeText}>{formattedTime}</Text>
           <Text style={styles.dateText}>{formattedDate}</Text>
         </View>
       </View>
-      
-      <View style={styles.footer}>
-        {isCompleted && onLeaderboardPress && (
-          <TouchableOpacity 
+      {isCompleted && onLeaderboardPress && (
+        <View style={styles.footer}>
+
+          <TouchableOpacity
             style={styles.leaderboardButton}
             onPress={() => onLeaderboardPress(id)}
           >
             <Text style={styles.leaderboardButtonText}>Leaderboard</Text>
           </TouchableOpacity>
-        )}
-      </View>
+
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
