@@ -10,7 +10,7 @@ import { ACTIVE_CONTEST_WITH_VIDEOS } from '@/routes/api';
 import apiClient from '@/utils/api';
 import { useContestsStore } from '@/store/contestsStore';
 
-const BLUR_IMAGE_URL = 'https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png';
+const BLUR_IMAGE_URL = 'https://9shootnew.s3.us-east-1.amazonaws.com/blurrrrr.png';
 
 
 interface PredictionQuestion {
