@@ -85,7 +85,12 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   const handlePayment = () => {
     animateSuccess();
     setTimeout(() => {
-      router.push('/(tabs)/video-prediction');
+      router.push({
+        pathname: '/(tabs)/video-prediction',
+        params: { 
+          contestId: contest.id,
+        }
+      });
     }, 1500);
   };
 

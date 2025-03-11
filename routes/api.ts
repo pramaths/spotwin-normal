@@ -27,3 +27,10 @@ export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user
 
 // ative contest with videos
 export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
+
+
+//Prediction
+export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;
+export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
+export const EDIT_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
+export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;

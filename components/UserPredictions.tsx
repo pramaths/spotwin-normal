@@ -48,7 +48,6 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   }, [contestId, userId]);
 
   const handleEditPrediction = (prediction: IUserPrediction) => {
-    // Navigate to video-prediction page with the prediction ID and contestId
     router.push({
       pathname: '/(tabs)/video-prediction',
       params: { 

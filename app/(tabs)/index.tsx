@@ -52,7 +52,7 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchContests();
     fetchUser();
-  }, []);
+  }, [PrivyUser]);
 
   const fetchUser = async () => {
     if (!wallets || wallets.length === 0) {
@@ -67,17 +67,28 @@ export default function HomeScreen() {
   const fetchContests = async () => {
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-      const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user?.id || ''), 'GET');
-
-
-      if (response.success && response.data && userContestsResponse.success) {
-        console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
-        console.log("User contests:", userContestsResponse?.data?.map((contest: IContest) => contest.id));
-        let availableContests = response.data.filter((contest: IContest) => !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id));
-        setContests(availableContests);
-        setUserContests(userContestsResponse.data || []);
+      
+      // Only fetch user contests if we have a user ID
+      if (user?.id) {
+        const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
+        
+        if (response.success && response.data && userContestsResponse.success) {
+          console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
+          console.log("User contests:", userContestsResponse?.data?.map((contest: IContest) => contest.id));
+          let availableContests = response.data.filter((contest: IContest) => 
+            !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id)
+          );
+          setContests(availableContests);
+          setUserContests(userContestsResponse.data || []);
+        } else {
+          console.error("Failed to fetch contests:", response.message);
+        }
       } else {
-        console.error("Failed to fetch contests:", response.message);
+        // If no user ID, just set all contests as available
+        if (response.success && response.data) {
+          setContests(response.data);
+          setUserContests([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching contests:", error);

@@ -15,10 +15,20 @@ import { Volume2, VolumeX, ChevronLeft } from 'lucide-react-native';
 import VideoItem from '../../components/VideoItem';
 import { useRouter, useNavigation } from 'expo-router';
 import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo } from '../../services/videoApi';
+import { useLocalSearchParams } from 'expo-router';
+import { useUserStore } from '@/store/userStore';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
+// Add this polyfill at the top of your file, after the imports
+if (typeof global.structuredClone !== 'function') {
+  global.structuredClone = function(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  };
+}
+
 export default function HomeScreen() {
+  const { contestId } = useLocalSearchParams();
   const [videos, setVideos] = useState<IFeaturedVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +42,7 @@ export default function HomeScreen() {
   const appStateRef = useRef(AppState.currentState);
   const flatListRef = useRef<FlatList>(null);
   const isMountedRef = useRef(true);
+  const { user} = useUserStore();
 
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -41,7 +52,7 @@ export default function HomeScreen() {
     setVisibleVideos({});
     
     try {
-      const data = await fetchFeaturedVideos();
+      const data = await fetchFeaturedVideos(contestId as string);
       
       if (isMountedRef.current) {
         setVideos(data);
@@ -64,7 +75,6 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // Handle navigation focus/blur events
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
       setIsScreenActive(true);
@@ -82,22 +92,18 @@ export default function HomeScreen() {
     };
   }, [navigation, loadVideos]);
 
-  // Handle app state changes (background/foreground)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (
         appStateRef.current.match(/inactive|background/) && 
         nextAppState === 'active'
       ) {
-        // App has come to the foreground
         setIsScreenActive(true);
-        // Reload videos when app comes to foreground
         loadVideos();
       } else if (
         appStateRef.current === 'active' && 
         nextAppState.match(/inactive|background/)
       ) {
-        // App has gone to the background
         setIsScreenActive(false);
         setVisibleVideos({});
       }
@@ -110,7 +116,6 @@ export default function HomeScreen() {
     };
   }, [loadVideos]);
 
-  // Initial load of videos
   useEffect(() => {
     loadVideos();
     
@@ -133,7 +138,7 @@ export default function HomeScreen() {
     
     // Submit prediction to API
     try {
-      await submitPrediction(currentVideoId, prediction);
+      await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction as 'yes' | 'no');
     } catch (err) {
       console.error('Error submitting prediction:', err);
       // Continue even if API call fails - we've already updated UI
