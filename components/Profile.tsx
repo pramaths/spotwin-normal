@@ -132,7 +132,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{Zuser?.twitterUsername}</Text>
               <TouchableOpacity onPress={handleCopyAddress} style={styles.addressContainer}>
-                <Text style={styles.profileUsername}>{walletAddress}</Text>
+                <Text style={styles.profileUsername}>{walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}</Text>
                 <Copy size={16} color="#0504dc" style={styles.copyIcon} />
               </TouchableOpacity>
               {copied && <Text style={styles.copiedText}>Address copied!</Text>}
