@@ -18,6 +18,8 @@ import { useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Shoot9SDK } from '../program/contract-sdk';
 import { Wallet } from '@coral-xyz/anchor';
+import {getUserParticipationStatus} from '../services/userContestsApi';
+import { useUserStore } from '@/store/userStore';
 
 interface ContestJoinModalProps {
   isVisible: boolean;
@@ -136,6 +138,7 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { wallets } = useEmbeddedSolanaWallet();
+  const { user } = useUserStore();
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -187,6 +190,11 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   };
   const handleSolanaPayment = async () => {
     try {
+      const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
+      if(userParticipationStatus){
+        setError("You have already participated in this contest");
+        return;
+      }
       setIsLoading(true);
       setError(null);
       

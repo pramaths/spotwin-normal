@@ -73,6 +73,7 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const totalPredictionsNeeded = 9;
 
   useEffect(() => {
     const loadPredictions = async () => {
@@ -124,60 +125,118 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
     );
   }
 
-  if (predictions.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No predictions found for this contest</Text>
-      </View>
-    );
-  }
-
-  const renderItem = ({ item }: { item: IUserPrediction }) => {
-    return (
-      <View style={styles.predictionCard}>
-        <Image source={{ uri: item.thumbnailUrl || item.video.thumbnailUrl }} style={styles.thumbnail} />
-
-        <View style={styles.contentContainer}>
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionText}>{item.question || item.video.question || 'No question available'}</Text>
-          </View>
-
-          <View style={styles.bottomSection}>
-            <View style={[
-              styles.outcomeContainer,
-              (item.outcome === OutcomeType.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
-            ]}>
-              <Text style={styles.outcomeText}>
-                {(item.outcome === OutcomeType.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => handleEditPrediction(item)}
-            >
-              <Pencil size={16} color="#0504dc" />
-              <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
+  return (
+    <View style={styles.mainContainer}>
+      <View style={styles.progressContainer}>
+        <View style={styles.progressTextContainer}>
+          <Text style={styles.progressTitle}>Your Predictions</Text>
+          <Text style={styles.progressCount}>
+            <Text style={styles.currentCount}>{predictions.length}</Text>
+            <Text style={styles.totalCount}>/{totalPredictionsNeeded}</Text>
+          </Text>
+        </View>
+        
+        <View style={styles.progressBarBackground}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { width: `${(predictions.length / totalPredictionsNeeded) * 100}%` }
+            ]} 
+          />
         </View>
       </View>
-    );
-  };
 
-  return (
-    <FlatList
-      data={predictions}
-      renderItem={renderItem}
-      keyExtractor={item => item.id}
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-    />
+      {predictions.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No predictions yet. Make some predictions to join this contest!</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={predictions}
+          renderItem={({ item }) => (
+            <View style={styles.predictionCard}>
+              <Image source={{ uri: item.thumbnailUrl || item.video.thumbnailUrl }} style={styles.thumbnail} />
+
+              <View style={styles.contentContainer}>
+                <View style={styles.questionContainer}>
+                  <Text style={styles.questionText}>{item.question || item.video.question || 'No question available'}</Text>
+                </View>
+
+                <View style={styles.bottomSection}>
+                  <View style={[
+                    styles.outcomeContainer,
+                    (item.outcome === OutcomeType.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
+                  ]}>
+                    <Text style={[
+                      styles.outcomeText,
+                      (item.outcome === OutcomeType.YES || item.prediction === 'YES') ? styles.yesText : styles.noText
+                    ]}>
+                      {(item.outcome === OutcomeType.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => handleEditPrediction(item)}
+                  >
+                    <Pencil size={16} color="#0504dc" />
+                    <Text style={styles.editButtonText}>Edit</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
+    flex: 1,
+  },
+  progressContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  progressTextContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 12,
+  },
+  progressCount: {
+    fontSize: 16,
+  },
+  currentCount: {
+    fontWeight: '700',
+    color: '#0504dc',
+  },
+  totalCount: {
+    color: '#666',
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#0504dc',
+    borderRadius: 4,
+  },
+  listContainer: {
     padding: 16,
     paddingBottom: 100, // Add space at the bottom for tab navigation
   },
@@ -203,11 +262,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    margin: 16,
   },
   emptyText: {
     color: '#666',
     fontSize: 16,
     textAlign: 'center',
+    lineHeight: 24,
   },
   predictionCard: {
     flexDirection: 'row',
@@ -230,6 +293,7 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 100,
     height: 100,
+    backgroundColor: '#f0f0f0',
   },
   contentContainer: {
     flex: 1,
@@ -243,6 +307,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
+    lineHeight: 20,
   },
   bottomSection: {
     flexDirection: 'row',
@@ -265,7 +330,12 @@ const styles = StyleSheet.create({
   outcomeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
+  },
+  yesText: {
+    color: '#00C853',
+  },
+  noText: {
+    color: '#FF2D55',
   },
   editButton: {
     flexDirection: 'row',
@@ -274,7 +344,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: 'rgba(59, 59, 109, 0.1)',
+    backgroundColor: 'rgba(5, 4, 220, 0.1)',
   },
   editButtonText: {
     marginLeft: 4,

@@ -22,6 +22,7 @@ export const SUBMISSION = `${backendUrl}/submission`;
 
 //UserContests
 export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
+export const USER_PARTICIPATION =(userId: string)=> `${backendUrl}/user-contests/user/${userId}/participation`;
 
 // ative contest with videos
 export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
@@ -30,6 +31,6 @@ export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
 //Prediction
 export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;
 export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
-export const REMOVE_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
+export const REMOVE_PREDICTION_API = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;

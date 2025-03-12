@@ -19,6 +19,8 @@ import { useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Shoot9SDK } from '../program/contract-sdk';
 import { Wallet } from '@coral-xyz/anchor';
+import { getUserParticipationStatus } from '../services/userContestsApi';
+import { useUserStore } from '@/store/userStore';
 
 const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
   console.log("Privy wallet details:", {
@@ -65,8 +67,6 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         console.log("Transaction sent with signature:", signature);
         return tx as T;
       } else if (tx instanceof VersionedTransaction) {
-        // For versioned transactions
-        // Send without simulation
         const { signature } = await provider.request({
           method: 'signAndSendTransaction',
           params: {
@@ -128,7 +128,7 @@ interface PaymentModalProps {
 }
 
 const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalProps) => {
-  const [amount, setAmount] = useState(contest?.entryFee || 1);
+  const [amount, setAmount] = useState(contest?.entryFee || 0.2);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +137,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const { wallets } = useEmbeddedSolanaWallet();
-
+  const { user } = useUserStore();
   const animateSuccess = () => {
     setShowSuccess(true);
 
@@ -189,6 +189,11 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
 
   const handlePayment = async () => {
     try {
+      const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
+      if(userParticipationStatus){
+        setError("You have already participated in this contest");
+        return;
+      }
       setIsLoading(true);
       setError(null);
       
@@ -214,27 +219,15 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
         
         try {
-          console.log("Creating SDK with:", {
-            connection: connection.rpcEndpoint,
-            wallet: anchorWallet.publicKey.toString(),
-          });
-          console.log("Creating SDK instance...");
           const sdk = new Shoot9SDK(connection, anchorWallet);
 
           // Get contest ID
           const contestId = parseInt(contest.solanaContestId);
-          console.log("Contest ID:", contestId);
-          
-          // Log contest creator for debugging
-          console.log("Contest creator (raw):", contest.contestCreator);
-          
-          // Validate the contest creator address before passing it to PublicKey
           if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
               !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
             throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
           }
-          
-          // Create PublicKey instance with validation
+
           let creatorPublicKey;
           try {
             creatorPublicKey = new PublicKey(contest.contestCreator);
@@ -244,7 +237,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
           }
           
-          // Call enterContest with detailed logging
           console.log("Entering contest with params:", {
             creator: creatorPublicKey.toString(),
             contestId: contestId

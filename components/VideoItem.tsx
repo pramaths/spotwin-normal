@@ -13,8 +13,6 @@ import { Play } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import { OutcomeType } from '@/types';
-import { SUBMIT_PREDICTION, REMOVE_PREDICTION} from '@/routes/api';
-import apiClient from '@/utils/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +28,8 @@ interface VideoItemProps {
   muteState: boolean;
   onPrediction: (prediction: OutcomeType) => void;
   contestId: string;
+  userVote: OutcomeType | null;
+  onRemovePrediction?: () => void;
 }
 
 const VideoItem = ({
@@ -37,6 +37,8 @@ const VideoItem = ({
   isVisible,
   muteState,
   onPrediction,
+  userVote,
+  onRemovePrediction
 }: VideoItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -215,7 +217,6 @@ const VideoItem = ({
             />
           </View>
           
-          {/* Prediction buttons skeleton */}
           <View style={styles.predictionContainer}>
             <Animatable.View 
               animation="pulse" 
@@ -277,7 +278,7 @@ const VideoItem = ({
                     style={[
                       styles.predictionButton,
                       styles.yesButton,
-                      selectedOption === OutcomeType.YES && styles.selectedButton
+                      userVote === OutcomeType.YES && styles.selectedButton
                     ]}
                     onPress={() => handlePrediction(OutcomeType.YES)}
                   >
@@ -288,12 +289,21 @@ const VideoItem = ({
                     style={[
                       styles.predictionButton,
                       styles.noButton,
-                      selectedOption === OutcomeType.NO && styles.selectedButton
+                      userVote === OutcomeType.NO && styles.selectedButton
                     ]}
                     onPress={() => handlePrediction(OutcomeType.NO)}
                   >
                     <Text style={styles.noText}>NO</Text>
                   </TouchableOpacity>
+                  
+                  {userVote !== null && onRemovePrediction && (
+                    <TouchableOpacity
+                      style={styles.removePredictionButton}
+                      onPress={onRemovePrediction}
+                    >
+                      <Text style={styles.removePredictionText}>Undo</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </>
@@ -389,8 +399,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   selectedButton: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#2476ee',
   },
   yesText: {
     fontWeight: 'bold',
@@ -398,6 +408,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   noText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  removePredictionButton: {
+    flex: 1,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    marginHorizontal: 8,
+    backgroundColor: '#F44336',
+  },
+  removePredictionText: {
     fontWeight: 'bold',
     fontSize: 16,
     color: '#FFFFFF',

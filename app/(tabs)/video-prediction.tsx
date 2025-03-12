@@ -19,8 +19,6 @@ import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo, RemovePrediction
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
 import { OutcomeType } from '@/types';
-import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
-import apiClient from '@/utils/api';
 import { IUserPrediction } from '@/components/UserPredictions';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
@@ -49,6 +47,13 @@ export default function HomeScreen() {
   const { user} = useUserStore();
   const [predictionMessage, setPredictionMessage] = useState<{text: string, type: OutcomeType} | null>(null);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
+  const [userVotesMap, setUserVotesMap] = useState<Record<string, OutcomeType | null>>({});
+
+
+  const getUserVoteForVideo = useCallback((videoId:string)=>{
+    const userPrediction = predictions.find(prediction => prediction.videoId === videoId);
+    return userPrediction?.prediction;
+  },[predictions]);
 
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -94,6 +99,11 @@ export default function HomeScreen() {
 
         const data = await fetchUserPredictions(contestId as string, user?.id || '');
         setPredictions(data);
+        const votesMap = data.reduce((acc, prediction) => {
+          acc[prediction.video.id] = prediction.prediction as OutcomeType | null;
+          return acc;
+        },{} as Record<string, OutcomeType | null>);
+        setUserVotesMap(votesMap);
         setLoading(false);
       } catch (err: any) {
         setError(err.message || 'Failed to load predictions');
@@ -154,6 +164,28 @@ export default function HomeScreen() {
       setIsScreenActive(false);
     };
   }, [loadVideos]);
+
+  const handleRemovePrediction = async (videoId: string) => {
+    try {
+      await RemovePrediction(videoId);
+      
+      // Update local state
+      setUserVotesMap(prev => {
+        const updated = {...prev};
+        delete updated[videoId];
+        return updated;
+      });
+      
+      // Remove from answered questions
+      setAnsweredQuestions(prev => prev.filter(id => id !== videoId));
+      
+      // Update predictions list
+      setPredictions(prev => prev.filter(p => p.videoId !== videoId));
+      
+    } catch (err) {
+      console.error('Error removing prediction:', err);
+    }
+  };
 
   const handlePrediction = async (prediction: OutcomeType) => {
     if (videos.length === 0 || currentIndex >= videos.length) return;
@@ -280,6 +312,8 @@ export default function HomeScreen() {
                 muteState={muteState}
                 onPrediction={handlePrediction}
                 contestId={contestId as string}
+                userVote={userVotesMap[item.id] || null}
+                onRemovePrediction={() => handleRemovePrediction(item.id)}
               />
             )}
             keyExtractor={(item, index) => `${item.id}-${index}`}
