@@ -3,28 +3,29 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
+import apiClient from '@/utils/api';
+import { LEADERBOARD_API } from '@/routes/api';
 
-// Mock leaderboard data - replace with actual API call
 interface LeaderboardEntry {
   id: string;
   rank: number;
   username: string;
-  avatar: string;
+  profileImageUrl: string;
   score: number;
   prize?: string;
 }
 
 const mockLeaderboardData: LeaderboardEntry[] = [
-  { id: '1', rank: 1, username: 'champion123', avatar: 'https://i.pravatar.cc/150?img=1', score: 1250, prize: '0.5 SOL' },
-  { id: '2', rank: 2, username: 'sportsfan', avatar: 'https://i.pravatar.cc/150?img=2', score: 1100, prize: '0.3 SOL' },
-  { id: '3', rank: 3, username: 'gamemaster', avatar: 'https://i.pravatar.cc/150?img=3', score: 950, prize: '0.2 SOL' },
-  { id: '4', rank: 4, username: 'player4', avatar: 'https://i.pravatar.cc/150?img=4', score: 820 },
-  { id: '5', rank: 5, username: 'player5', avatar: 'https://i.pravatar.cc/150?img=5', score: 780 },
-  { id: '6', rank: 6, username: 'player6', avatar: 'https://i.pravatar.cc/150?img=6', score: 750 },
-  { id: '7', rank: 7, username: 'player7', avatar: 'https://i.pravatar.cc/150?img=7', score: 720 },
-  { id: '8', rank: 8, username: 'player8', avatar: 'https://i.pravatar.cc/150?img=8', score: 690 },
-  { id: '9', rank: 9, username: 'player9', avatar: 'https://i.pravatar.cc/150?img=9', score: 650 },
-  { id: '10', rank: 10, username: 'player10', avatar: 'https://i.pravatar.cc/150?img=10', score: 600 },
+  { id: '1', rank: 1, username: 'champion123', profileImageUrl: 'https://i.pravatar.cc/150?img=1', score: 1250, prize: '0.5 SOL' },
+  { id: '2', rank: 2, username: 'sportsfan', profileImageUrl: 'https://i.pravatar.cc/150?img=2', score: 1100, prize: '0.3 SOL' },
+  { id: '3', rank: 3, username: 'gamemaster', profileImageUrl: 'https://i.pravatar.cc/150?img=3', score: 950, prize: '0.2 SOL' },
+  { id: '4', rank: 4, username: 'player4', profileImageUrl: 'https://i.pravatar.cc/150?img=4', score: 820 },
+  { id: '5', rank: 5, username: 'player5', profileImageUrl: 'https://i.pravatar.cc/150?img=5', score: 780 },
+  { id: '6', rank: 6, username: 'player6', profileImageUrl: 'https://i.pravatar.cc/150?img=6', score: 750 },
+  { id: '7', rank: 7, username: 'player7', profileImageUrl: 'https://i.pravatar.cc/150?img=7', score: 720 },
+  { id: '8', rank: 8, username: 'player8', profileImageUrl: 'https://i.pravatar.cc/150?img=8', score: 690 },
+  { id: '9', rank: 9, username: 'player9', profileImageUrl: 'https://i.pravatar.cc/150?img=9', score: 650 },
+  { id: '10', rank: 10, username: 'player10', profileImageUrl: 'https://i.pravatar.cc/150?img=10', score: 600 },
 ];
 
 export default function LeaderboardScreen() {
@@ -34,34 +35,40 @@ export default function LeaderboardScreen() {
   const [contestName, setContestName] = useState<string>('Contest Leaderboard');
 
   useEffect(() => {
-    // In a real app, fetch the leaderboard data for the specific contest
-    // For now, we'll use mock data
-    setLeaderboard(mockLeaderboardData);
-    
-    // You would also fetch the contest details to show the name
-    setContestName('Europa League Leaderboard');
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await apiClient<LeaderboardEntry[]>(LEADERBOARD_API(id as string), 'GET');
+        if (response.success && response.data) {
+          setLeaderboard(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        setLeaderboard(mockLeaderboardData);
+      }
+    };
+    fetchLeaderboard();
   }, [id]);
 
   const renderLeaderboardItem = ({ item }: { item: LeaderboardEntry }) => (
     <View style={styles.leaderboardItem}>
       <View style={styles.rankContainer}>
         <Text style={[
-          styles.rankText, 
-          item.rank === 1 ? styles.firstPlace : 
-          item.rank === 2 ? styles.secondPlace : 
-          item.rank === 3 ? styles.thirdPlace : null
+          styles.rankText,
+          item.rank === 1 ? styles.firstPlace :
+            item.rank === 2 ? styles.secondPlace :
+              item.rank === 3 ? styles.thirdPlace : null
         ]}>
           {item.rank}
         </Text>
       </View>
-      
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      
+
+      <Image source={{ uri: item.profileImageUrl }} style={styles.avatar} />
+
       <View style={styles.userInfo}>
         <Text style={styles.username}>{item.username}</Text>
         <Text style={styles.score}>{item.score} points</Text>
       </View>
-      
+
       {item.prize && (
         <View style={styles.prizeContainer}>
           <Text style={styles.prizeText}>{item.prize}</Text>
@@ -79,7 +86,7 @@ export default function LeaderboardScreen() {
         <Text style={styles.headerTitle}>{contestName}</Text>
         <View style={{ width: 24 }} />
       </View>
-      
+
       <FlatList
         data={leaderboard}
         renderItem={renderLeaderboardItem}

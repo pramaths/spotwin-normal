@@ -34,3 +34,7 @@ export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl
 export const REMOVE_PREDICTION_API = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;
+
+
+//leaderboard
+export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboard/${contestId}`;
