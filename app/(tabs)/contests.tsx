@@ -30,6 +30,10 @@ export default function ContestsScreen() {
   }
 
   const getContests = () => {
+    if (!userContests || userContests.length === 0) {
+      return [];
+    }
+    
     return selectedTab === 'ACTIVE'
       ? userContests.filter((data: IContest) =>
         data && (data.status === 'LIVE' || data.status === 'OPEN'))
@@ -90,24 +94,40 @@ export default function ContestsScreen() {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={getContests()}
-          renderItem={({ item }) => (
-            <UserContestCard
-              contest={item}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: tabBarHeight }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#3498db']}
-              tintColor="#3498db"
-            />
-          }
-        />
+        {(!userContests || userContests.length === 0) ? (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No contests available</Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
+              <Text style={styles.refreshButtonText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={getContests()}
+            renderItem={({ item }) => (
+              <UserContestCard
+                contest={item}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: tabBarHeight }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#3498db']}
+                tintColor="#3498db"
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyStateContainer}>
+                <Text style={styles.emptyStateText}>
+                  {selectedTab === 'ACTIVE' ? 'No active contests' : 'No completed contests'}
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -143,5 +163,29 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 24,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  refreshButton: {
+    backgroundColor: '#0504dc',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  refreshButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: '#FFF',
   },
 });

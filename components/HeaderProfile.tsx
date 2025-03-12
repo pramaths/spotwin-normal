@@ -21,6 +21,7 @@ import * as web3 from '@solana/web3.js';
 import { useFundSolanaWallet } from "@privy-io/expo";
 import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
+import { useAuthStore } from '../store/authstore';
 
 interface HeaderProfileProps {
   user?: IUser;
@@ -38,6 +39,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const [solBalance, setSolBalance] = useState<number>(0);
   const { user, setUser } = useUserStore();
   const balanceUpdatedRef = useRef(false);
+  const { isNewUser, setIsNewUser } = useAuthStore();
   
   useEffect(() => {
     const fetchBalance = async () => {
@@ -87,6 +89,12 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isNewUser) {
+      setHowItWorksModalVisible(true);
+    }
+  }, [isNewUser]);
+
   const handleHowItWorksPress = () => {
     setHowItWorksModalVisible(true);
   };
@@ -96,6 +104,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   };
 
   const closeHowItWorksModal = () => {
+    setIsNewUser(false);
     setHowItWorksModalVisible(false);
   };
 

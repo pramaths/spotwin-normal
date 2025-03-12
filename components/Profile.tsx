@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@privy-io/expo';
 import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
+import { useFundSolanaWallet } from "@privy-io/expo";
 
 interface ProfileScreenProps {
   onClose?: () => void;
@@ -24,6 +25,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const { recover } = useRecoverEmbeddedWallet();
   const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
   const { user: Zuser } = useUserStore();
+  const { fundWallet } = useFundSolanaWallet();
 
   const [balance, setBalance] = useState<number>(0);
 
@@ -68,6 +70,16 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
     router.push('/(auth)/signup');
   };
 
+  const handleFundwallet = async () => {
+    if (!walletAddress) return;
+
+    await fundWallet({
+      address: walletAddress,
+      asset: 'native-currency',
+      amount: "0.2",
+    });
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left', 'top']}>
       {onClose && (
@@ -99,7 +111,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <Text style={styles.walletAmount}>{balance}</Text>
 
           <View style={styles.walletActions}>
-            <TouchableOpacity style={styles.depositButton}>
+            <TouchableOpacity style={styles.depositButton} onPress={handleFundwallet}>
               <ArrowDown size={20} color="#FFF" />
               <Text style={styles.depositButtonText}>Deposit</Text>
             </TouchableOpacity>
@@ -129,7 +141,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <TouchableOpacity style={styles.menuItem}
             onPress={handleWalletRecover}>
             <View style={styles.menuIconContainer}>
-              <HelpCircle size={24} color="#000" />
+              <RefreshCcw size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Recover Wallet</Text>
           </TouchableOpacity>

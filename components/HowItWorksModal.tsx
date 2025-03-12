@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useState } from 'react';
 
@@ -12,6 +13,7 @@ import FirstHowItWorks from '../assets/images/1sthowitworks.svg';
 import SecondHowItWorks from '../assets/images/2ndhowitworks.svg';
 import ThirdHowItWorks from '../assets/images/3rdhowitworks.svg';
 import FourthHowItWorks from '../assets/images/4thhowitworks.svg';
+import { useAuthStore } from '../store/authstore';
 
 const { width } = Dimensions.get('window');
 
@@ -53,11 +55,17 @@ interface HowItWorksModalProps {
 export default function HowItWorksModal({ visible, onClose }: HowItWorksModalProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const isLastSlide = currentSlideIndex === howItWorksSlides.length - 1;
+  const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
+  const isNewUser = useAuthStore((state) => state.isNewUser);
 
   const handleNextSlide = () => {
     if (currentSlideIndex < howItWorksSlides.length - 1) {
       setCurrentSlideIndex(currentSlideIndex + 1);
     }
+  };
+
+  const openLearnMoreLink = () => {
+    Linking.openURL('https://9shoot.fun/how-it-works');
   };
 
   const currentSlide = howItWorksSlides[currentSlideIndex];
@@ -107,9 +115,14 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
 
           {/* Navigation buttons */}
           {isLastSlide ? (
-            <TouchableOpacity style={styles.doneButton} onPress={onClose}>
-              <Text style={styles.doneButtonText}>Got it!</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.doneButton} onPress={onClose}>
+                <Text style={styles.doneButtonText}>Got it!</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.learnMoreButton} onPress={openLearnMoreLink}>
+                <Text style={styles.learnMoreButtonText}>Check Detials</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity style={styles.nextButton} onPress={handleNextSlide}>
               <Text style={styles.nextButtonText}>Next</Text>
@@ -189,16 +202,36 @@ const styles = StyleSheet.create({
   activeIndicator: {
     backgroundColor: '#007AFF',
   },
+  buttonContainer: {
+    width: '80%',
+    alignItems: 'center',
+    gap: 12,
+  },
   doneButton: {
     backgroundColor: '#007AFF',
     borderRadius: 8,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    width: '80%',
+    width: '100%',
     alignItems: 'center',
   },
   doneButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  learnMoreButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  learnMoreButtonText: {
+    color: '#007AFF',
     fontSize: 16,
     fontWeight: '600',
   },

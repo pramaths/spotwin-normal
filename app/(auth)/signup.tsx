@@ -20,6 +20,7 @@ export default function SignupScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [isPressing, setIsPressing] = useState(false);
+  const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
   
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -79,6 +80,7 @@ export default function SignupScreen() {
     onSuccess: async (user, isNewUser) => {
       console.log('Login successful', { user, isNewUser });
       console.log('User:', JSON.stringify(user));
+      setIsNewUser(isNewUser || false);
       try {
         const userAny = user as any;
         

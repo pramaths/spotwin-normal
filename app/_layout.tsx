@@ -43,7 +43,7 @@ export default function RootLayout() {
         <Slot />
         <PrivyElements config={{ appearance: { accentColor: '#00AF55' } }} />
       </PrivyProvider>
-      <StatusBar style="dark" backgroundColor="transparent" translucent />
+      <StatusBar style="light" backgroundColor="transparent" translucent />
     </SafeAreaProvider>
   );
 }
