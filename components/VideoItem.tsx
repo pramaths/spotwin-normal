@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  Platform
 } from 'react-native';
 import { useVideoPlayer, VideoView, VideoPlayer } from 'expo-video';
 import { Play } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
+import { OutcomeType } from '@/types';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,7 +26,10 @@ interface VideoItemProps {
   item: IFeaturedVideo;
   isVisible: boolean;
   muteState: boolean;
-  onPrediction: (prediction: 'yes' | 'no') => void;
+  onPrediction: (prediction: OutcomeType) => void;
+  contestId: string;
+  userVote: OutcomeType | null;
+  onRemovePrediction?: () => void;
 }
 
 const VideoItem = ({
@@ -32,16 +37,17 @@ const VideoItem = ({
   isVisible,
   muteState,
   onPrediction,
+  userVote,
+  onRemovePrediction
 }: VideoItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOption, setSelectedOption] = useState<'yes' | 'no' | null>(null);
+  const [selectedOption, setSelectedOption] = useState<OutcomeType| null>(null);
   const isMountedRef = useRef(true);
   const playerRef = useRef<VideoPlayer | null>(null);
   const statusListenerRef = useRef<{ remove: () => void } | null>(null);
 
-  // Create video player with the video source initially
   const videoPlayer = useVideoPlayer(
     { uri: item.videoUrl },
     (player) => {
@@ -168,9 +174,9 @@ const VideoItem = ({
     }
   };
 
-  const handlePrediction = (prediction: 'yes' | 'no') => {
+  const handlePrediction = (prediction: OutcomeType) => {
     if (!isMountedRef.current) return;
-    
+
     setSelectedOption(prediction);
     setTimeout(() => {
       if (isMountedRef.current) {
@@ -211,7 +217,6 @@ const VideoItem = ({
             />
           </View>
           
-          {/* Prediction buttons skeleton */}
           <View style={styles.predictionContainer}>
             <Animatable.View 
               animation="pulse" 
@@ -250,6 +255,7 @@ const VideoItem = ({
                 style={styles.videoPlayer}
                 nativeControls={false}
                 allowsFullscreen
+                contentFit='fill'
               />
 
               {!isPlaying && (
@@ -272,9 +278,9 @@ const VideoItem = ({
                     style={[
                       styles.predictionButton,
                       styles.yesButton,
-                      selectedOption === 'yes' && styles.selectedButton
+                      userVote === OutcomeType.YES && styles.selectedButton
                     ]}
-                    onPress={() => handlePrediction('yes')}
+                    onPress={() => handlePrediction(OutcomeType.YES)}
                   >
                     <Text style={styles.yesText}>YES</Text>
                   </TouchableOpacity>
@@ -283,12 +289,21 @@ const VideoItem = ({
                     style={[
                       styles.predictionButton,
                       styles.noButton,
-                      selectedOption === 'no' && styles.selectedButton
+                      userVote === OutcomeType.NO && styles.selectedButton
                     ]}
-                    onPress={() => handlePrediction('no')}
+                    onPress={() => handlePrediction(OutcomeType.NO)}
                   >
                     <Text style={styles.noText}>NO</Text>
                   </TouchableOpacity>
+                  
+                  {userVote !== null && onRemovePrediction && (
+                    <TouchableOpacity
+                      style={styles.removePredictionButton}
+                      onPress={onRemovePrediction}
+                    >
+                      <Text style={styles.removePredictionText}>Undo</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </>
@@ -302,7 +317,7 @@ const VideoItem = ({
 const styles = StyleSheet.create({
   videoContainer: {
     width,
-    height,
+    height: Platform.OS === 'ios' ? height - 120 : height,
     backgroundColor: '#000',
     overflow: 'hidden',
   },
@@ -384,8 +399,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   selectedButton: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: '#2476ee',
   },
   yesText: {
     fontWeight: 'bold',
@@ -393,6 +408,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   noText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  removePredictionButton: {
+    flex: 1,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    marginHorizontal: 8,
+    backgroundColor: '#F44336',
+  },
+  removePredictionText: {
     fontWeight: 'bold',
     fontSize: 16,
     color: '#FFFFFF',

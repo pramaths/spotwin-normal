@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,7 +11,7 @@ import {
   Platform,
   Alert
 } from 'react-native';
-import { User } from '../types';
+import { IUser } from '../types';
 import EmptyWalletIcon from '../assets/icons/empty-wallet.svg';
 import ProfileScreen from './Profile';
 import HowItWorksModal from './HowItWorksModal';
@@ -19,21 +20,15 @@ import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 import * as web3 from '@solana/web3.js';
 import { useFundSolanaWallet } from "@privy-io/expo";
 import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
-
-// Default user if none provided
-const defaultUser: User = {
-  id: '1',
-  name: 'toly',
-  avatar: 'https://pbs.twimg.com/profile_images/1896990528748593152/jU2rStOc_200x200.jpg'
-};
+import { useUserStore } from '../store/userStore';
+import { useAuthStore } from '../store/authstore';
 
 interface HeaderProfileProps {
-  user?: User;
+  user?: IUser;
   onProfilePress?: () => void;
 }
 
 const HeaderProfile: React.FC<HeaderProfileProps> = ({
-  user = defaultUser,
   onProfilePress,
 }) => {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -42,14 +37,40 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const { fundWallet } = useFundSolanaWallet();
   const { wallets } = useEmbeddedSolanaWallet();
   const [solBalance, setSolBalance] = useState<number>(0);
+  const { user, setUser } = useUserStore();
+  const balanceUpdatedRef = useRef(false);
+  const { isNewUser, setIsNewUser } = useAuthStore();
+  
   useEffect(() => {
-    if (!wallets || wallets.length === 0) {
-      setSolBalance(0);
-      return;
-    }
-    const solBalance = fetchSolanaBalance(wallets[0]?.address || '');
-    setSolBalance(Number(solBalance));
-  }, [wallets])
+    const fetchBalance = async () => {
+      if (!wallets || wallets.length === 0) {
+        setSolBalance(0);
+        balanceUpdatedRef.current = false;
+        return;
+      }
+      
+      try {
+        const solBalance = await fetchSolanaBalance(wallets[0]?.address || '');
+        const numBalance = Number(solBalance);
+        setSolBalance(numBalance);
+        
+        // Only update user if we have a user and the balance hasn't been updated yet
+        // or if the balance has changed
+        if (user && (!balanceUpdatedRef.current || user.balance !== numBalance)) {
+          setUser({
+            ...user,
+            balance: numBalance
+          });
+          balanceUpdatedRef.current = true;
+        }
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+      }
+    };
+    
+    fetchBalance();
+  }, [wallets, setUser]); // Remove user from dependencies
+
   const handleFundwallet = async () => {
     if (!wallets || wallets.length === 0) return;
 
@@ -68,6 +89,12 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (isNewUser) {
+      setHowItWorksModalVisible(true);
+    }
+  }, [isNewUser]);
+
   const handleHowItWorksPress = () => {
     setHowItWorksModalVisible(true);
   };
@@ -77,6 +104,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   };
 
   const closeHowItWorksModal = () => {
+    setIsNewUser(false);
     setHowItWorksModalVisible(false);
   };
 
@@ -89,11 +117,11 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
           activeOpacity={0.7}
         >
           <Image
-            source={{ uri: user.avatar }}
+            source={{ uri: user?.imageUrl }}
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>gm, {user.name}</Text>
+            <Text style={styles.userName}>gm, {user?.twitterUsername}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>

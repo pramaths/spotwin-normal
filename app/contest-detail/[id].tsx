@@ -1,102 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform, Image } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import UserPredictions from '@/components/UserPredictions';
 import { IContest } from '@/types';
-
-const getContestById = (id: string): IContest | undefined => {
-  const contests = [
-    {
-      "id": "f984ea94-a07e-4bff-a802-1694f5125604",
-      "name": "Premier League Prediction",
-      "entryFee": 0.2,
-      "currency": "SOL",
-      "description": "Manchester United vs Arsenal",
-      "status": "OPEN",
-      "createdAt": "2025-03-05T10:32:19.895Z",
-      "updatedAt": "2025-03-05T10:32:19.895Z",
-      "event": {
-        "id": "077e38f3-6275-4c68-920f-3a7de8ba9bbf",
-        "title": "Premier League",
-        "description": "Premier League match",
-        "eventImageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/5829da6d-3660-43b2-a6df-2d2e775a29b3-Men's_Champions_Trophy.png",
-        "startDate": "2025-03-05T08:58:46.130Z",
-        "endDate": "2025-03-05T08:58:46.130Z",
-        "status": "OPEN",
-        "createdAt": "2025-03-05T09:04:41.701Z",
-        "updatedAt": "2025-03-05T09:27:20.389Z",
-        "sport": {
-          "id": "3dc44aff-9748-44fc-aa74-1379213a4363",
-          "name": "Football",
-          "description": "The most popular sport in the world",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/e2b67264-426b-4499-9b7c-266f1556f38b-5492.jpg",
-          "isActive": true,
-          "createdAt": "2025-03-02T18:07:04.227Z",
-          "updatedAt": "2025-03-02T18:07:04.227Z"
-        },
-        "teamA": {
-          "id": "4ec72fe7-263b-42e5-af1f-b0c26fed97a7",
-          "name": "Manchester United",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/2502a671-38ac-4ae0-a076-ad202300bfa1-india.png",
-          "country": "England"
-        },
-        "teamB": {
-          "id": "59217b82-77ae-4340-ba13-483bea11a7d6",
-          "name": "Arsenal",
-          "imageUrl": "https://s3.ap-south-1.amazonaws.com/sizzils3/f105ff41-e9aa-4d90-b551-2f9b488b0e5b-pak.png",
-          "country": "England"
-        }
-      }
-    },
-  ];
-  
-  return contests.find(contest => contest.id === id);
-};
+import { useUserStore } from '@/store/userStore';
+import { CONTESTS_BY_ID } from '@/routes/api';
+import apiClient from '@/utils/api';
 
 export default function ContestDetailScreen() {
   const { id: contestId } = useLocalSearchParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
   const [contest, setContest] = useState<IContest | undefined>();
-  const [error, setError] = useState<string | null>(null);
-  
-  // In a real app, would use a global state for userId
-  const userId = 'current-user-id';
+  const { user } = useUserStore();
 
   useEffect(() => {
-    if (!contestId) {
-      setError('Contest ID is required');
-      setLoading(false);
-      return;
-    }
-
-    // Simulate API call to get contest details
     const loadContest = async () => {
       try {
         setLoading(true);
-        // In a real app, this would be an API call
-        const contestData = getContestById(contestId);
-        
-        if (!contestData) {
-          setError('Contest not found');
-          setLoading(false);
-          return;
+        const response = await apiClient<IContest>(CONTESTS_BY_ID(contestId), 'GET');
+        if (response.success && response.data) {
+          setContest(response.data);
         }
-        
-        setContest(contestData);
-        setLoading(false);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load contest');
+      } catch (error) {
+        console.error('Error loading contest:', error);
+      } finally {
         setLoading(false);
       }
     };
-
     loadContest();
   }, [contestId]);
 
   const handleBack = () => {
-    router.back();
+    router.push('/(tabs)/contests');
   };
 
   if (loading) {
@@ -117,7 +54,7 @@ export default function ContestDetailScreen() {
     );
   }
 
-  if (error || !contest) {
+  if (!contest) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -128,7 +65,7 @@ export default function ContestDetailScreen() {
             <Text style={styles.headerTitle}>Error</Text>
           </View>
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error || 'Contest not found'}</Text>
+            <Text style={styles.errorText}>{'Contest not found'}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -142,20 +79,55 @@ export default function ContestDetailScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <ChevronLeft size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{contest.name}</Text>
+          <Image source={{ uri: contest.event.eventImageUrl }} style={styles.eventImage} />
+          <Text style={styles.headerTitle}> {contest.name}</Text>
         </View>
-        
+
         <View style={styles.contestInfoContainer}>
-          <Text style={styles.teamsText}>{contest.event.teamA.name} vs {contest.event.teamB.name}</Text>
-          <Text style={styles.descriptionText}>{contest.description}</Text>
+          <View style={styles.teamsContainer}>
+            <View style={styles.teamSection}>
+              {contest.event.teamA.imageUrl ? (
+                <Image
+                  source={{ uri: contest.event.teamA.imageUrl }}
+                  style={styles.teamLogo}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={[styles.teamLogoPlaceholder, { backgroundColor: '#E8F0FE' }]}>
+                  <Text style={styles.teamInitial}>{contest.event.teamA.name.charAt(0)}</Text>
+                </View>
+              )}
+              <Text style={styles.teamName}>{contest.event.teamA.name}</Text>
+            </View>
+
+            <View style={styles.vsContainer}>
+              <Text style={styles.vsText}>VS</Text>
+            </View>
+
+            <View style={styles.teamSection}>
+              {contest.event.teamB.imageUrl ? (
+                <Image
+                  source={{ uri: contest.event.teamB.imageUrl }}
+                  style={styles.teamLogo}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={[styles.teamLogoPlaceholder, { backgroundColor: '#FEE8E8' }]}>
+                  <Text style={styles.teamInitial}>{contest.event.teamB.name.charAt(0)}</Text>
+                </View>
+              )}
+              <Text style={styles.teamName}>{contest.event.teamB.name}</Text>
+            </View>
+          </View>
+
+          <View style={styles.eventInfoContainer}>
+            <Text style={styles.eventDate}>
+              {new Date(contest.event.startDate).toLocaleDateString()} • {new Date(contest.event.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
         </View>
-        
-        <View style={styles.divider} />
-        
-        <Text style={styles.sectionTitle}>Your Predictions</Text>
-        
         <View style={styles.predictionsContainer}>
-          <UserPredictions contestId={contestId} userId={userId} />
+          <UserPredictions contestId={contestId} userId={user?.id || ''} />
         </View>
       </View>
     </SafeAreaView>
@@ -193,6 +165,11 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 8,
   },
+  eventImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -215,29 +192,84 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contestInfoContainer: {
-    padding: 16,
+    padding: 20,
     backgroundColor: '#FFF',
     marginTop: 12,
+    marginHorizontal: 12,
+    borderRadius: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
       },
     }),
   },
-  teamsText: {
-    fontSize: 16,
+  teamsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  teamSection: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  teamLogo: {
+    width: 60,
+    height: 60,
+    marginBottom: 8,
+  },
+  teamLogoPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  teamInitial: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  teamName: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    textAlign: 'center',
+  },
+  vsContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  vsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  eventInfoContainer: {
+    backgroundColor: '#F8F8F8',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  eventDate: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
+  },
+  eventLocation: {
+    fontSize: 14,
+    color: '#555',
   },
   descriptionText: {
     fontSize: 14,
+    lineHeight: 20,
     color: '#666',
   },
   divider: {
@@ -247,11 +279,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
     marginHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   predictionsContainer: {
     flex: 1,

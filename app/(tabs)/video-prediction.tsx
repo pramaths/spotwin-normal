@@ -10,15 +10,27 @@ import {
   Text,
   AppState,
   ActivityIndicator,
+  Platform
 } from 'react-native';
 import { Volume2, VolumeX, ChevronLeft } from 'lucide-react-native';
 import VideoItem from '../../components/VideoItem';
 import { useRouter, useNavigation } from 'expo-router';
-import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo } from '../../services/videoApi';
+import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo, RemovePrediction, fetchUserPredictions } from '../../services/videoApi';
+import { useLocalSearchParams } from 'expo-router';
+import { useUserStore } from '@/store/userStore';
+import { OutcomeType } from '@/types';
+import { IUserPrediction } from '@/components/UserPredictions';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
+if (typeof global.structuredClone !== 'function') {
+  global.structuredClone = function(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  };
+}
+
 export default function HomeScreen() {
+  const { contestId } = useLocalSearchParams();
   const [videos, setVideos] = useState<IFeaturedVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +44,10 @@ export default function HomeScreen() {
   const appStateRef = useRef(AppState.currentState);
   const flatListRef = useRef<FlatList>(null);
   const isMountedRef = useRef(true);
+  const { user} = useUserStore();
+  const [predictionMessage, setPredictionMessage] = useState<{text: string, type: OutcomeType} | null>(null);
+  const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
+  const [userVotesMap, setUserVotesMap] = useState<Record<string, OutcomeType | null>>({});
 
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -41,7 +57,7 @@ export default function HomeScreen() {
     setVisibleVideos({});
     
     try {
-      const data = await fetchFeaturedVideos();
+      const data = await fetchFeaturedVideos(contestId as string);
       
       if (isMountedRef.current) {
         setVideos(data);
@@ -64,7 +80,35 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // Handle navigation focus/blur events
+  useEffect(() => {
+    const loadPredictions = async () => {
+      if (!contestId) {
+        setError('Contest ID is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const data = await fetchUserPredictions(contestId as string, user?.id || '');
+        setPredictions(data);
+        const votesMap = data.reduce((acc, prediction) => {
+          acc[prediction.video.id] = prediction.prediction as OutcomeType | null;
+          return acc;
+        },{} as Record<string, OutcomeType | null>);
+        setUserVotesMap(votesMap);
+        setAnsweredQuestions(data.map(prediction => prediction.video.id));
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load predictions');
+        setLoading(false);
+      }
+    };
+
+    loadPredictions();
+  }, [contestId, user]);
+
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
       setIsScreenActive(true);
@@ -82,22 +126,18 @@ export default function HomeScreen() {
     };
   }, [navigation, loadVideos]);
 
-  // Handle app state changes (background/foreground)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (
         appStateRef.current.match(/inactive|background/) && 
         nextAppState === 'active'
       ) {
-        // App has come to the foreground
         setIsScreenActive(true);
-        // Reload videos when app comes to foreground
         loadVideos();
       } else if (
         appStateRef.current === 'active' && 
         nextAppState.match(/inactive|background/)
       ) {
-        // App has gone to the background
         setIsScreenActive(false);
         setVisibleVideos({});
       }
@@ -110,7 +150,6 @@ export default function HomeScreen() {
     };
   }, [loadVideos]);
 
-  // Initial load of videos
   useEffect(() => {
     loadVideos();
     
@@ -121,22 +160,62 @@ export default function HomeScreen() {
     };
   }, [loadVideos]);
 
-  const handlePrediction = async (prediction: 'yes' | 'no') => {
+  const handleRemovePrediction = async (videoId: string) => {
+    try {
+      await RemovePrediction(videoId as string, user?.id || '');
+      
+      setUserVotesMap(prev => {
+        const updated = {...prev};
+        delete updated[videoId];
+        return updated;
+      });
+      
+      setAnsweredQuestions(prev => prev.filter(id => id !== videoId));
+      
+      setPredictions(prev => prev.filter(p => p.videoId !== videoId));
+      
+    } catch (err) {
+      console.error('Error removing prediction:', err);
+    }
+  };
+
+  const handlePrediction = async (prediction: OutcomeType) => {
     if (videos.length === 0 || currentIndex >= videos.length) return;
     
     const currentVideoId = videos[currentIndex].id;
     
-    // Add to answered questions locally
-    if (!answeredQuestions.includes(currentVideoId)) {
-      setAnsweredQuestions(prev => [...prev, currentVideoId]);
-    }
-    
-    // Submit prediction to API
     try {
-      await submitPrediction(currentVideoId, prediction);
+      await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction);
+      
+      if (!answeredQuestions.includes(currentVideoId)) {
+        setAnsweredQuestions(prev => [...prev, currentVideoId]);
+      }
+      
+      setUserVotesMap(prev => ({
+        ...prev,
+        [currentVideoId]: prediction
+      }));
+      
+      // Show prediction message
+      setPredictionMessage({
+        text: `You predicted ${prediction === OutcomeType.YES ? 'YES' : 'NO'}!`,
+        type: prediction
+      });
+      
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
+      
     } catch (err) {
       console.error('Error submitting prediction:', err);
-      // Continue even if API call fails - we've already updated UI
+      setPredictionMessage({
+        text: 'Failed to submit prediction. Please try again.',
+        type: OutcomeType.NO 
+      });
+      
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
     }
   };
 
@@ -145,18 +224,16 @@ export default function HomeScreen() {
   };
   
   const handleBack = () => {
-    // Force cleanup before navigation
     setIsScreenActive(false);
     setVisibleVideos({});
     
-    // Small delay to ensure cleanup happens before navigation
     setTimeout(() => {
       router.back();
     }, 50);
   };
   
   const totalQuestions = videos.length;
-  const remainingQuestions = answeredQuestions.length;
+  const remainingQuestions = totalQuestions > 0 ? Object.keys(userVotesMap).length : 0;
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (!isScreenActive || loading) return;
@@ -241,12 +318,15 @@ export default function HomeScreen() {
                 isVisible={(visibleVideos[index] || false) && isScreenActive}
                 muteState={muteState}
                 onPrediction={handlePrediction}
+                contestId={contestId as string}
+                userVote={userVotesMap[item.id] || null}
+                onRemovePrediction={() => handleRemovePrediction(item.id)}
               />
             )}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            snapToInterval={WINDOW_HEIGHT}
+            snapToInterval={Platform.OS === 'ios' ? WINDOW_HEIGHT -120 : WINDOW_HEIGHT }
             decelerationRate="fast"
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
@@ -258,6 +338,15 @@ export default function HomeScreen() {
           />
         )}
       </SafeAreaView>
+      
+      {predictionMessage && (
+        <View style={[
+          styles.predictionMessage, 
+          predictionMessage.type === OutcomeType.YES ? styles.yesMessage : styles.noMessage
+        ]}>
+          <Text style={styles.predictionMessageText}>{predictionMessage.text}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -334,6 +423,27 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   questionCounterText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  predictionMessage: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    zIndex: 20,
+    opacity: 0.9,
+  },
+  yesMessage: {
+    backgroundColor: '#4CAF50',
+  },
+  noMessage: {
+    backgroundColor: '#F44336',
+  },
+  predictionMessageText: {
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,

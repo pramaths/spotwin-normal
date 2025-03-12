@@ -1,29 +1,4 @@
-export interface Contest {
-    id: string;
-    league: string;
-    match: string;
-    teams: {
-      home: string;
-      away: string;
-    };
-    logo?: string;
-  }
-  
-  export interface Question {
-    id: string;
-    contestId: string;
-    question: string;
-    endsAt: string;
-    imageUrl: string;
-  }
-  
-  export interface User {
-    id: string;
-    name: string;
-    avatar: string;
-  }
-
-  export interface ITeam{
+export interface ITeam{
     id: string;
     name: string;
     imageUrl: string;
@@ -62,20 +37,34 @@ export interface Contest {
     currency: string;
     description: string;
     status: string;
+    solanaContestId: string;
+    contestPublicKey:string;
     createdAt: string;
     updatedAt: string;
     event: IEvent;
+    contestCreator: string;
+  }
+
+  export interface IContestWithVideos extends IContest {
+    featuredVideos: Array<{
+      id: string;
+      submissionId: string;
+      videoUrl: string;
+      thumbnailUrl: string;
+      userId: string;
+      contestId: string;
+      correctOutcome: null | string;
+      numberOfBets: number;
+      question: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
   }
 
   export enum IQuestionStatus {
     PENDING = 'PENDING',
     APPROVED = 'APPROVED',
     REJECTED = 'REJECTED'
-  }
-
-  export enum IOutcomeType{
-    YES = 'YES',
-    NO = 'NO'
   }
 
   export interface IFeaturedVideos{
@@ -89,4 +78,42 @@ export interface Contest {
     id: string;
     question: string;
     videoUrl: string;
+  }
+
+  export interface IUser{
+    id: string;
+    twitterUsername: string;
+    publicAddress: string;
+    imageUrl: string; 
+    balance?: number;
+  }
+
+
+  export enum OutcomeType{
+    YES = 'YES',
+    NO = 'NO'
+  }
+
+  export interface IPrediction {
+    id: string;
+    userId: string;
+    contestId: string;
+    videoId: string;
+    prediction: string;
+    isCorrect: boolean | null;
+    createdAt: string;
+    updatedAt: string;
+    video: {
+      id: string;
+      submissionId: string;
+      videoUrl: string;
+      question: string | null;
+      thumbnailUrl: string;
+      userId: string;
+      contestId: string;
+      correctOutcome: string | null;
+      numberOfBets: number;
+      createdAt: string;
+      updatedAt: string;
+    };
   }

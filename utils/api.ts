@@ -1,5 +1,3 @@
-import axios, { AxiosRequestConfig, AxiosError } from "axios";
-
 interface RequestBody {
   [key: string]: any;
 }
@@ -8,6 +6,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
+  status: number;
 }
 
 export interface ErrorResponse {
@@ -20,7 +19,7 @@ export interface ErrorResponse {
 }
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-
+console.log("API_BASE_URL:", API_BASE_URL);
 
 const apiClient = async <T,>(
   endpoint: string,
@@ -28,36 +27,46 @@ const apiClient = async <T,>(
   body: RequestBody | FormData | null = null,
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
-  // Construct full URL if endpoint doesn't include http
-  const url = endpoint.startsWith('http') 
-    ? endpoint 
-    : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-
+  console.log("endpoint:", endpoint);
   const headers: Record<string, string> = {};
   if (!(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
-  const axiosConfig: AxiosRequestConfig = {
-    url,
+  const options: RequestInit = {
     method,
-    data: body,
     headers,
-    withCredentials: false, 
+    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   };
 
   try {
-    const response = await axios(axiosConfig);
-    return { 
-      success: true, 
-      data: response.data, 
-      message: response.data.message || "Request successful" 
+    console.log("Sending request with options:", JSON.stringify(options));
+    const response = await fetch(endpoint, options);
+    console.log("Received response status:", response.status);
+    
+    if (method === 'DELETE' && response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        data: null as unknown as T,
+        status: response.status,
+      };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    let data: T | null = null;
+    
+    if (contentType && contentType.includes('application/json') && response.status !== 204) {
+      const text = await response.text();
+      data = text ? JSON.parse(text) as T : null;
+    }
+
+    return {
+      success: response.ok,
+      data: data as T,
+      status: response.status,
     };
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      return handleSpecificError(error);
-    }
-    console.error("Unknown error:", error);
+    console.error("API request failed:", error);
     return {
       success: false,
       type: "UnknownError",
@@ -68,10 +77,19 @@ const apiClient = async <T,>(
   }
 };
 
-const handleSpecificError = (error: AxiosError): ErrorResponse => {
-  const status = error.response?.status || 0;
-  const serverMessage = (error.response?.data as { message?: string })?.message || "No message provided by the server";
-  const details = (error.response?.data as { details?: any })?.details || null;
+const handleErrorResponse = async (response: Response): Promise<ErrorResponse> => {
+  const status = response.status;
+  let serverMessage = "No message provided by the server";
+  let details = null;
+  
+  try {
+    const errorData = await response.json();
+    serverMessage = errorData.message || serverMessage;
+    details = errorData.details || null;
+  } catch (e) {
+    // If we can't parse the JSON, just use the status text
+    serverMessage = response.statusText;
+  }
 
   switch (status) {
     case 400:
@@ -84,7 +102,6 @@ const handleSpecificError = (error: AxiosError): ErrorResponse => {
         details,
       };
     case 401:
-      // For mobile, we'll handle navigation in the component that uses this
       return {
         success: false,
         type: "Unauthorized",
@@ -119,6 +136,5 @@ const handleSpecificError = (error: AxiosError): ErrorResponse => {
       };
   }
 };
-
 
 export default apiClient;

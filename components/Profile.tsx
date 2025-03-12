@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -10,7 +11,9 @@ import {
   getUserEmbeddedSolanaWallet,
   usePrivy,
 } from '@privy-io/expo';
-import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
+import { fetchSolanaBalance } from '../utils/solanaUtils';
+import { useUserStore } from '../store/userStore';
+import { useFundSolanaWallet } from "@privy-io/expo";
 
 interface ProfileScreenProps {
   onClose?: () => void;
@@ -22,6 +25,8 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const solanaWallet = useEmbeddedSolanaWallet();
   const { recover } = useRecoverEmbeddedWallet();
   const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
+  const { user: Zuser } = useUserStore();
+  const { fundWallet } = useFundSolanaWallet();
 
   const [balance, setBalance] = useState<number>(0);
 
@@ -66,6 +71,25 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
     router.push('/(auth)/signup');
   };
 
+  const handleFundwallet = async () => {
+    console.log("Funding wallet");
+    if (!walletAddress) return;
+    console.log("Wallet address:", walletAddress);
+    try {
+      await fundWallet({
+        address: walletAddress,
+        asset: 'native-currency',
+        amount: "0.2",
+      });
+      console.log("Funding successful");
+      // Refresh balance after successful funding
+      const newBalance = await fetchSolanaBalance(walletAddress);
+      setBalance(newBalance);
+    } catch (error) {
+      console.error('Fund wallet error:', error);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left', 'top']}>
       {onClose && (
@@ -82,11 +106,11 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
         <View style={styles.header}>
           <View style={styles.profileContainer}>
             <Image
-              source={{ uri: 'https://pbs.twimg.com/profile_images/1896990528748593152/jU2rStOc_200x200.jpg' }}
+              source={{ uri: Zuser?.imageUrl }}
               style={styles.profileImage}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>Toly</Text>
+              <Text style={styles.profileName}>{Zuser?.twitterUsername}</Text>
               <Text style={styles.profileUsername}>{solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString().slice(0, 6) + '...' + solanaWallet.publicKey.toString().slice(-4) : 'Not created'}</Text>
             </View>
           </View>
@@ -97,7 +121,10 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <Text style={styles.walletAmount}>{balance}</Text>
 
           <View style={styles.walletActions}>
-            <TouchableOpacity style={styles.depositButton}>
+            <TouchableOpacity 
+              style={styles.depositButton}
+              onPress={handleFundwallet}
+            >
               <ArrowDown size={20} color="#FFF" />
               <Text style={styles.depositButtonText}>Deposit</Text>
             </TouchableOpacity>
@@ -127,7 +154,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <TouchableOpacity style={styles.menuItem}
             onPress={handleWalletRecover}>
             <View style={styles.menuIconContainer}>
-              <HelpCircle size={24} color="#000" />
+              <RefreshCcw size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Recover Wallet</Text>
           </TouchableOpacity>
@@ -313,5 +340,15 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 20,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+    fontFamily: 'Inter-Regular',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });

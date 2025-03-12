@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
+import { Slot, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useAuthStore } from '../store/authstore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PrivyProvider, PrivyElements } from '@privy-io/expo';
-import { PrivyWalletCheck } from '../components/PrivyWalletCheck';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { isAuthenticated } = useAuthStore();
-  const router = useRouter();
-  const segments = useSegments();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,12 +40,10 @@ export default function RootLayout() {
           },
         }}
       >
-        <PrivyWalletCheck>
-          <Slot />
-        </PrivyWalletCheck>
+        <Slot />
         <PrivyElements config={{ appearance: { accentColor: '#00AF55' } }} />
       </PrivyProvider>
-      <StatusBar style="dark" backgroundColor="transparent" translucent />
+      <StatusBar style="light" backgroundColor="transparent" translucent />
     </SafeAreaProvider>
   );
 }

@@ -14,7 +14,7 @@ import WhiteCup from '../../assets/icons/whitecup.svg';
 import WhiteFeed from '../../assets/icons/whitefeed.svg';
 import WhiteQuestion from '../../assets/icons/whitequestion.svg';
 import { AuthBoundary } from '@privy-io/expo';
-
+import { PrivyWalletCheck } from '../../components/PrivyWalletCheck';
 import FullScreenLoader from '../../components/FullScreenLoader';
 import ErrorScreen from '../../components/ErrorScreen';
 
@@ -23,74 +23,76 @@ export default function TabLayout() {
   const tabBarHeight = 40 + (Platform.OS === 'ios' ? insets.bottom : 20);
 
   return (
-    <AuthBoundary
-    loading={<FullScreenLoader />}
-      error={(error) => <ErrorScreen error={error} />}
-      unauthenticated={<Redirect href="/(auth)/signup" />}
-    >
-    <View style={{ flex: 1 }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            ...styles.tabBar,
-            height: tabBarHeight,
-            paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
-            backgroundColor: '#1A1A3A',
-            borderTopWidth: 0,
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-          },
-          tabBarActiveTintColor: '#FFF',
-          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
-          tabBarLabelStyle: styles.tabBarLabel,
-        }}
+    <PrivyWalletCheck>
+      <AuthBoundary
+        loading={<FullScreenLoader />}
+        error={(error) => <ErrorScreen error={error} />}
+        unauthenticated={<Redirect href="/(auth)/signup" />}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ focused }) => focused ? <WhiteHome /> : <HomeIcon />,
-          }}
-        />
-        <Tabs.Screen
-          name="contests"
-          options={{
-            title: 'Contests',
-            tabBarIcon: ({ focused }) => focused ? <WhiteCup /> : <CupIcon />,
-          }}
-        />
-        <Tabs.Screen
-          name="feeds"
-          options={{
-            title: 'Feeds',
-            tabBarIcon: ({ focused }) => focused ? <WhiteFeed /> : <FeedIcon />,
-          }}
-        />
-        <Tabs.Screen
-          name="questions"
-          options={{
-            title: 'Questions',
-            tabBarIcon: ({ focused }) => focused ? <WhiteQuestion /> : <QuestionIcon />,
-          }}
-        />
-        <Tabs.Screen
-          name="contribute"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="video-prediction"
-          options={{
-            href: null, 
-          }}
-        />
-      </Tabs>
-    </View>
-    </AuthBoundary>
+        <View style={{ flex: 1 }}>
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+              tabBarStyle: {
+                ...styles.tabBar,
+                height: tabBarHeight,
+                paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
+                backgroundColor: '#1A1A3A',
+                borderTopWidth: 0,
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+              },
+              tabBarActiveTintColor: '#FFF',
+              tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
+              tabBarLabelStyle: styles.tabBarLabel,
+            }}
+          >
+            <Tabs.Screen
+              name="index"
+              options={{
+                title: 'Home',
+                tabBarIcon: ({ focused }) => focused ? <WhiteHome /> : <HomeIcon />,
+              }}
+            />
+            <Tabs.Screen
+              name="contests"
+              options={{
+                title: 'Contests',
+                tabBarIcon: ({ focused }) => focused ? <WhiteCup /> : <CupIcon />,
+              }}
+            />
+            <Tabs.Screen
+              name="feeds"
+              options={{
+                title: 'Feeds',
+                tabBarIcon: ({ focused }) => focused ? <WhiteFeed /> : <FeedIcon />,
+              }}
+            />
+            <Tabs.Screen
+              name="questions"
+              options={{
+                title: 'Questions',
+                tabBarIcon: ({ focused }) => focused ? <WhiteQuestion /> : <QuestionIcon />,
+              }}
+            />
+            <Tabs.Screen
+              name="contribute"
+              options={{
+                href: null,
+              }}
+            />
+            <Tabs.Screen
+              name="video-prediction"
+              options={{
+                href: null,
+              }}
+            />
+          </Tabs>
+        </View>
+      </AuthBoundary>
+    </PrivyWalletCheck>
   );
 }
 

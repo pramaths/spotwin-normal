@@ -1,12 +1,40 @@
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-export const LOGIN = `${backendUrl}/api/auth/login`;
-export const LOGOUT = `${backendUrl}/api/auth/logout`;
+export const LOGIN = `${backendUrl}/auth/login`;
+export const LOGOUT = `${backendUrl}/auth/logout`;
 
 //sports
 export const SPORTS = `${backendUrl}/api/sports`;
-export const SPORTS_BY_ID = `${backendUrl}/api/sports/:id`;
 
 //contests
-export const CONTESTS = `${backendUrl}/api/contests`;
-export const CONTESTS_BY_ID = `${backendUrl}/api/contests/:id`;
+export const CONTESTS = `${backendUrl}/contests`;
+export const CONTESTS_BY_ID = (id: string) => `${backendUrl}/contests/${id}`;
 
+
+//questions
+export const QUESTIONS =(id: string) => `${backendUrl}/submission/user/${id}`;
+
+//user
+export const USER =(publicAddress: string) => `${backendUrl}/users/address/${publicAddress}`;
+
+
+//submission
+export const SUBMISSION = `${backendUrl}/submission`;
+
+//UserContests
+export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
+export const USER_PARTICIPATION =(userId: string)=> `${backendUrl}/user-contests/user/${userId}/participation`;
+
+// ative contest with videos
+export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
+
+
+//Prediction
+export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;
+export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
+export const REMOVE_PREDICTION_API = (videoId: string, userId: string) => `${backendUrl}/predictions/video/${videoId}/user/${userId}`;
+export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
+export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;
+
+
+//leaderboard
+export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboard/${contestId}`;

@@ -1,105 +1,92 @@
-import { Platform } from 'react-native';
+import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION, REMOVE_PREDICTION_API, GET_BY_A_PREDICTION, GET_PREDICTION_BY_USER_AND_CONTEST } from "../routes/api";
+import apiClient from "@/utils/api";
+import { OutcomeType } from "@/types";
+import { IUserPrediction } from "@/components/UserPredictions";
 
 export interface IFeaturedVideo {
   id: string;
   question: string;
   videoUrl: string;
+  thumbnailUrl: string;
+  userId: string;
+  contestId: string;
+  correctOutcome: string | null;
+  numberOfBets: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Sample video data
-const SAMPLE_VIDEOS: IFeaturedVideo[] = [
-  {
-    id: '1',
-    question: 'Will Rodrygo score atleast one goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm2.mp4',
-  },
-  {
-    id: '2',
-    question: 'Will AM score in the first half?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm3.mp4',
-  },
-  {
-    id: '3',
-    question: 'Will Julian Alvarez score atleast one goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm1.mp4',
-  },
-  {
-    id: '4',
-    question: 'Will Brahim Triaz score atleast one goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm4.mp4',
-  },
-  {
-    id: '5',
-    question: 'Will Mbappé score a goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/amrm5.mp4',
-  },
-];
 
-
-const SAMPLE_VIDEOS_2 = [
-  {
-    id: '1',
-    question: 'Will Bruno Fernandes score a goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs1.mp4',
-  },
-  {
-    id: '2',
-    question: 'Will Amad score a goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs2.mp4',
-  },
-  {
-    id: '3',
-    question: 'Will Garnacho score a goal?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs3.mp4',
-  },
-  {
-    id: '4',
-    question: 'Will Manchester United get a Red Card?',
-    videoUrl: 'https://9shootnew.s3.us-east-1.amazonaws.com/murs4.mp4',
+export const fetchFeaturedVideos = async (contestId: string): Promise<IFeaturedVideo[]> => {
+  try {
+    const response = await apiClient(GET_ALL_QUESTIONS_BY_CONTEST(contestId), "GET");
+    if (response.success && response.data) {
+      return response.data as IFeaturedVideo[];
+    } else {
+      console.error("Error fetching featured videos:", response.message);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching featured videos:", error);
+    return [];
   }
-]
-
-export const fetchFeaturedVideos = async (): Promise<IFeaturedVideo[]> => {
-  // Simulate network delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...SAMPLE_VIDEOS]);
-    }, 500);
-  });
 };
 
-/**
- * Simulates fetching a single video by ID
- * @param id The ID of the video to fetch
- * @returns Promise that resolves to a featured video or null if not found
- */
-export const fetchVideoById = async (id: string): Promise<IFeaturedVideo | null> => {
-  // Simulate network delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const video = SAMPLE_VIDEOS.find(video => video.id === id);
-      resolve(video || null);
-    }, 300);
-  });
-};
 
-/**
- * Simulates submitting a prediction for a video
- * @param videoId The ID of the video
- * @param prediction The user's prediction ('yes' or 'no')
- * @returns Promise that resolves to a success message
- */
 export const submitPrediction = async (
-  videoId: string, 
-  prediction: 'yes' | 'no'
+  videoId: string,
+  contestId: string,
+  userId: string,
+  prediction: OutcomeType
 ): Promise<{ success: boolean; message: string }> => {
-  // Simulate network delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        success: true,
-        message: `Successfully submitted ${prediction} prediction for video ${videoId}`
-      });
-    }, 300);
-  });
+  try {
+    const response = await apiClient(SUBMIT_PREDICTION, "POST", {
+      videoId,
+      contestId,
+      userId,
+      prediction
+    });
+    if (response.success) {
+      return { success: true, message: "Prediction submitted successfully" };
+    } else {
+      return { success: false, message: response.message || "An error occurred" };
+    }
+  } catch (error) {
+    console.error("Error submitting prediction:", error);
+    return { success: false, message: "An error occurred" };
+  }
+  
 };
+
+export const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
+  try {
+    const response = await apiClient<IUserPrediction[]>(GET_PREDICTION_BY_USER_AND_CONTEST(contestId, userId || ''), 'GET');
+    console.log('response', response);
+    if (response.success && response.data) {
+      return response.data.map((prediction: IUserPrediction) => ({
+        ...prediction,
+        question: prediction.video.question || '',
+        thumbnailUrl: prediction.video.thumbnailUrl,
+        outcome: prediction.prediction === 'YES' ? OutcomeType.YES : OutcomeType.NO
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching user predictions:', error);
+    throw new Error('Failed to fetch predictions');
+  }
+};
+
+export const RemovePrediction = async(predictionId: string, userId: string):Promise<{success: boolean, message: string}> => {
+  try {
+    const response = await apiClient(REMOVE_PREDICTION_API(predictionId, userId), "DELETE");
+    if (response.success) {
+      return { success: true, message: "Prediction removed successfully" };
+    } else {
+      return { success: false, message: "An error occurred" };
+    }
+  } catch (error) {
+    console.error('Error removing prediction:', error);
+    return { success: false, message: "An error occurred" };
+  }
+}

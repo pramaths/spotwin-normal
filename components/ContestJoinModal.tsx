@@ -13,24 +13,174 @@ import {
 } from 'react-native';
 import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
-import { formatFullDate } from '../utils/dateUtils';
 import { router } from 'expo-router';
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Shoot9SDK } from '../program/contract-sdk';
+import { Wallet } from '@coral-xyz/anchor';
+import {getUserParticipationStatus} from '../services/userContestsApi';
+import { useUserStore } from '@/store/userStore';
 
 interface ContestJoinModalProps {
   isVisible: boolean;
   onClose: () => void;
   contest: IContest;
   onConfirm?: () => void;
+  isUserParticipating: boolean;
 }
+
+if (typeof global.structuredClone !== 'function') {
+  global.structuredClone = function (obj) {
+    return JSON.parse(JSON.stringify(obj));
+  };
+  console.log("structuredClone polyfill added");
+}
+
+
+const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
+  console.log("Privy wallet details:", {
+    wallet: privyWallet,
+    hasAddress: !!privyWallet?.address,
+    hasSignTransaction: !!privyWallet?.signTransaction,
+    signTransactionType: typeof privyWallet?.signTransaction,
+    methods: Object.keys(privyWallet || {})
+  });
+
+  if (!privyWallet || !privyWallet.address) {
+    throw new Error("Privy wallet missing address");
+  }
+
+  const dummyPayer = Keypair.generate();
+  const getConnection = () => new Connection(
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game'
+  );
+
+  return {
+    publicKey: new PublicKey(privyWallet.address),
+    payer: dummyPayer,
+    signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+      console.log("Signing transaction with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = getConnection();
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+      if (tx instanceof Transaction) {
+        tx.recentBlockhash = blockhash;
+        tx.lastValidBlockHeight = lastValidBlockHeight;
+
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Transaction sent with signature:", signature);
+        return tx as T;
+      } else if (tx instanceof VersionedTransaction) {
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: {
+            transaction: tx,
+            connection,
+            options: {
+              skipPreflight: true, // Skip simulation
+              preflightCommitment: 'confirmed'
+            }
+          },
+        });
+        console.log("Versioned transaction sent with signature:", signature);
+        return tx as T;
+      }
+
+      throw new Error("Unsupported transaction type");
+    },
+    signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+      console.log("Signing multiple transactions with provider...");
+      const provider = await privyWallet.getProvider();
+      const connection = getConnection();
+
+      return await Promise.all(txs.map(async (tx) => {
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+        if (tx instanceof Transaction) {
+          tx.recentBlockhash = blockhash;
+          tx.lastValidBlockHeight = lastValidBlockHeight;
+
+          await provider.request({
+            method: 'signAndSendTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true, // Skip simulation
+                preflightCommitment: 'confirmed'
+              }
+            },
+          });
+        } else if (tx instanceof VersionedTransaction) {
+
+          await provider.request({
+            method: 'signAndSendTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true, // Skip simulation
+                preflightCommitment: 'confirmed'
+              }
+            },
+          });
+        }
+        return tx;
+      }));
+    },
+  };
+};
 
 const { height } = Dimensions.get('window');
 
-const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoinModalProps) => {
+const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating }: ContestJoinModalProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { wallets } = useEmbeddedSolanaWallet();
+  const { user } = useUserStore();
+  const [userBalance, setUserBalance] = useState<number | null>(0);
+
+  const fetchUserBalance = async () => {
+    console.log("fetchUserBalance started", { wallets });
+    if (!wallets || wallets.length === 0) {
+      console.log("No wallets available for balance check");
+      return;
+    }
+    
+    try {
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
+      );
+      
+      console.log("Fetching balance for address:", wallets[0].address);
+      const balance = await connection.getBalance(new PublicKey(wallets[0].address));
+      const balanceInSol = balance / 1_000_000_000;
+      console.log("Balance fetched successfully:", balanceInSol, "SOL");
+      
+      setUserBalance(balanceInSol);
+      return balanceInSol;
+    } catch (err) {
+      console.error("Error in fetchUserBalance:", err);
+      return null;
+    }
+  };
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -80,23 +230,151 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
       }
     }, 1800);
   };
+  
+  const handleSolanaPayment = async () => {
+    try {
+      const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
+      if(userParticipationStatus){
+        setError("You have already participated in this contest");
+        return false;
+      }
+      setIsLoading(true);
+      setError(null);
+      
+      if (!wallets || wallets.length === 0) {
+        throw new Error("No wallet connected");
+      }
+      
+      // Check balance before proceeding
+      const balance = await fetchUserBalance();
+      if (balance === null || balance === undefined) {
+        throw new Error("Failed to fetch wallet balance");
+      }
 
-  const handlePayment = () => {
-    animateSuccess();
-    setTimeout(() => {
-      router.push('/(tabs)/video-prediction');
-    }, 1500);
+      const requiredAmount = contest?.entryFee || 0.2;
+      if (balance < requiredAmount) {
+        setIsLoading(false);
+        setError(`Insufficient balance. You need at least ${requiredAmount} SOL to enter this contest. Add funds by clicking on the wallet icon.`);
+        return false;
+      }
+      
+      const privyWallet = wallets[0];
+      console.log("Privy wallet:", {
+        address: privyWallet.address,
+        hasAddress: !!privyWallet.address,
+        addressType: typeof privyWallet.address,
+        hasPublicKey: !!privyWallet.publicKey,
+      });
+      
+      // Create connection to Solana network
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      );
+      
+      try {
+        const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
+        console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
+        
+        try {
+          console.log("Creating SDK with:", {
+            connection: connection.rpcEndpoint,
+            wallet: anchorWallet.publicKey.toString(),
+          });
+          console.log("Creating SDK instance...");
+          const sdk = new Shoot9SDK(connection, anchorWallet);
+
+          const contestId = parseInt(contest.solanaContestId);
+          
+          console.log("Contest ID:", contest.solanaContestId);
+          
+          // Log contest creator for debugging
+          console.log("Contest creator (raw):", contest.contestCreator);
+          
+          // Validate the contest creator address before passing it to PublicKey
+          if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
+              !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
+            throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
+          }
+          
+          // Create PublicKey instance with validation
+          let creatorPublicKey;
+          try {
+            creatorPublicKey = new PublicKey(contest.contestCreator);
+            console.log("Creator public key created successfully:", creatorPublicKey.toString());
+          } catch (pkError) {
+            console.error("Failed to create PublicKey from contest creator:", pkError);
+            throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
+          }
+          
+          // Call enterContest with detailed logging
+          console.log("Entering contest with params:", {
+            creator: creatorPublicKey.toString(),
+            contestId: contestId
+          });
+          
+          const txId = await sdk.enterContest(creatorPublicKey, contestId);
+          console.log("Transaction successful:", txId);
+          
+          return true; // Return true on successful payment
+          
+        } catch (sdkError) {
+          console.error("SDK error:", sdkError);
+          // Log more details about the error
+          if (sdkError instanceof Error) {
+            console.error("Error name:", sdkError.name);
+            console.error("Error message:", sdkError.message);
+            console.error("Error stack:", sdkError.stack);
+            
+            // Check if it's a Shoot9SDKError with a cause
+            if (sdkError.hasOwnProperty('cause')) {
+              console.error("Error cause:", (sdkError as any).cause);
+            }
+          }
+          throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
+        }
+      } catch (adapterError) {
+        console.error("Wallet adapter error:", adapterError);
+        throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(err instanceof Error ? err.message : "Failed to process payment");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    const success = await handleSolanaPayment();
+    if (success) {
+      animateSuccess();
+      setTimeout(() => {
+        router.push({
+          pathname: "/video-prediction",
+          params: { contestId: contest.id },
+        });
+      }, 1500);
+    }
   };
 
   useEffect(() => {
     if (isVisible) {
+      console.log("Modal opened, fetching initial balance");
       setShowSuccess(false);
+      fetchUserBalance();
     }
   }, [isVisible]);
 
+  // Add check for wallet availability
+  useEffect(() => {
+    console.log("Checking wallet availability:", {
+      wallets: wallets?.length
+    });
+  }, [wallets]);
+
   if (!contest) return null;
 
-  // Get thumbnail from the first video if available
   const thumbnailUrl = contest.event?.eventImageUrl || 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png';
 
   return (
@@ -112,7 +390,11 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
             <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <ChevronLeft color="#000" size={24} />
             </TouchableOpacity>
+            {isUserParticipating ? (
             <Text style={styles.headerTitle}>Join Contest</Text>
+            ) : (
+              <Text style={styles.headerTitle}>Already Joined</Text>
+            )}
             <View style={{ width: 24 }} />
           </View>
 
@@ -145,11 +427,15 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
             </View>
           </View>
 
+          <View style={styles.balanceContainer}>
+            <Text style={styles.balanceText}>Your current balance: <Text style={styles.balanceAmount}>{userBalance?.toFixed(2) || '0.00'} SOL</Text></Text>
+          </View>
+
           <TouchableOpacity
             style={styles.joinButton}
             onPress={handlePayment}
           >
-            <Text style={styles.joinButtonText}>Pay ${contest.entryFee || 49}</Text>
+            <Text style={styles.joinButtonText}>Pay ${contest.entryFee || 0.2}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -159,7 +445,12 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm }: ContestJoi
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
 
-          <Text style={styles.balanceText}>Your current balance: $900</Text>
+          {/* Error message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           {showSuccess && (
             <View style={styles.successOverlay}>
@@ -311,12 +602,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  balanceContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
   balanceText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginVertical: 12,
-    paddingBottom: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+  balanceAmount: {
+    fontWeight: '600',
+    color: '#000',
+  },
+  errorContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 14,
   },
   successOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
