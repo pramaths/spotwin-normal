@@ -67,11 +67,6 @@ export interface ITeam{
     REJECTED = 'REJECTED'
   }
 
-  export enum IOutcomeType{
-    YES = 'YES',
-    NO = 'NO'
-  }
-
   export interface IFeaturedVideos{
     contestId: string;
     eventId: string;

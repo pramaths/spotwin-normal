@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Pencil } from 'lucide-react-native';
-import { IContest, IOutcomeType } from '@/types';
+import { IContest, OutcomeType } from '@/types';
 import { formatDateTime } from '@/utils/dateUtils';
 import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
 import apiClient from '@/utils/api';
@@ -35,7 +35,7 @@ interface IVideo {
   updatedAt: string;
 }
 
-interface IUserPrediction {
+export interface IUserPrediction {
   id: string;
   userId: string;
   contestId: string;
@@ -47,7 +47,7 @@ interface IUserPrediction {
   video: IVideo;
   question?: string; // For backward compatibility with existing code
   thumbnailUrl?: string; // For backward compatibility with existing code
-  outcome?: IOutcomeType; // For backward compatibility with existing code
+  outcome?: OutcomeType; // For backward compatibility with existing code
 }
 
 const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
@@ -59,7 +59,7 @@ const fetchUserPredictions = async (contestId: string, userId?: string): Promise
         ...prediction,
         question: prediction.video.question || '',
         thumbnailUrl: prediction.video.thumbnailUrl,
-        outcome: prediction.prediction === 'YES' ? IOutcomeType.YES : IOutcomeType.NO
+        outcome: prediction.prediction === 'YES' ? OutcomeType.YES : OutcomeType.NO
       }));
     }
     return [];
@@ -145,10 +145,10 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
           <View style={styles.bottomSection}>
             <View style={[
               styles.outcomeContainer,
-              (item.outcome === IOutcomeType.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
+              (item.outcome === OutcomeType.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
             ]}>
               <Text style={styles.outcomeText}>
-                {(item.outcome === IOutcomeType.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
+                {(item.outcome === OutcomeType.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
               </Text>
             </View>
 

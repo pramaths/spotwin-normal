@@ -15,14 +15,16 @@ import {
 import { Volume2, VolumeX, ChevronLeft } from 'lucide-react-native';
 import VideoItem from '../../components/VideoItem';
 import { useRouter, useNavigation } from 'expo-router';
-import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo } from '../../services/videoApi';
+import { fetchFeaturedVideos, submitPrediction, IFeaturedVideo, RemovePrediction, fetchUserPredictions } from '../../services/videoApi';
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
 import { OutcomeType } from '@/types';
+import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
+import apiClient from '@/utils/api';
+import { IUserPrediction } from '@/components/UserPredictions';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
-// Add this polyfill at the top of your file, after the imports
 if (typeof global.structuredClone !== 'function') {
   global.structuredClone = function(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -46,6 +48,7 @@ export default function HomeScreen() {
   const isMountedRef = useRef(true);
   const { user} = useUserStore();
   const [predictionMessage, setPredictionMessage] = useState<{text: string, type: OutcomeType} | null>(null);
+  const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
 
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -77,6 +80,29 @@ export default function HomeScreen() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const loadPredictions = async () => {
+      if (!contestId) {
+        setError('Contest ID is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const data = await fetchUserPredictions(contestId as string, user?.id || '');
+        setPredictions(data);
+        setLoading(false);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load predictions');
+        setLoading(false);
+      }
+    };
+
+    loadPredictions();
+  }, [contestId, user]);
 
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
@@ -133,8 +159,6 @@ export default function HomeScreen() {
     if (videos.length === 0 || currentIndex >= videos.length) return;
     
     const currentVideoId = videos[currentIndex].id;
-    
-    // Add to answered questions locally
     if (!answeredQuestions.includes(currentVideoId)) {
       setAnsweredQuestions(prev => [...prev, currentVideoId]);
     }
@@ -145,12 +169,10 @@ export default function HomeScreen() {
       type: prediction
     });
     
-    // Hide message after 2 seconds
     setTimeout(() => {
       setPredictionMessage(null);
     }, 2000);
     
-    // Submit prediction to API
     try {
       await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction);
     } catch (err) {
@@ -163,11 +185,9 @@ export default function HomeScreen() {
   };
   
   const handleBack = () => {
-    // Force cleanup before navigation
     setIsScreenActive(false);
     setVisibleVideos({});
     
-    // Small delay to ensure cleanup happens before navigation
     setTimeout(() => {
       router.back();
     }, 50);

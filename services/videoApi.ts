@@ -1,6 +1,7 @@
-import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION } from "../routes/api";
+import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION, REMOVE_PREDICTION, GET_BY_A_PREDICTION, GET_PREDICTION_BY_USER_AND_CONTEST } from "../routes/api";
 import apiClient from "@/utils/api";
 import { OutcomeType } from "@/types";
+import { IUserPrediction } from "@/components/UserPredictions";
 
 export interface IFeaturedVideo {
   id: string;
@@ -56,3 +57,38 @@ export const submitPrediction = async (
   }
   
 };
+
+export const RemovePrediction = async (predictionId: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await apiClient(REMOVE_PREDICTION(predictionId), "DELETE");
+    if (response.success) {
+      return { success: true, message: "Prediction removed successfully" };
+    } else {
+      return { success: false, message: response.message || "An error occurred" };
+    }
+  } catch (error) {
+    console.error("Error removing prediction:", error);
+    return { success: false, message: "An error occurred" };
+  }
+}
+
+export const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
+  try {
+    const response = await apiClient<IUserPrediction[]>(GET_PREDICTION_BY_USER_AND_CONTEST(contestId, userId || ''), 'GET');
+    console.log('response', response);
+    if (response.success && response.data) {
+      return response.data.map((prediction: IUserPrediction) => ({
+        ...prediction,
+        question: prediction.video.question || '',
+        thumbnailUrl: prediction.video.thumbnailUrl,
+        outcome: prediction.prediction === 'YES' ? OutcomeType.YES : OutcomeType.NO
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching user predictions:', error);
+    throw new Error('Failed to fetch predictions');
+  }
+};
+
+
