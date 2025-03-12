@@ -77,13 +77,13 @@ export const fetchUserPredictions = async (contestId: string, userId?: string): 
   }
 };
 
-export const RemovePrediction = async(predictionId: string):Promise<{success: boolean, message: string}> => {
+export const RemovePrediction = async(predictionId: string, userId: string):Promise<{success: boolean, message: string}> => {
   try {
-    const response = await apiClient(REMOVE_PREDICTION_API(predictionId), "DELETE");
+    const response = await apiClient(REMOVE_PREDICTION_API(predictionId, userId), "DELETE");
     if (response.success) {
       return { success: true, message: "Prediction removed successfully" };
     } else {
-      return { success: false, message: response.message || "An error occurred" };
+      return { success: false, message: "An error occurred" };
     }
   } catch (error) {
     console.error('Error removing prediction:', error);

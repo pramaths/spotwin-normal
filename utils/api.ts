@@ -6,6 +6,7 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
+  status: number;
 }
 
 export interface ErrorResponse {
@@ -43,15 +44,26 @@ const apiClient = async <T,>(
     const response = await fetch(endpoint, options);
     console.log("Received response status:", response.status);
     
-    if (!response.ok) {
-      return handleErrorResponse(response);
+    if (method === 'DELETE' && response.status >= 200 && response.status < 300) {
+      return {
+        success: true,
+        data: null as unknown as T,
+        status: response.status,
+      };
     }
     
-    const data = await response.json();
-    return { 
-      success: true, 
-      data, 
-      message: data.message || "Request successful" 
+    const contentType = response.headers.get('content-type');
+    let data: T | null = null;
+    
+    if (contentType && contentType.includes('application/json') && response.status !== 204) {
+      const text = await response.text();
+      data = text ? JSON.parse(text) as T : null;
+    }
+
+    return {
+      success: response.ok,
+      data: data as T,
+      status: response.status,
     };
   } catch (error: unknown) {
     console.error("API request failed:", error);

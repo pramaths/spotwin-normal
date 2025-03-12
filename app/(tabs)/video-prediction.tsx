@@ -49,12 +49,6 @@ export default function HomeScreen() {
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [userVotesMap, setUserVotesMap] = useState<Record<string, OutcomeType | null>>({});
 
-
-  const getUserVoteForVideo = useCallback((videoId:string)=>{
-    const userPrediction = predictions.find(prediction => prediction.videoId === videoId);
-    return userPrediction?.prediction;
-  },[predictions]);
-
   const loadVideos = useCallback(async () => {
     if (!isMountedRef.current) return;
     
@@ -104,6 +98,7 @@ export default function HomeScreen() {
           return acc;
         },{} as Record<string, OutcomeType | null>);
         setUserVotesMap(votesMap);
+        setAnsweredQuestions(data.map(prediction => prediction.video.id));
         setLoading(false);
       } catch (err: any) {
         setError(err.message || 'Failed to load predictions');
@@ -167,19 +162,16 @@ export default function HomeScreen() {
 
   const handleRemovePrediction = async (videoId: string) => {
     try {
-      await RemovePrediction(videoId);
+      await RemovePrediction(videoId as string, user?.id || '');
       
-      // Update local state
       setUserVotesMap(prev => {
         const updated = {...prev};
         delete updated[videoId];
         return updated;
       });
       
-      // Remove from answered questions
       setAnsweredQuestions(prev => prev.filter(id => id !== videoId));
       
-      // Update predictions list
       setPredictions(prev => prev.filter(p => p.videoId !== videoId));
       
     } catch (err) {
@@ -194,6 +186,12 @@ export default function HomeScreen() {
     if (!answeredQuestions.includes(currentVideoId)) {
       setAnsweredQuestions(prev => [...prev, currentVideoId]);
     }
+    
+    // Update userVotesMap to reflect the new prediction
+    setUserVotesMap(prev => ({
+      ...prev,
+      [currentVideoId]: prediction
+    }));
     
     // Show prediction message
     setPredictionMessage({
@@ -226,7 +224,7 @@ export default function HomeScreen() {
   };
   
   const totalQuestions = videos.length;
-  const remainingQuestions = answeredQuestions.length;
+  const remainingQuestions = totalQuestions > 0 ? Object.keys(userVotesMap).length : 0;
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (!isScreenActive || loading) return;

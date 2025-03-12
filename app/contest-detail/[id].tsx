@@ -11,7 +11,6 @@ import apiClient from '@/utils/api';
 
 export default function ContestDetailScreen() {
   const { id: contestId } = useLocalSearchParams<{ id: string }>();
-  console.log('contestId', contestId);
   const [loading, setLoading] = useState(true);
   const [contest, setContest] = useState<IContest | undefined>();
   const { user } = useUserStore();
@@ -32,6 +31,7 @@ export default function ContestDetailScreen() {
     };
     loadContest();
   }, [contestId]);
+
   const handleBack = () => {
     router.push('/(tabs)/contests');
   };
