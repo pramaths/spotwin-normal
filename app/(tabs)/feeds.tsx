@@ -65,7 +65,7 @@ const FeedsScreen = () => {
         contestId: contest.id,
         correctOutcome: null,
         numberOfBets: 0,
-        question: 'fun',
+        question: 'Want to see more questions? Join the contest now!',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });

@@ -88,6 +88,14 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
         const data = await fetchUserPredictions(contestId, userId);
         setPredictions(data);
         setLoading(false);
+        if (data.length === 0) {
+          router.push({
+            pathname: '/(tabs)/video-prediction',
+            params: {
+              contestId: contestId
+            }
+          });
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load predictions');
         setLoading(false);

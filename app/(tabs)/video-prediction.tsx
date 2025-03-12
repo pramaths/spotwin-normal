@@ -183,30 +183,39 @@ export default function HomeScreen() {
     if (videos.length === 0 || currentIndex >= videos.length) return;
     
     const currentVideoId = videos[currentIndex].id;
-    if (!answeredQuestions.includes(currentVideoId)) {
-      setAnsweredQuestions(prev => [...prev, currentVideoId]);
-    }
-    
-    // Update userVotesMap to reflect the new prediction
-    setUserVotesMap(prev => ({
-      ...prev,
-      [currentVideoId]: prediction
-    }));
-    
-    // Show prediction message
-    setPredictionMessage({
-      text: `You predicted ${prediction === OutcomeType.YES ? 'YES' : 'NO'}!`,
-      type: prediction
-    });
-    
-    setTimeout(() => {
-      setPredictionMessage(null);
-    }, 2000);
     
     try {
       await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction);
+      
+      if (!answeredQuestions.includes(currentVideoId)) {
+        setAnsweredQuestions(prev => [...prev, currentVideoId]);
+      }
+      
+      setUserVotesMap(prev => ({
+        ...prev,
+        [currentVideoId]: prediction
+      }));
+      
+      // Show prediction message
+      setPredictionMessage({
+        text: `You predicted ${prediction === OutcomeType.YES ? 'YES' : 'NO'}!`,
+        type: prediction
+      });
+      
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
+      
     } catch (err) {
       console.error('Error submitting prediction:', err);
+      setPredictionMessage({
+        text: 'Failed to submit prediction. Please try again.',
+        type: OutcomeType.NO 
+      });
+      
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
     }
   };
 

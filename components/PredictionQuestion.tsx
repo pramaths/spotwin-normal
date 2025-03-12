@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     },
     questionContainer: {
         marginBottom: 10,
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: 'hidden',
     },
     blurContainer: {

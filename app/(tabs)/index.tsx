@@ -67,8 +67,6 @@ export default function HomeScreen() {
   const fetchContests = async () => {
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-      
-      // Only fetch user contests if we have a user ID
       if (user?.id) {
         const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
         

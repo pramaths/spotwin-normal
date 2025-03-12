@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import PredictionQuestion from './PredictionQuestion';
-import ContestJoinModal from './ContestJoinModal';
 import { IContestWithVideos } from '@/types';
 import { PredictionGridSkeleton } from './SkeletonLoading';
 import { useContestsStore } from '@/store/contestsStore';

@@ -29,6 +29,14 @@ interface ContestJoinModalProps {
   isUserParticipating: boolean;
 }
 
+if (typeof global.structuredClone !== 'function') {
+  global.structuredClone = function (obj) {
+    return JSON.parse(JSON.stringify(obj));
+  };
+  console.log("structuredClone polyfill added");
+}
+
+
 const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
   console.log("Privy wallet details:", {
     wallet: privyWallet,
@@ -41,8 +49,11 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
   if (!privyWallet || !privyWallet.address) {
     throw new Error("Privy wallet missing address");
   }
-  
+
   const dummyPayer = Keypair.generate();
+  const getConnection = () => new Connection(
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game'
+  );
 
   return {
     publicKey: new PublicKey(privyWallet.address),
@@ -50,16 +61,14 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
     signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
       console.log("Signing transaction with provider...");
       const provider = await privyWallet.getProvider();
-      const connection = new Connection(
-        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-      );
-      
+      const connection = getConnection();
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
       if (tx instanceof Transaction) {
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
         tx.recentBlockhash = blockhash;
         tx.lastValidBlockHeight = lastValidBlockHeight;
-        
-        // Send without simulation
+
         const { signature } = await provider.request({
           method: 'signAndSendTransaction',
           params: {
@@ -74,8 +83,6 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         console.log("Transaction sent with signature:", signature);
         return tx as T;
       } else if (tx instanceof VersionedTransaction) {
-        // For versioned transactions
-        // Send without simulation
         const { signature } = await provider.request({
           method: 'signAndSendTransaction',
           params: {
@@ -90,25 +97,34 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         console.log("Versioned transaction sent with signature:", signature);
         return tx as T;
       }
-      
+
       throw new Error("Unsupported transaction type");
     },
     signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
       console.log("Signing multiple transactions with provider...");
       const provider = await privyWallet.getProvider();
-      const connection = new Connection(
-        process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-      );
-      
+      const connection = getConnection();
+
       return await Promise.all(txs.map(async (tx) => {
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
         if (tx instanceof Transaction) {
-          // Get a fresh blockhash before sending
-          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
           tx.recentBlockhash = blockhash;
           tx.lastValidBlockHeight = lastValidBlockHeight;
-        }
-        
-        if (tx instanceof Transaction || tx instanceof VersionedTransaction) {
+
+          await provider.request({
+            method: 'signAndSendTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true, // Skip simulation
+                preflightCommitment: 'confirmed'
+              }
+            },
+          });
+        } else if (tx instanceof VersionedTransaction) {
+
           await provider.request({
             method: 'signAndSendTransaction',
             params: {
@@ -139,6 +155,32 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   const [error, setError] = useState<string | null>(null);
   const { wallets } = useEmbeddedSolanaWallet();
   const { user } = useUserStore();
+  const [userBalance, setUserBalance] = useState<number | null>(0);
+
+  const fetchUserBalance = async () => {
+    console.log("fetchUserBalance started", { wallets });
+    if (!wallets || wallets.length === 0) {
+      console.log("No wallets available for balance check");
+      return;
+    }
+    
+    try {
+      const connection = new Connection(
+        process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
+      );
+      
+      console.log("Fetching balance for address:", wallets[0].address);
+      const balance = await connection.getBalance(new PublicKey(wallets[0].address));
+      const balanceInSol = balance / 1_000_000_000;
+      console.log("Balance fetched successfully:", balanceInSol, "SOL");
+      
+      setUserBalance(balanceInSol);
+      return balanceInSol;
+    } catch (err) {
+      console.error("Error in fetchUserBalance:", err);
+      return null;
+    }
+  };
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -188,18 +230,32 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
       }
     }, 1800);
   };
+  
   const handleSolanaPayment = async () => {
     try {
       const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
       if(userParticipationStatus){
         setError("You have already participated in this contest");
-        return;
+        return false;
       }
       setIsLoading(true);
       setError(null);
       
       if (!wallets || wallets.length === 0) {
         throw new Error("No wallet connected");
+      }
+      
+      // Check balance before proceeding
+      const balance = await fetchUserBalance();
+      if (balance === null || balance === undefined) {
+        throw new Error("Failed to fetch wallet balance");
+      }
+
+      const requiredAmount = contest?.entryFee || 0.2;
+      if (balance < requiredAmount) {
+        setIsLoading(false);
+        setError(`Insufficient balance. You need at least ${requiredAmount} SOL to enter this contest. Add funds by clicking on the wallet icon.`);
+        return false;
       }
       
       const privyWallet = wallets[0];
@@ -259,8 +315,7 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
           const txId = await sdk.enterContest(creatorPublicKey, contestId);
           console.log("Transaction successful:", txId);
           
-          // Show success animation
-          animateSuccess();
+          return true; // Return true on successful payment
           
         } catch (sdkError) {
           console.error("SDK error:", sdkError);
@@ -284,26 +339,39 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
     } catch (err) {
       console.error("Payment error:", err);
       setError(err instanceof Error ? err.message : "Failed to process payment");
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
-  const handlePayment = () => {
-    handleSolanaPayment();
-    animateSuccess();
-    setTimeout(() => {
-      router.push({
-        pathname: "/video-prediction",
-        params: { contestId: contest.id },
-      });
-    }, 1500);
+
+  const handlePayment = async () => {
+    const success = await handleSolanaPayment();
+    if (success) {
+      animateSuccess();
+      setTimeout(() => {
+        router.push({
+          pathname: "/video-prediction",
+          params: { contestId: contest.id },
+        });
+      }, 1500);
+    }
   };
 
   useEffect(() => {
     if (isVisible) {
+      console.log("Modal opened, fetching initial balance");
       setShowSuccess(false);
+      fetchUserBalance();
     }
   }, [isVisible]);
+
+  // Add check for wallet availability
+  useEffect(() => {
+    console.log("Checking wallet availability:", {
+      wallets: wallets?.length
+    });
+  }, [wallets]);
 
   if (!contest) return null;
 
@@ -359,11 +427,15 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
             </View>
           </View>
 
+          <View style={styles.balanceContainer}>
+            <Text style={styles.balanceText}>Your current balance: <Text style={styles.balanceAmount}>{userBalance?.toFixed(2) || '0.00'} SOL</Text></Text>
+          </View>
+
           <TouchableOpacity
             style={styles.joinButton}
             onPress={handlePayment}
           >
-            <Text style={styles.joinButtonText}>Pay ${contest.entryFee || 49}</Text>
+            <Text style={styles.joinButtonText}>Pay ${contest.entryFee || 0.2}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -373,7 +445,12 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
 
-          <Text style={styles.balanceText}>Your current balance: $900</Text>
+          {/* Error message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           {showSuccess && (
             <View style={styles.successOverlay}>
@@ -525,12 +602,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  balanceContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
   balanceText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginVertical: 12,
-    paddingBottom: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+  balanceAmount: {
+    fontWeight: '600',
+    color: '#000',
+  },
+  errorContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 14,
   },
   successOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
