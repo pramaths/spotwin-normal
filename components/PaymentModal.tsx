@@ -45,7 +45,12 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
 
   const dummyPayer = Keypair.generate();
   const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game'
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
+    {
+      commitment: 'confirmed',
+      disableRetryOnRateLimit: false,
+      confirmTransactionInitialTimeout: 120000
+    }
   );
 
   return {
@@ -56,11 +61,11 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
       const provider = await privyWallet.getProvider();
       const connection = getConnection();
 
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const { blockhash } = await connection.getLatestBlockhash('finalized');
 
       if (tx instanceof Transaction) {
         tx.recentBlockhash = blockhash;
-        tx.lastValidBlockHeight = lastValidBlockHeight;
+        tx.feePayer = new PublicKey(privyWallet.address);
 
         const { signature } = await provider.request({
           method: 'signAndSendTransaction',
@@ -68,8 +73,11 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
             transaction: tx,
             connection,
             options: {
-              skipPreflight: true, // Skip simulation
-              preflightCommitment: 'confirmed'
+              skipPreflight: true,
+              maxRetries: 5,
+              preflightCommitment: 'processed',
+              skipSimulation: true,
+              minContextSlot: 0,
             }
           },
         });
@@ -82,8 +90,11 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
             transaction: tx,
             connection,
             options: {
-              skipPreflight: true, // Skip simulation
-              preflightCommitment: 'confirmed'
+              skipPreflight: true,
+              maxRetries: 5,
+              preflightCommitment: 'processed',
+              skipSimulation: true,
+              minContextSlot: 0,
             }
           },
         });
@@ -99,11 +110,11 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
       const connection = getConnection();
 
       return await Promise.all(txs.map(async (tx) => {
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        const { blockhash } = await connection.getLatestBlockhash('finalized');
 
         if (tx instanceof Transaction) {
           tx.recentBlockhash = blockhash;
-          tx.lastValidBlockHeight = lastValidBlockHeight;
+          tx.feePayer = new PublicKey(privyWallet.address);
 
           await provider.request({
             method: 'signAndSendTransaction',
@@ -111,21 +122,26 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
               transaction: tx,
               connection,
               options: {
-                skipPreflight: true, // Skip simulation
-                preflightCommitment: 'confirmed'
+                skipPreflight: true,
+                maxRetries: 5,
+                preflightCommitment: 'processed',
+                skipSimulation: true,
+                minContextSlot: 0,
               }
             },
           });
         } else if (tx instanceof VersionedTransaction) {
-
           await provider.request({
             method: 'signAndSendTransaction',
             params: {
               transaction: tx,
               connection,
               options: {
-                skipPreflight: true, // Skip simulation
-                preflightCommitment: 'confirmed'
+                skipPreflight: true,
+                maxRetries: 5,
+                preflightCommitment: 'processed',
+                skipSimulation: true,
+                minContextSlot: 0,
               }
             },
           });

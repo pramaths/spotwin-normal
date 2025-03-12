@@ -117,3 +117,16 @@ export interface ITeam{
       updatedAt: string;
     };
   }
+
+  export interface IQuestion {
+    id: string;
+    contestId: string;
+    question: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    teams: string;
+    eventImage: string;
+    eventName: string;
+    contestName: string;
+    username: string;
+    userId: string;
+  }

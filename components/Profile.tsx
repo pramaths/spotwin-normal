@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw, Copy, Key } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -14,6 +14,7 @@ import {
 import { fetchSolanaBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
 import { useFundSolanaWallet } from "@privy-io/expo";
+import QRCode from 'react-native-qrcode-svg';
 
 interface ProfileScreenProps {
   onClose?: () => void;
@@ -27,6 +28,8 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
   const { user: Zuser } = useUserStore();
   const { fundWallet } = useFundSolanaWallet();
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [balance, setBalance] = useState<number>(0);
 
@@ -40,6 +43,24 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
 
     getBalance();
   }, [walletAddress]);
+
+  const handleCopyAddress = async () => {
+    if (walletAddress) {
+      await Clipboard.setString(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleExportPrivateKey = async () => {
+    if (!solanaWallet) return;
+    try {
+      // const provider = await solanaWallet.getProvider();
+      console.log("Export private key functionality needs to be implemented");
+    } catch (error) {
+      console.error('Failed to export private key:', error);
+    }
+  };
 
   const handleWalletRecover = async () => {
     try {
@@ -82,7 +103,6 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
         amount: "0.2",
       });
       console.log("Funding successful");
-      // Refresh balance after successful funding
       const newBalance = await fetchSolanaBalance(walletAddress);
       setBalance(newBalance);
     } catch (error) {
@@ -111,7 +131,11 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             />
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{Zuser?.twitterUsername}</Text>
-              <Text style={styles.profileUsername}>{solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString().slice(0, 6) + '...' + solanaWallet.publicKey.toString().slice(-4) : 'Not created'}</Text>
+              <TouchableOpacity onPress={handleCopyAddress} style={styles.addressContainer}>
+                <Text style={styles.profileUsername}>{walletAddress}</Text>
+                <Copy size={16} color="#0504dc" style={styles.copyIcon} />
+              </TouchableOpacity>
+              {copied && <Text style={styles.copiedText}>Address copied!</Text>}
             </View>
           </View>
         </View>
@@ -123,15 +147,10 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <View style={styles.walletActions}>
             <TouchableOpacity 
               style={styles.depositButton}
-              onPress={handleFundwallet}
+              onPress={() => setShowDepositModal(true)}
             >
               <ArrowDown size={20} color="#FFF" />
               <Text style={styles.depositButtonText}>Deposit</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.withdrawButton}>
-              <ArrowUp size={20} color="#0504dc" />
-              <Text style={styles.withdrawButtonText}>Withdraw</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -149,6 +168,16 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
               <HelpCircle size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Help & support</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleExportPrivateKey}
+          >
+            <View style={styles.menuIconContainer}>
+              <Key size={24} color="#000" />
+            </View>
+            <Text style={styles.menuText}>Export Private Key</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}
@@ -173,6 +202,51 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showDepositModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDepositModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowDepositModal(false)}
+            >
+              <X size={24} color="#000" />
+            </TouchableOpacity>
+            
+            <Text style={styles.modalTitle}>Deposit SOL</Text>
+            <Text style={styles.modalSubtitle}>Scan QR code or copy address</Text>
+            
+            <View style={styles.qrContainer}>
+              {walletAddress && (
+                <QRCode
+                  value={walletAddress}
+                  size={200}
+                  backgroundColor="white"
+                />
+              )}
+            </View>
+            
+            <View style={styles.addressBox}>
+              <Text style={styles.addressText}>{walletAddress}</Text>
+              <TouchableOpacity onPress={handleCopyAddress} style={styles.copyButton}>
+                <Copy size={20} color="#0504dc" />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.fundButton}
+              onPress={handleFundwallet}
+            >
+              <Text style={styles.fundButtonText}>Fund with Privy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -350,5 +424,91 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.7,
+  },
+  addressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  copyIcon: {
+    marginLeft: 8,
+  },
+  copiedText: {
+    color: '#00AF55',
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: 'Inter-Regular',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    minHeight: '60%',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    right: 24,
+    top: 24,
+    zIndex: 1,
+  },
+  modalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+    color: '#000',
+    marginBottom: 8,
+    textAlign: 'center',
+    marginTop: 24,
+  },
+  modalSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addressBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  addressText: {
+    flex: 1,
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#000',
+  },
+  copyButton: {
+    padding: 8,
+  },
+  fundButton: {
+    backgroundColor: '#0504dc',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  fundButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#FFF',
   },
 });

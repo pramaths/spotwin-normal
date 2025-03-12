@@ -6,24 +6,13 @@ import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
 import { QUESTIONS } from '@/routes/api';
 import { useUserStore } from '@/store/userStore'; 
+import { IQuestion } from '@/types';
 
-interface Question {
-  id: string;
-  contestId: string;
-  question: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  teams: string;
-  eventImage: string;
-  eventName: string;
-  contestName: string;
-  username: string;
-  userId: string;
-}
 
 export default function QuestionScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<IQuestion[]>([]);
   const { user } = useUserStore(); 
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
@@ -31,7 +20,7 @@ export default function QuestionScreen() {
   const fetchQuestions = async () => {
     try {
       if (!user?.id) return;
-      const response = await apiClient<Question[]>(QUESTIONS(user.id), 'GET');
+      const response = await apiClient<IQuestion[]>(QUESTIONS(user.id), 'GET');
       if (response.success && response.data) {
         setQuestions(response.data);
       }
