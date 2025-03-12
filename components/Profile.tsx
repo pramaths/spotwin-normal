@@ -13,7 +13,6 @@ import {
 } from '@privy-io/expo';
 import { fetchSolanaBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
-import { useFundSolanaWallet } from "@privy-io/expo";
 import QRCode from 'react-native-qrcode-svg';
 
 interface ProfileScreenProps {
@@ -27,7 +26,6 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
   const { recover } = useRecoverEmbeddedWallet();
   const walletAddress = solanaWallet?.status === 'connected' ? solanaWallet.publicKey.toString() : null;
   const { user: Zuser } = useUserStore();
-  const { fundWallet } = useFundSolanaWallet();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -92,24 +90,6 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
     router.push('/(auth)/signup');
   };
 
-  const handleFundwallet = async () => {
-    console.log("Funding wallet");
-    if (!walletAddress) return;
-    console.log("Wallet address:", walletAddress);
-    try {
-      await fundWallet({
-        address: walletAddress,
-        asset: 'native-currency',
-        amount: "0.2",
-      });
-      console.log("Funding successful");
-      const newBalance = await fetchSolanaBalance(walletAddress);
-      setBalance(newBalance);
-    } catch (error) {
-      console.error('Fund wallet error:', error);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left', 'top']}>
       {onClose && (
@@ -141,11 +121,13 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
         </View>
 
         <View style={styles.walletCard}>
-          <Text style={styles.walletLabel}>Wallet</Text>
+          {/* <Text style={styles.walletLabel}>Wallet</Text>
+          <Text style={styles.chainInfo}>Chain: Sonic</Text>
+          <Text style={styles.bridgeInfo}>Convert SOL to SNIC using Sonic Bridge</Text> */}
           <Text style={styles.walletAmount}>{balance}</Text>
 
           <View style={styles.walletActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.depositButton}
               onPress={() => setShowDepositModal(true)}
             >
@@ -170,7 +152,7 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             <Text style={styles.menuText}>Help & support</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={handleExportPrivateKey}
           >
@@ -188,12 +170,12 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             <Text style={styles.menuText}>Recover Wallet</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          {/* <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuIconContainer}>
               <Shield size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Privacy & Security</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <TouchableOpacity style={styles.logoutButton}
@@ -217,10 +199,15 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
             >
               <X size={24} color="#000" />
             </TouchableOpacity>
-            
+
             <Text style={styles.modalTitle}>Deposit SOL</Text>
             <Text style={styles.modalSubtitle}>Scan QR code or copy address</Text>
-            
+
+            <View style={styles.chainInfoBox}>
+              <Text style={styles.chainInfoText}>Chain: Sonic</Text>
+              <Text style={styles.bridgeInfoText}>Convert SOL to SNIC using Sonic Bridge</Text>
+            </View>
+
             <View style={styles.qrContainer}>
               {walletAddress && (
                 <QRCode
@@ -230,20 +217,13 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
                 />
               )}
             </View>
-            
+
             <View style={styles.addressBox}>
               <Text style={styles.addressText}>{walletAddress}</Text>
               <TouchableOpacity onPress={handleCopyAddress} style={styles.copyButton}>
                 <Copy size={20} color="#0504dc" />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.fundButton}
-              onPress={handleFundwallet}
-            >
-              <Text style={styles.fundButtonText}>Fund with Privy</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -303,6 +283,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 8,
+  },
+  chainInfo: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  bridgeInfo: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
   },
   walletAmount: {
     fontFamily: 'Inter-Bold',
@@ -510,5 +502,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     color: '#FFF',
+  },
+  chainInfoBox: {
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    backgroundColor: 'rgba(255, 59, 48, 0.05)',
+  },
+  chainInfoText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 4,
+  },
+  bridgeInfoText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666',
   },
 });

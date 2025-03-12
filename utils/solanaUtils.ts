@@ -19,8 +19,8 @@ export const fetchSolanaBalance = async (address: string): Promise<number> => {
 
 
 export const formatSolBalance = (balance: number): string => {
-  if (balance < 0.001) {
-    return '< 0.001 SOL';
+  if (balance < 0.01) {
+    return '< 0.01';
   }
-  return `${balance.toFixed(3)} SOL`;
+  return `${balance.toFixed(2)} SOL`;
 };
