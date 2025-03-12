@@ -207,22 +207,75 @@ export class Shoot9SDK {
     const contest = await this.findContestPDA(contestCreator, contestId);
     const contestAccount = await this.getContest(contestCreator, contestId);
     console.log("Contest account:", contestAccount);
-    console.log("Contest:", contest);
+    console.log("Contest PDA:", contest.toString());
+    console.log("Entry fee (lamports):", contestAccount.entryFee.toString());
+    console.log("User wallet:", this.wallet.publicKey.toString());
+    
     try {
-      const tx = await this.program.methods
+      console.log("Building transaction...");
+      const instruction = await this.program.methods
         .enterContest(contestAccount.entryFee)
         .accountsStrict({
           user: this.wallet.publicKey,
           contest,
           systemProgram: SystemProgram.programId,
         })
-        .rpc();
-
-      await this.connection.confirmTransaction(tx, "confirmed");
-      console.log("Entered contest:", contest.toString());
-      return tx;
+        .instruction();
+      
+      console.log("Instruction created:", instruction);
+      console.log("Getting latest blockhash...");
+      const { blockhash, lastValidBlockHeight } = 
+        await this.connection.getLatestBlockhash('confirmed');
+      console.log("Latest blockhash:", blockhash);
+      
+      // Create a new transaction with the latest blockhash
+      const transaction = new anchor.web3.Transaction({
+        feePayer: this.wallet.publicKey,
+        recentBlockhash: blockhash,
+      }).add(instruction);
+      
+      console.log("Transaction created with blockhash:", blockhash);
+      console.log("Signing transaction...");
+      
+      // Sign the transaction
+      const signedTx = await this.wallet.signTransaction(transaction);
+      console.log("Transaction signed, signature:", signedTx.signatures[0].signature?.toString('hex'));
+      
+      // Send the signed transaction
+      console.log("Sending transaction...");
+      const txid = await this.connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+      console.log("Transaction sent with ID:", txid);
+      
+      // Confirm the transaction
+      console.log("Confirming transaction...");
+      const confirmation = await this.connection.confirmTransaction({
+        signature: txid,
+        blockhash,
+        lastValidBlockHeight,
+      }, 'confirmed');
+      
+      console.log("Transaction confirmation result:", confirmation);
+      if (confirmation.value.err) {
+        console.error("Transaction confirmed but has error:", confirmation.value.err);
+        throw new Error(`Transaction confirmed with error: ${JSON.stringify(confirmation.value.err)}`);
+      }
+      
+      console.log("Successfully entered contest:", contest.toString());
+      return txid;
     } catch (e) {
       console.error("Enter contest error:", e);
+      if (e instanceof anchor.web3.SendTransactionError) {
+        console.error("SendTransactionError details:", e.message);
+        try {
+          const logs = e.logs;
+          console.error("Transaction logs:", logs);
+        } catch (logError) {
+          console.error("Failed to get logs:", logError);
+        }
+      }
       throw new Shoot9SDKError("Failed to enter contest", e);
     }
   }

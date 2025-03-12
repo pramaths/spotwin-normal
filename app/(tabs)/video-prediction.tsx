@@ -185,6 +185,19 @@ export default function HomeScreen() {
     const currentVideoId = videos[currentIndex].id;
     
     try {
+      // Check if we've already reached the maximum predictions
+      if (Object.keys(userVotesMap).length >= 9 && !userVotesMap[currentVideoId]) {
+        setPredictionMessage({
+          text: 'Maximum of 9 predictions reached for this contest reached, Undo other predictions to make a new one',
+          type: OutcomeType.NO
+        });
+        
+        setTimeout(() => {
+          setPredictionMessage(null);
+        }, 2000);
+        return;
+      }
+      
       await submitPrediction(currentVideoId, contestId as string, user?.id || '', prediction);
       
       if (!answeredQuestions.includes(currentVideoId)) {
@@ -206,12 +219,21 @@ export default function HomeScreen() {
         setPredictionMessage(null);
       }, 2000);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting prediction:', err);
-      setPredictionMessage({
-        text: 'Failed to submit prediction. Please try again.',
-        type: OutcomeType.NO 
-      });
+      
+      // Check for the specific max predictions error
+      if (err.message && err.message.includes('maximum number of predictions')) {
+        setPredictionMessage({
+          text: 'Maximum of 9 predictions reached for this contest',
+          type: OutcomeType.NO
+        });
+      } else {
+        setPredictionMessage({
+          text: 'Failed to submit prediction. Please try again.',
+          type: OutcomeType.NO 
+        });
+      }
       
       setTimeout(() => {
         setPredictionMessage(null);
@@ -232,8 +254,8 @@ export default function HomeScreen() {
     }, 50);
   };
   
-  const totalQuestions = videos.length;
-  const remainingQuestions = totalQuestions > 0 ? Object.keys(userVotesMap).length : 0;
+  const totalQuestions = 9; // Maximum allowed predictions
+  const answeredQuestionsCount = Object.keys(userVotesMap).length;
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (!isScreenActive || loading) return;
@@ -304,7 +326,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
         
         <View style={styles.questionCounter}>
-          <Text style={styles.questionCounterText}>{remainingQuestions}/9 questions answered</Text>
+          <Text style={styles.questionCounterText}>{answeredQuestionsCount}/{totalQuestions} questions answered</Text>
         </View>
 
         {videos.length > 0 && (

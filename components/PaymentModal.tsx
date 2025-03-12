@@ -75,9 +75,6 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
             options: {
               skipPreflight: true,
               maxRetries: 5,
-              preflightCommitment: 'processed',
-              skipSimulation: true,
-              minContextSlot: 0,
             }
           },
         });
@@ -92,9 +89,6 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
             options: {
               skipPreflight: true,
               maxRetries: 5,
-              preflightCommitment: 'processed',
-              skipSimulation: true,
-              minContextSlot: 0,
             }
           },
         });
@@ -249,82 +243,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         errorObject: err
       });
       return null;
-    }
-  };
-
-  const handleFundWallet = async () => {
-    console.log("handleFundWallet started");
-    if (!wallets || wallets.length === 0) {
-      console.log("No wallets found:", { wallets });
-      setError("No wallet connected");
-      return;
-    }
-    
-    try {
-      console.log("Starting wallet funding process", {
-        walletAddress: wallets[0].address,
-        fundWalletFunction: !!fundWallet
-      });
-      
-      setIsFundingWallet(true);
-      
-      const currentBalance = userBalance || 0;
-      if (currentBalance < (contest?.entryFee || 0.2)) {
-        setError(
-          <View>
-            <Text style={styles.errorText}>Insufficient balance. You need at least {contest?.entryFee || 0.2} SOL.</Text>
-            <TouchableOpacity 
-              style={[styles.fundButton]} 
-              onPress={async () => {
-                try {
-                  if (!fundWallet) {
-                    throw new Error("Funding not available");
-                  }
-                  
-                  const result = await fundWallet({
-                    address: wallets[0].address,
-                    asset: 'native-currency',
-                    amount: "0.2"
-                  });
-                  
-                  console.log("Funding initiated:", result);
-                  await fetchUserBalance();
-                } catch (err) {
-                  console.error("Funding error:", err);
-                  setError("Could not initiate funding. Please try again.");
-                }
-              }}
-            >
-              <View style={styles.fundButtonContent}>
-                <Text style={styles.fundButtonText}>Add Funds (0.2 SOL)</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        );
-        return;
-      }
-      
-      const fundResult = await fundWallet({
-        address: wallets[0].address,
-        asset: 'native-currency',
-        amount: "0.2"
-      });
-      
-      console.log("Funding result:", fundResult);
-      
-      const newBalance = await fetchUserBalance();
-      console.log("New balance after funding:", newBalance);
-      
-      setIsFundingWallet(false);
-      setError(null);
-    } catch (err) {
-      console.error("Error in handleFundWallet:", err);
-      console.log("Error details:", {
-        message: err instanceof Error ? err.message : "Unknown error",
-        errorObject: err
-      });
-      setError("Failed to fund wallet. Please try again.");
-      setIsFundingWallet(false);
     }
   };
 
