@@ -211,8 +211,16 @@ export class Shoot9SDK {
     console.log("Entry fee (lamports):", contestAccount.entryFee.toString());
     console.log("User wallet:", this.wallet.publicKey.toString());
     
+    // Check if user is already a participant
+    const userPubkeyString = this.wallet.publicKey.toString();
+    if (contestAccount.participants.some(p => p.toString() === userPubkeyString)) {
+      console.log("User is already a participant in this contest");
+      throw new Shoot9SDKError("You have already entered this contest");
+    }
+    
     try {
       console.log("Building transaction...");
+      // Use the program's rpc method directly
       const tx = await this.program.methods
         .enterContest(contestAccount.entryFee)
         .accountsStrict({
@@ -224,6 +232,7 @@ export class Shoot9SDK {
       
       console.log("Transaction sent with ID:", tx);
       
+      // Confirm the transaction
       console.log("Confirming transaction...");
       await this.connection.confirmTransaction(tx, "confirmed");
       

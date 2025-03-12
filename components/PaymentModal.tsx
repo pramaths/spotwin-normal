@@ -277,26 +277,17 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       }
 
       const privyWallet = wallets[0];
-      console.log("Privy wallet:", {
-        address: privyWallet.address,
-        hasAddress: !!privyWallet.address,
-        addressType: typeof privyWallet.address,
-        hasPublicKey: !!privyWallet.publicKey,
-      });
-
       const connection = new Connection(
         process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
       );
 
       try {
         const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
-        console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
-
+        
         try {
           const sdk = new Shoot9SDK(connection, anchorWallet);
-
-          // Get contest ID
           const contestId = parseInt(contest.solanaContestId);
+          
           if (!contest.contestCreator || typeof contest.contestCreator !== 'string' ||
             !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
             throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
@@ -305,28 +296,43 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
           let creatorPublicKey;
           try {
             creatorPublicKey = new PublicKey(contest.contestCreator);
-            console.log("Creator public key created successfully:", creatorPublicKey.toString());
           } catch (pkError) {
             console.error("Failed to create PublicKey from contest creator:", pkError);
             throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
           }
 
-          console.log("Entering contest with params:", {
-            creator: creatorPublicKey.toString(),
-            contestId: contestId
-          });
+          // Check if the user is already in the participants list
+          try {
+            const contestAccount = await sdk.getContest(creatorPublicKey, contestId);
+            const userPubkeyString = anchorWallet.publicKey.toString();
+            
+            if (contestAccount.participants.some(p => p.toString() === userPubkeyString)) {
+              console.log("User is already a participant in this contest");
+              animateSuccess(); // Show success since they're already in
+              return;
+            }
+          } catch (checkError) {
+            console.error("Error checking participant status:", checkError);
+            // Continue with the attempt to enter if we can't check
+          }
 
           const txId = await sdk.enterContest(creatorPublicKey, contestId);
           console.log("Transaction successful:", txId);
-
-          // Show success animation
           animateSuccess();
 
         } catch (sdkError) {
           console.error("SDK error:", sdkError);
           
-          // Check for specific Solana error messages
+          // Check for specific error messages
           const errorMessage = sdkError instanceof Error ? sdkError.message : "SDK operation failed";
+          
+          if (errorMessage.includes("already entered this contest") || 
+              errorMessage.includes("already been processed")) {
+            console.log("User has already entered this contest");
+            animateSuccess(); // Show success since they're already in
+            return;
+          }
+          
           const errorCause = sdkError instanceof Error && (sdkError as any).cause ? (sdkError as any).cause : null;
           
           if (errorCause && typeof errorCause.message === 'string') {
