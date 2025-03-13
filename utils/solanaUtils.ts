@@ -2,7 +2,7 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export const fetchSolanaBalance = async (address: string): Promise<number> => {
   try {
-    const connection = new Connection('https://rpc.mainnet-alpha.sonic.game', 'confirmed');
+    const connection = new Connection('https://api.testnet.v1.sonic.game', 'confirmed');
     
     const publicKey = new PublicKey(address);
     

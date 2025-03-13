@@ -51,7 +51,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
 
   const dummyPayer = Keypair.generate();
   const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.testnet.v1.sonic.game',
     {
       commitment: 'confirmed',
       disableRetryOnRateLimit: false,
@@ -74,7 +74,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         tx.feePayer = new PublicKey(privyWallet.address);
 
         const { signature } = await provider.request({
-          method: 'signAndSendTransaction',
+          method: 'signTransaction',
           params: {
             transaction: tx,
             connection,
@@ -88,7 +88,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         return tx as T;
       } else if (tx instanceof VersionedTransaction) {
         const { signature } = await provider.request({
-          method: 'signAndSendTransaction',
+          method: 'sign',
           params: {
             transaction: tx,
             connection,
@@ -117,31 +117,25 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
           tx.feePayer = new PublicKey(privyWallet.address);
 
           await provider.request({
-            method: 'signAndSendTransaction',
+            method: 'sign',
             params: {
               transaction: tx,
               connection,
               options: {
                 skipPreflight: true,
                 maxRetries: 5,
-                preflightCommitment: 'processed',
-                skipSimulation: true,
-                minContextSlot: 0,
               }
             },
           });
         } else if (tx instanceof VersionedTransaction) {
           await provider.request({
-            method: 'signAndSendTransaction',
+            method: 'sign',
             params: {
               transaction: tx,
               connection,
               options: {
                 skipPreflight: true,
                 maxRetries: 5,
-                preflightCommitment: 'processed',
-                skipSimulation: true,
-                minContextSlot: 0,
               }
             },
           });
@@ -255,7 +249,6 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
         throw new Error("No wallet connected");
       }
       
-      // Check balance before proceeding
       const balance = await fetchUserBalance();
       if (balance === null || balance === undefined) {
         throw new Error("Failed to fetch wallet balance");
@@ -263,111 +256,45 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
 
       const requiredAmount = contest?.entryFee || 0.2;
       if (balance < requiredAmount) {
-        setIsLoading(false);
         setError(`Insufficient balance. You need at least ${requiredAmount} SOL to enter this contest. Add funds by clicking on the wallet icon.`);
         return false;
       }
       
       const privyWallet = wallets[0];
-      console.log("Privy wallet:", {
-        address: privyWallet.address,
-        hasAddress: !!privyWallet.address,
-        addressType: typeof privyWallet.address,
-        hasPublicKey: !!privyWallet.publicKey,
-      });
-      
-      // Create connection to Solana network
       const connection = new Connection(
         process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
         {
           commitment: 'confirmed',
-          disableRetryOnRateLimit: true, // Prevent automatic retries
+          disableRetryOnRateLimit: true,
         }
       );
       
-      try {
-        const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
-        console.log("Anchor wallet public key:", anchorWallet.publicKey.toString());
-        
-        try {
-          console.log("Creating SDK with:", {
-            connection: connection.rpcEndpoint,
-            wallet: anchorWallet.publicKey.toString(),
-          });
-          console.log("Creating SDK instance...");
-          const sdk = new Shoot9SDK(connection, anchorWallet);
+      const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
+      const sdk = new Shoot9SDK(connection, anchorWallet);
 
-          const contestId = parseInt(contest.solanaContestId);
-          
-          console.log("Contest ID:", contest.solanaContestId);
-          
-          // Log contest creator for debugging
-          console.log("Contest creator (raw):", contest.contestCreator);
-          
-          // Validate the contest creator address before passing it to PublicKey
-          if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
-              !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
-            throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
-          }
-          
-          // Create PublicKey instance with validation
-          let creatorPublicKey;
-          try {
-            creatorPublicKey = new PublicKey(contest.contestCreator);
-            console.log("Creator public key created successfully:", creatorPublicKey.toString());
-          } catch (pkError) {
-            console.error("Failed to create PublicKey from contest creator:", pkError);
-            throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
-          }
-          
-          // Generate a unique identifier for this transaction attempt
-          const transactionAttemptId = Date.now().toString();
-          console.log(`Starting transaction attempt ${transactionAttemptId}`);
-          
-          // Call enterContest with detailed logging
-          console.log(`Attempt ${transactionAttemptId}: Entering contest with params:`, {
-            creator: creatorPublicKey.toString(),
-            contestId: contestId
-          });
-          
-          try {
-            const txId = await sdk.enterContest(creatorPublicKey, contestId);
-            console.log(`Attempt ${transactionAttemptId}: Transaction successful:`, txId);
-            return true; // Return true on successful payment
-          } catch (txError) {
-            console.error(`Attempt ${transactionAttemptId}: Transaction error:`, txError);
-            
-            // Check if it's a duplicate transaction error
-            const errorMessage = txError instanceof Error ? txError.message : String(txError);
-            if (errorMessage.includes("already processed") || 
-                errorMessage.includes("0x1")) {
-              console.log("Detected duplicate transaction error - this likely means the transaction was successful");
-              // The transaction might have actually succeeded despite the error
-              // We could add additional verification here if needed
-              return true;
-            }
-            
-            throw txError; // Re-throw if it's not a duplicate transaction error
-          }
-          
-        } catch (sdkError) {
-          console.error("SDK error:", sdkError);
-          // Log more details about the error
-          if (sdkError instanceof Error) {
-            console.error("Error name:", sdkError.name);
-            console.error("Error message:", sdkError.message);
-            console.error("Error stack:", sdkError.stack);
-            
-            // Check if it's a Shoot9SDKError with a cause
-            if (sdkError.hasOwnProperty('cause')) {
-              console.error("Error cause:", (sdkError as any).cause);
-            }
-          }
-          throw new Error(sdkError instanceof Error ? sdkError.message : "SDK operation failed");
+      const contestId = parseInt(contest.solanaContestId);
+      
+      // Validate the contest creator address
+      if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
+          !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
+        throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
+      }
+      
+      const creatorPublicKey = new PublicKey(contest.contestCreator);
+      
+      try {
+        const txId = await sdk.enterContest(creatorPublicKey, contestId);
+        console.log("Transaction successful:", txId);
+        return true;
+      } catch (txError) {        
+        // Check if it's a duplicate transaction error
+        const errorMessage = txError instanceof Error ? txError.message : String(txError);
+        if (errorMessage.includes("already processed") || errorMessage.includes("0x1")) {
+          console.log("Detected duplicate transaction error - this likely means the transaction was successful");
+          return true;
         }
-      } catch (adapterError) {
-        console.error("Wallet adapter error:", adapterError);
-        throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
+        
+        throw txError;
       }
     } catch (err) {
       console.error("Payment error:", err);

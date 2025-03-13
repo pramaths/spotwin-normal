@@ -206,12 +206,7 @@ export class Shoot9SDK {
     console.log("Contest ID:", contestId);
     const contest = await this.findContestPDA(contestCreator, contestId);
     const contestAccount = await this.getContest(contestCreator, contestId);
-    console.log("Contest account:", contestAccount);
-    console.log("Contest PDA:", contest.toString());
-    console.log("Entry fee (lamports):", contestAccount.entryFee.toString());
-    console.log("User wallet:", this.wallet.publicKey.toString());
     
-    // Check if user is already a participant
     const userPubkeyString = this.wallet.publicKey.toString();
     if (contestAccount.participants.some(p => p.toString() === userPubkeyString)) {
       console.log("User is already a participant in this contest");
@@ -220,7 +215,6 @@ export class Shoot9SDK {
     
     try {
       console.log("Building transaction...");
-      // Use the program's rpc method directly
       const tx = await this.program.methods
         .enterContest(contestAccount.entryFee)
         .accountsStrict({
@@ -230,9 +224,8 @@ export class Shoot9SDK {
         })
         .rpc();
       
-      console.log("Transaction sent with ID:", tx);
+      console.log("Transaction sent with signature:", tx);
       
-      // Confirm the transaction
       console.log("Confirming transaction...");
       await this.connection.confirmTransaction(tx, "confirmed");
       
@@ -240,15 +233,6 @@ export class Shoot9SDK {
       return tx;
     } catch (e) {
       console.error("Enter contest error:", e);
-      if (e instanceof anchor.web3.SendTransactionError) {
-        console.error("SendTransactionError details:", e.message);
-        try {
-          const logs = e.logs;
-          console.error("Transaction logs:", logs);
-        } catch (logError) {
-          console.error("Failed to get logs:", logError);
-        }
-      }
       throw new Shoot9SDKError("Failed to enter contest", e);
     }
   }

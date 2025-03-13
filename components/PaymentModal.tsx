@@ -29,6 +29,7 @@ if (typeof global.structuredClone !== 'function') {
   console.log("structuredClone polyfill added");
 }
 
+const recentTransactions = new Set<string>();
 
 const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
   console.log("Privy wallet details:", {
@@ -45,7 +46,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
 
   const dummyPayer = Keypair.generate();
   const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.testnet.v1.sonic.game',
     {
       commitment: 'confirmed',
       disableRetryOnRateLimit: false,
@@ -67,33 +68,64 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
         tx.recentBlockhash = blockhash;
         tx.feePayer = new PublicKey(privyWallet.address);
 
-        const { signature } = await provider.request({
-          method: 'signAndSendTransaction',
-          params: {
-            transaction: tx,
-            connection,
-            options: {
-              skipPreflight: true,
-              maxRetries: 5,
-            }
-          },
-        });
-        console.log("Transaction sent with signature:", signature);
-        return tx as T;
+        // Create a transaction signature for deduplication
+        const txSignature = tx.serializeMessage().toString('base64');
+
+        // Check if we've already processed this transaction
+        if (recentTransactions.has(txSignature)) {
+          console.log("Duplicate transaction detected, skipping send");
+          throw new Error("This transaction has already been processed");
+        }
+
+        // Add to our set of recent transactions
+        recentTransactions.add(txSignature);
+
+        try {
+          const { signature } = await provider.request({
+            method: 'signTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true,
+                maxRetries: 1, // Reduce retries to prevent duplicates
+              }
+            },
+          });
+          return tx as T;
+        } catch (error) {
+          // If there's an error, remove from our set so we can try again
+          recentTransactions.delete(txSignature);
+          throw error;
+        }
       } else if (tx instanceof VersionedTransaction) {
-        const { signature } = await provider.request({
-          method: 'signAndSendTransaction',
-          params: {
-            transaction: tx,
-            connection,
-            options: {
-              skipPreflight: true,
-              maxRetries: 5,
-            }
-          },
-        });
-        console.log("Versioned transaction sent with signature:", signature);
-        return tx as T;
+        // Similar deduplication for versioned transactions
+        const txSignature = tx.message.serialize().toString('base64');
+
+        if (recentTransactions.has(txSignature)) {
+          console.log("Duplicate versioned transaction detected, skipping send");
+          throw new Error("This transaction has already been processed");
+        }
+
+        recentTransactions.add(txSignature);
+
+        try {
+          const { signature } = await provider.request({
+            method: 'signTransaction',
+            params: {
+              transaction: tx,
+              connection,
+              options: {
+                skipPreflight: true,
+                maxRetries: 1,
+              }
+            },
+          });
+          return tx as T;
+        } catch (error) {
+          recentTransactions.delete(txSignature);
+          throw error;
+        }
       }
 
       throw new Error("Unsupported transaction type");
@@ -110,35 +142,57 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
           tx.recentBlockhash = blockhash;
           tx.feePayer = new PublicKey(privyWallet.address);
 
-          await provider.request({
-            method: 'signAndSendTransaction',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 5,
-                preflightCommitment: 'processed',
-                skipSimulation: true,
-                minContextSlot: 0,
-              }
-            },
-          });
+          const txSignature = tx.serializeMessage().toString('base64');
+
+          if (recentTransactions.has(txSignature)) {
+            console.log("Duplicate transaction detected in batch, skipping");
+            throw new Error("This transaction has already been processed");
+          }
+
+          recentTransactions.add(txSignature);
+
+          try {
+            await provider.request({
+              method: 'signTransaction',
+              params: {
+                transaction: tx,
+                connection,
+                options: {
+                  skipPreflight: true,
+                  maxRetries: 1,
+                }
+              },
+            });
+          } catch (error) {
+            recentTransactions.delete(txSignature);
+            throw error;
+          }
         } else if (tx instanceof VersionedTransaction) {
-          await provider.request({
-            method: 'signAndSendTransaction',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 5,
-                preflightCommitment: 'processed',
-                skipSimulation: true,
-                minContextSlot: 0,
-              }
-            },
-          });
+          const txSignature = tx.message.serialize().toString('base64');
+
+          if (recentTransactions.has(txSignature)) {
+            console.log("Duplicate versioned transaction detected in batch, skipping");
+            throw new Error("This transaction has already been processed");
+          }
+
+          recentTransactions.add(txSignature);
+
+          try {
+            await provider.request({
+              method: 'signTransaction',
+              params: {
+                transaction: tx,
+                connection,
+                options: {
+                  skipPreflight: true,
+                  maxRetries: 1,
+                }
+              },
+            });
+          } catch (error) {
+            recentTransactions.delete(txSignature);
+            throw error;
+          }
         }
         return tx;
       }));
@@ -223,17 +277,17 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       console.log("No wallets available for balance check");
       return;
     }
-    
+
     try {
       const connection = new Connection(
         process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
       );
-      
+
       console.log("Fetching balance for address:", wallets[0].address);
       const balance = await connection.getBalance(new PublicKey(wallets[0].address));
       const balanceInSol = balance / 1_000_000_000;
       console.log("Balance fetched successfully:", balanceInSol, "SOL");
-      
+
       setUserBalance(balanceInSol);
       return balanceInSol;
     } catch (err) {
@@ -247,6 +301,9 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   };
 
   const handlePayment = async () => {
+    // Prevent multiple clicks
+    if (isLoading) return;
+
     try {
       const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
       if (userParticipationStatus) {
@@ -254,7 +311,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         return;
       }
       setIsLoading(true);
-      setError(null);
+      setError(null); // Clear any previous errors
 
       if (!wallets || wallets.length === 0) {
         throw new Error("No wallet connected");
@@ -283,29 +340,16 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
 
       try {
         const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
-        
+
         try {
           const sdk = new Shoot9SDK(connection, anchorWallet);
           const contestId = parseInt(contest.solanaContestId);
-          
-          if (!contest.contestCreator || typeof contest.contestCreator !== 'string' ||
-            !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
-            throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
-          }
+          let creatorPublicKey = new PublicKey(contest.contestCreator);
 
-          let creatorPublicKey;
-          try {
-            creatorPublicKey = new PublicKey(contest.contestCreator);
-          } catch (pkError) {
-            console.error("Failed to create PublicKey from contest creator:", pkError);
-            throw new Error(`Invalid contest creator address format: ${contest.contestCreator}`);
-          }
-
-          // Check if the user is already in the participants list
           try {
             const contestAccount = await sdk.getContest(creatorPublicKey, contestId);
             const userPubkeyString = anchorWallet.publicKey.toString();
-            
+
             if (contestAccount.participants.some(p => p.toString() === userPubkeyString)) {
               console.log("User is already a participant in this contest");
               animateSuccess(); // Show success since they're already in
@@ -313,49 +357,40 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             }
           } catch (checkError) {
             console.error("Error checking participant status:", checkError);
-            // Continue with the attempt to enter if we can't check
           }
 
-          const txId = await sdk.enterContest(creatorPublicKey, contestId);
-          console.log("Transaction successful:", txId);
-          animateSuccess();
+          try {
+            const txId = await sdk.enterContest(creatorPublicKey, contestId);
+            console.log("Transaction successful:", txId);
+            animateSuccess();
+          } catch (txError) {
+            console.error("Transaction error:", txError);
+            throw txError; 
+          }
 
         } catch (sdkError) {
           console.error("SDK error:", sdkError);
-          
-          // Check for specific error messages
           const errorMessage = sdkError instanceof Error ? sdkError.message : "SDK operation failed";
-          
-          if (errorMessage.includes("already entered this contest") || 
-              errorMessage.includes("already been processed")) {
-            console.log("User has already entered this contest");
-            animateSuccess(); // Show success since they're already in
-            return;
-          }
-          
-          const errorCause = sdkError instanceof Error && (sdkError as any).cause ? (sdkError as any).cause : null;
-          
-          if (errorCause && typeof errorCause.message === 'string') {
-            if (errorCause.message.includes("Attempt to debit an account but found no record of a prior credit")) {
-              throw new Error(`Insufficient balance. Please fund your wallet with at least ${requiredAmount} SOL to enter this contest.`);
-            }
-          }
-          
           throw new Error(errorMessage);
         }
       } catch (adapterError) {
         console.error("Wallet adapter error:", adapterError);
+        const errorString = JSON.stringify(adapterError);
+        if (errorString.includes("already been processed")) {
+          console.log("Transaction was already processed (adapter error), showing success");
+          animateSuccess();
+          return;
+        }
+
         throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
       }
     } catch (err) {
       console.error("Payment error:", err);
       setError(err instanceof Error ? err.message : "Failed to process payment");
-      
-      // If the error is related to insufficient funds, show the fund wallet button
-      if (err instanceof Error && 
-          (err.message.includes("Insufficient balance") || 
-           err.message.includes("debit an account"))) {
-        // Refresh the balance to confirm it's actually low
+
+      if (err instanceof Error &&
+        (err.message.includes("Insufficient balance") ||
+          err.message.includes("debit an account"))) {
         await fetchUserBalance();
       }
     } finally {
@@ -364,6 +399,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   };
 
   const handlePayAndContribute = () => {
+    if (isLoading) return;
     handlePayment();
 
     setTimeout(() => {
