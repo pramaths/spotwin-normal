@@ -107,20 +107,43 @@ const ContributePage = () => {
       return;
     }
     setIsSubmitting(true);
-    try{
-      const response = await apiClient(SUBMISSION, 'POST', {
-        userId: user?.id,
-        contestId: contestId,
-        question,
-        videoUri
+    try {
+      // Create form data to send video binary
+      const formData = new FormData();
+      formData.append('userId', user?.id as string);
+      formData.append('contestId', contestId);
+      formData.append('question', question);
+      
+      // Append video as binary data
+      if (videoUri) {
+        // Fetch the video file as a blob
+        const fileResponse = await fetch(videoUri);
+        const blob = await fileResponse.blob();
+        
+        const videoName = videoUri.split('/').pop() || 'video.mp4';
+        
+        // Append the blob directly
+        formData.append('video', blob, videoName);
+      }
+      
+      // Use fetch directly instead of apiClient
+      const response = await fetch(SUBMISSION, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData
       });
-      if(response.success){
+      
+      const result = await response.json();
+      
+      if(result.success){
         setIsSubmitting(false);
         setTimeout(() => {
           router.push('/questions');
         }, 1000);
       }
-    }catch(error){
+    } catch(error) {
       console.log(error);
       setIsSubmitting(false);
     }
