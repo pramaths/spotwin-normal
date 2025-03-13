@@ -46,7 +46,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
 
   const dummyPayer = Keypair.generate();
   const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.testnet.v1.sonic.game',
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
     {
       commitment: 'confirmed',
       disableRetryOnRateLimit: false,

@@ -51,7 +51,7 @@ const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
 
   const dummyPayer = Keypair.generate();
   const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://api.testnet.v1.sonic.game',
+    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
     {
       commitment: 'confirmed',
       disableRetryOnRateLimit: false,
@@ -273,8 +273,7 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
       const sdk = new Shoot9SDK(connection, anchorWallet);
 
       const contestId = parseInt(contest.solanaContestId);
-      
-      // Validate the contest creator address
+
       if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
           !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
         throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
