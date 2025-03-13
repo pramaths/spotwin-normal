@@ -12,7 +12,8 @@ import { useState } from 'react';
 import FirstHowItWorks from '../assets/images/1sthowitworks.svg';
 import SecondHowItWorks from '../assets/images/2ndhowitworks.svg';
 import ThirdHowItWorks from '../assets/images/3rdhowitworks.svg';
-import FourthHowItWorks from '../assets/images/4thhowitworks.svg';
+import leaderboard from '../assets/images/leaderboard.svg';
+
 import { useAuthStore } from '../store/authstore';
 
 const { width } = Dimensions.get('window');
@@ -31,19 +32,19 @@ const howItWorksSlides: SlideData[] = [
     SvgComponent: FirstHowItWorks,
   },
   {
-    title: 'Pick Your Challenge',
-    description: 'Answer a few simple questions to rank higher and win more!',
+    title: 'Answer ANY 9 Questions',
+    description: 'Out of the 30 questions, answer any 9 with YES or NO options',
     SvgComponent: SecondHowItWorks,
   },
   {
     title: 'Play and Contribute',
-    description: 'Upload videos or complete tasks if needed for extra points!',
+    description: 'Upload relevant videos and questions and stand a chance to get a rank boost in the leaderboard i.e more rewards',
     SvgComponent: ThirdHowItWorks,
   },
   {
-    title: 'The Results Are In!',
-    description: 'Winners share the prize pool. Earn, repeat, and keep playing!',
-    SvgComponent: FourthHowItWorks,
+    title: 'Leaderboard',
+    description: 'Winners share the prize pool. Earn, repeat, and keep playing!, To understand more about the our rankin mechanism, click on the check details button',
+    SvgComponent: leaderboard,
   },
 ];
 

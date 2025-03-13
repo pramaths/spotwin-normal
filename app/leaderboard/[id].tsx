@@ -34,20 +34,20 @@ export default function LeaderboardScreen() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [contestName, setContestName] = useState<string>('Contest Leaderboard');
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const response = await apiClient<LeaderboardEntry[]>(LEADERBOARD_API(id as string), 'GET');
-        if (response.success && response.data) {
-          setLeaderboard(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        setLeaderboard(mockLeaderboardData);
-      }
-    };
-    fetchLeaderboard();
-  }, [id]);
+  // useEffect(() => {
+  //   const fetchLeaderboard = async () => {
+  //     try {
+  //       const response = await apiClient<LeaderboardEntry[]>(LEADERBOARD_API(id as string), 'GET');
+  //       if (response.success && response.data) {
+  //         setLeaderboard(mockLeaderboardData);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching leaderboard:', error);
+  //       setLeaderboard(mockLeaderboardData);
+  //     }
+  //   };
+  //   fetchLeaderboard();
+  // }, [id]);
 
   const renderLeaderboardItem = ({ item }: { item: LeaderboardEntry }) => (
     <View style={styles.leaderboardItem}>
@@ -88,7 +88,7 @@ export default function LeaderboardScreen() {
       </View>
 
       <FlatList
-        data={leaderboard}
+        data={mockLeaderboardData}
         renderItem={renderLeaderboardItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
