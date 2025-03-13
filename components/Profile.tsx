@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw, Copy, Key } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -205,7 +205,12 @@ export default function ProfileScreen({ onClose }: ProfileScreenProps) {
 
             <View style={styles.chainInfoBox}>
               <Text style={styles.chainInfoText}>Chain: Sonic</Text>
-              <Text style={styles.bridgeInfoText}>Convert SOL to SNIC using Sonic Bridge</Text>
+              <Text style={styles.bridgeInfoText}>
+                Convert native SOL to Sonic SOL using the{" "}
+                <Text style={{ color: "blue" }} onPress={() => Linking.openURL("https://bridge.sonic.game/add")}>
+                  Sonic Bridge
+                </Text>.
+              </Text>
             </View>
 
             <View style={styles.qrContainer}>

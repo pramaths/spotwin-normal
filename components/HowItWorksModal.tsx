@@ -65,6 +65,11 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
     }
   };
 
+  const handleClose = () => {
+    setCurrentSlideIndex(0); // Reset to first slide when closing
+    onClose();
+  };
+
   const openLearnMoreLink = () => {
     Linking.openURL('https://9shoot.fun/how-it-works');
   };
@@ -73,11 +78,11 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
   const Svg = currentSlide.SvgComponent;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <TouchableOpacity 
         style={styles.overlay} 
         activeOpacity={1} 
-        onPress={onClose}
+        onPress={handleClose}
       >
         <TouchableOpacity 
           style={styles.container} 
@@ -85,7 +90,7 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
           onPress={(e) => e.stopPropagation()}
         >
           {/* Close button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
 
@@ -117,11 +122,11 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
           {/* Navigation buttons */}
           {isLastSlide ? (
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.doneButton} onPress={onClose}>
+              <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
                 <Text style={styles.doneButtonText}>Got it!</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.learnMoreButton} onPress={openLearnMoreLink}>
-                <Text style={styles.learnMoreButtonText}>Check Detials</Text>
+                <Text style={styles.learnMoreButtonText}>Check Details</Text>
               </TouchableOpacity>
             </View>
           ) : (
