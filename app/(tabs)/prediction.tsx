@@ -1,0 +1,460 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  SafeAreaView,
+  Dimensions,
+  Text,
+  ActivityIndicator
+} from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { submitPrediction, RemovePrediction, fetchUserPredictions } from '@/services/videoApi';
+import { useLocalSearchParams } from 'expo-router';
+import { useUserStore } from '@/store/userStore';
+import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion } from '@/types';
+import QuestionItem from '@/components/QuestionItem';
+import { QUESTIONS_BY_CONTEST } from '@/routes/api';
+import apiClient from '@/utils/api';
+
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
+
+export default function PredictionScreen() {
+  const { contestId } = useLocalSearchParams();
+  const [questions, setQuestions] = useState<IQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<IDifficultyLevel>(IDifficultyLevel.EASY);
+
+  const [predictionMessage, setPredictionMessage] = useState<{ text: string; type: IOutcome } | null>(null);
+  const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
+  const [userVotesMap, setUserVotesMap] = useState<Record<string, IOutcome | null>>({});
+  const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
+
+  const [questionsByDifficulty, setQuestionsByDifficulty] = useState<Record<IDifficultyLevel, IQuestion[]>>({
+    [IDifficultyLevel.EASY]: [],
+    [IDifficultyLevel.MEDIUM]: [],
+    [IDifficultyLevel.HARD]: []
+  });
+
+  const { user } = useUserStore();
+  const router = useRouter();
+
+  const [difficultyTabs] = useState<IDifficultyLevel[]>([
+    IDifficultyLevel.EASY,
+    IDifficultyLevel.MEDIUM,
+    IDifficultyLevel.HARD
+  ]);
+
+  const getAnsweredCountByDifficulty = (difficulty: IDifficultyLevel) => {
+    return predictions.filter((p: IUserPrediction) => p.question.difficultyLevel === difficulty).length;
+  };
+
+  const loadQuestions = useCallback(async () => {
+    if (!contestId) {
+      setError('Contest ID is required');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiClient<IQuestion[]>(QUESTIONS_BY_CONTEST(contestId as string), 'GET');
+      if (response.success && response.data) {
+        const questionData = Array.isArray(response.data) ? response.data : [];
+        setQuestions(questionData);
+
+        const groupedQuestions: Record<IDifficultyLevel, IQuestion[]> = {
+          [IDifficultyLevel.EASY]: [],
+          [IDifficultyLevel.MEDIUM]: [],
+          [IDifficultyLevel.HARD]: []
+        };
+
+        if (questionData.length > 0) {
+          questionData.forEach((q: IQuestion) => {
+            if (groupedQuestions[q.difficultyLevel]) {
+              groupedQuestions[q.difficultyLevel].push(q);
+            }
+          });
+        }
+
+        setQuestionsByDifficulty(groupedQuestions);
+      } else {
+        setError('Failed to load questions. Please try again.');
+      }
+    } catch (err) {
+      setError('Failed to load questions. Please try again.');
+      console.error('Error loading questions:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [contestId]);
+
+  const loadPredictions = useCallback(async () => {
+    if (!contestId) return;
+
+    try {
+      setLoading(true);
+      const data = await fetchUserPredictions(contestId as string, user?.id || '');
+      setPredictions(data);
+
+      const votesMap = data.reduce((acc: Record<string, IOutcome | null>, pred: IUserPrediction) => {
+        acc[pred.question.id] = pred.prediction;
+        return acc;
+      }, {});
+      setUserVotesMap(votesMap);
+
+      const answeredIds = data.map((p: IUserPrediction) => p.question.id);
+      setAnsweredQuestions(answeredIds);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load predictions');
+    } finally {
+      setLoading(false);
+    }
+  }, [contestId, user?.id]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
+
+  useEffect(() => {
+    loadPredictions();
+  }, [loadPredictions]);
+
+  const handleTabPress = (difficulty: IDifficultyLevel) => {
+    setSelectedDifficulty(difficulty);
+  };
+
+  const handlePrediction = async (question: IQuestion, prediction: IOutcome) => {
+    try {
+      // Check if already answered 3 in this difficulty
+      const answeredQuestionsForDifficulty = predictions.filter(
+        (p: IUserPrediction) => p.question.difficultyLevel === question.difficultyLevel
+      );
+
+      if (answeredQuestionsForDifficulty.length >= 3 && !userVotesMap[question.id]) {
+        setPredictionMessage({
+          text: `You can only answer 3 questions in ${question.difficultyLevel} level`,
+          type: IOutcome.NO
+        });
+        setTimeout(() => {
+          setPredictionMessage(null);
+        }, 2000);
+        return;
+      }
+
+      await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
+
+      if (!answeredQuestions.includes(question.id)) {
+        setAnsweredQuestions((prev: string[]) => [...prev, question.id]);
+      }
+
+      setUserVotesMap((prev) => ({
+        ...prev,
+        [question.id]: prediction
+      }));
+
+      // Add or update predictions in state
+      setPredictions((prev: IUserPrediction[]) => {
+        const existingIndex = prev.findIndex((p) => p.question.id === question.id);
+        const newEntry: IUserPrediction = {
+          id: question.id,
+          userId: user?.id || '',
+          contestId: contestId as string,
+          prediction: prediction,
+          isCorrect: null,
+          question
+        };
+
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex] = newEntry;
+          return updated;
+        } else {
+          return [...prev, newEntry];
+        }
+      });
+
+      setPredictionMessage({
+        text: `You predicted ${prediction === IOutcome.YES ? 'YES' : 'NO'}!`,
+        type: prediction
+      });
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
+    } catch (err: any) {
+      console.error('Error submitting prediction:', err);
+      setPredictionMessage({
+        text: 'Failed to submit prediction. Please try again.',
+        type: IOutcome.NO
+      });
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
+    }
+  };
+
+  const handleRemovePrediction = async (questionId: string) => {
+    try {
+      await RemovePrediction(questionId, user?.id || '');
+
+      setUserVotesMap((prev) => {
+        const updated = { ...prev };
+        delete updated[questionId];
+        return updated;
+      });
+
+      setAnsweredQuestions((prev) => prev.filter((id) => id !== questionId));
+
+      setPredictions((prev) => prev.filter((p: IUserPrediction) => p.question.id !== questionId));
+    } catch (err) {
+      console.error('Error removing prediction:', err);
+    }
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  // Render
+  const currentQuestions = questionsByDifficulty[selectedDifficulty] || [];
+  const answeredCount = getAnsweredCountByDifficulty(selectedDifficulty);
+
+  if (loading && questions.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <ActivityIndicator size="large" color="#FFF" />
+        <Text style={styles.loadingText}>Loading questions...</Text>
+      </View>
+    );
+  }
+
+  if (error && questions.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadQuestions}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+
+      <SafeAreaView style={styles.safeContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <ChevronLeft color="#FFF" size={24} />
+          </TouchableOpacity>
+
+          <View style={styles.tabContainer}>
+            {difficultyTabs.map((difficulty: IDifficultyLevel) => (
+              <TouchableOpacity
+                key={difficulty}
+                style={[styles.tabButton, { backgroundColor: getTabColor(difficulty, selectedDifficulty) }]}
+                onPress={() => handleTabPress(difficulty)}
+              >
+                <Text style={styles.tabText}>{difficulty}</Text>
+                <Text style={styles.countBadge}>{getAnsweredCountByDifficulty(difficulty)}/3</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.questionCounterContainer}>
+          <Text style={styles.questionCounterText}>{answeredCount}/3 questions answered</Text>
+        </View>
+
+        <ScrollView
+          style={{ flex: 1, marginVertical: 10 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        >
+          {currentQuestions.length > 0 ? (
+            currentQuestions.map((q: IQuestion) => (
+              <QuestionItem
+                question={q}
+                onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
+                userVote={userVotesMap[q.id] || null}
+                onRemovePrediction={() => handleRemovePrediction(q.id)}
+              />
+            ))
+          ) : (
+            <View style={styles.noQuestionsContainer}>
+              <Text style={styles.noQuestionsText}>
+                No questions available for {selectedDifficulty} level
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+
+      {predictionMessage && (
+        <View
+          style={[
+            styles.predictionMessage,
+            predictionMessage.type === IOutcome.YES ? styles.yesMessage : styles.noMessage
+          ]}
+        >
+          <Text style={styles.predictionMessageText}>{predictionMessage.text}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function getTabColor(difficulty: IDifficultyLevel, selected: IDifficultyLevel) {
+  if (difficulty !== selected) return 'rgba(255, 255, 255, 0.2)';
+  switch (difficulty) {
+    case IDifficultyLevel.EASY:
+      return '#4CAF50'; // Green
+    case IDifficultyLevel.MEDIUM:
+      return '#FF9800'; // Orange
+    case IDifficultyLevel.HARD:
+      return '#F44336'; // Red
+    default:
+      return '#CCCCCC';
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000'
+  },
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#000'
+  },
+  header: {
+    paddingTop: 45,
+    paddingBottom: 10,
+    flexDirection: 'column',
+    alignItems: 'center',
+    zIndex: 10
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  loadingText: {
+    color: '#FFF',
+    marginTop: 10,
+    fontSize: 16
+  },
+  errorText: {
+    color: '#FFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20
+  },
+  retryButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    top: 0,
+    padding: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    zIndex: 10
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 50,
+    marginTop: 12,
+    zIndex: 5,
+    width: '100%'
+  },
+  tabButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minWidth: 80
+  },
+  tabText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14
+  },
+  countBadge: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6
+  },
+  questionCounterContainer: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    zIndex: 10
+  },
+  questionCounterText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14
+  },
+  noQuestionsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  noQuestionsText: {
+    color: '#FFF',
+    fontSize: 16,
+    textAlign: 'center'
+  },
+  predictionMessage: {
+    position: 'absolute',
+    bottom: 24,
+    alignSelf: 'center',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    zIndex: 20
+  },
+  yesMessage: {
+    backgroundColor: '#4CAF50'
+  },
+  noMessage: {
+    backgroundColor: '#F44336'
+  },
+  predictionMessageText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14
+  }
+});

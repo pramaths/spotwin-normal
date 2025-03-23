@@ -20,19 +20,17 @@ import PaymentModal from '../../components/PaymentModal';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatDateTime } from '../../utils/dateUtils';
-import { IContest } from '../../types';
+import { IContest, IUser } from '../../types';
 import { useContestsStore } from '../../store/contestsStore';
 import apiClient from '../../utils/api';
-import { CONTESTS } from '../../routes/api';
 import { useUserStore } from '../../store/userStore';
-import { IUser } from '../../types';
-import { USER, USER_CONTESTS } from '../../routes/api';
-import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
+import { USER, USER_CONTESTS, CONTESTS } from '../../routes/api';
+import { useNotification } from '@/contexts/NotificationContext';
 
 const sportsCategories = [
-  { id: '1', name: 'Football', icon: '⚽' },
-  { id: '2', name: 'Basketball', icon: '🏀' },
-  { id: '3', name: 'Cricket', icon: '🏏' },
+  { id: '1', name: 'Cricket', icon: '🏏' },
+  { id: '2', name: 'Football', icon: '⚽' },
+  { id: '3', name: 'Basketball', icon: '🏀' },
 ];
 
 export default function HomeScreen() {
@@ -42,23 +40,26 @@ export default function HomeScreen() {
   const [filteredContests, setFilteredContests] = useState<IContest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const { contests, setContests, setUserContests } = useContestsStore();
-  const { wallets } = useEmbeddedSolanaWallet();
   const router = useRouter();
   const featuredListRef = useRef<FlatList>(null);
-  const { user: PrivyUser } = usePrivy();
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
+
+  const { notification, expoPushToken, error } = useNotification();
+
+  if (error) {
+    console.log("Error:", error);
+  }
+  console.log("Notification:", JSON.stringify(notification, null, 2));
+  console.log("Expo Push Token:", expoPushToken);
 
   useEffect(() => {
     fetchContests();
     fetchUser();
-  }, [PrivyUser]);
+  }, []);
 
   const fetchUser = async () => {
-    if (!wallets || wallets.length === 0) {
-      return;
-    }
-    const response = await apiClient<IUser>(USER(wallets[0].address), 'GET');
+    const response = await apiClient<IUser>(USER(user?.id || ''), 'GET');
     if (response.success && response.data) {
       setUser(response.data);
     }
@@ -69,20 +70,16 @@ export default function HomeScreen() {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
       if (user?.id) {
         const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
-        
+
         if (response.success && response.data && userContestsResponse.success) {
-          console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
-          console.log("User contests:", userContestsResponse?.data?.map((contest: IContest) => contest.id));
-          let availableContests = response.data.filter((contest: IContest) => 
-            !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id)
-          );
-          setContests(availableContests);
+          // console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
+          // let availableContests = response.data.filter((contest: IContest) => 
+          //   !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id)
+          // );
+          setContests(response.data);
           setUserContests(userContestsResponse.data || []);
-        } else {
-          console.error("Failed to fetch contests:", response.message);
         }
       } else {
-        // If no user ID, just set all contests as available
         if (response.success && response.data) {
           setContests(response.data);
           setUserContests([]);
@@ -107,15 +104,17 @@ export default function HomeScreen() {
 
   const filterContestsBySport = (sportId: string) => {
     const sportName = sportsCategories.find(sport => sport.id === sportId)?.name;
-
     if (!sportName || contests.length === 0) {
       setFilteredContests([]);
       return;
     }
 
-    const filtered = contests.filter(contest =>
-      contest.event.sport?.name.toLowerCase() === sportName.toLowerCase()
-    );
+    const filtered = contests.filter(contest => {
+      console.log("contest.match?.event?.sport?.name", contest.match?.event?.sport?.name);
+      console.log("sportName", sportName);
+      return contest.match?.event?.sport?.name.toLowerCase() === sportName.toLowerCase()
+    });
+    console.log("filtered", filtered);
 
     setFilteredContests(filtered.length > 0 ? filtered : []);
   };
@@ -127,16 +126,10 @@ export default function HomeScreen() {
 
   const handleClosePaymentModal = () => {
     setPaymentModalVisible(false);
-    if (selectedContest) {
-      router.push({
-        pathname: "/video-prediction",
-        params: { contestId: selectedContest.id },
-      });
-    }
   };
 
   const renderFeaturedCard = ({ item, index }: { item: IContest, index: number }) => {
-    const { formattedTime } = formatDateTime(item.event.startDate);
+    const { formattedTime } = formatDateTime(item.match?.startTime || '');
 
     return (
       <View style={styles.featuredCardWrapper}>
@@ -149,11 +142,10 @@ export default function HomeScreen() {
           end={{ x: 1, y: 1 }}
         >
           <View style={styles.cardHeader}>
-            <Text style={styles.leagueText}>{item.event.title}</Text>
+            <Text style={styles.leagueText}>{item.match?.title}</Text>
             <TouchableOpacity
               style={styles.slideArrowContainer}
               onPress={() => {
-                // Scroll to the next card
                 const nextIndex = (index + 1) % contests.slice(0, 3).length;
                 featuredListRef.current?.scrollToIndex({
                   index: nextIndex,
@@ -168,12 +160,12 @@ export default function HomeScreen() {
           <View style={styles.teamsContainer}>
             <View style={styles.teamContainer}>
               <Image
-                source={{ uri: item.event.teamA.imageUrl }}
+                source={{ uri: item.match?.teamA.imageUrl }}
                 style={styles.teamLogo}
                 resizeMode="contain"
               />
               <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">
-                {item.event.teamA.name}
+                {item.match?.teamA.name}
               </Text>
             </View>
 
@@ -186,17 +178,16 @@ export default function HomeScreen() {
 
             <View style={styles.teamContainer}>
               <Image
-                source={{ uri: item.event.teamB.imageUrl }}
+                source={{ uri: item.match?.teamB.imageUrl }}
                 style={styles.teamLogo}
                 resizeMode="contain"
               />
               <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">
-                {item.event.teamB.name}
+                {item.match?.teamB.name}
               </Text>
             </View>
           </View>
 
-          {/* Footer */}
           <View style={styles.cardFooter}>
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
@@ -207,7 +198,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Prize pool</Text>
               <Text style={styles.footerValue}>
-                $ {item.entryFee.toLocaleString()}
+                TBD
               </Text>
             </View>
           </View>
@@ -331,7 +322,6 @@ export default function HomeScreen() {
   );
 }
 
-// Styles
 const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({

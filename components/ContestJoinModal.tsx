@@ -14,10 +14,7 @@ import {
 import { ChevronLeft, Check } from 'lucide-react-native';
 import { IContest } from '../types';
 import { router } from 'expo-router';
-import { useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
-import { Shoot9SDK } from '../program/contract-sdk';
-import { Wallet } from '@coral-xyz/anchor';
 import {getUserParticipationStatus} from '../services/userContestsApi';
 import { useUserStore } from '@/store/userStore';
 
@@ -29,124 +26,6 @@ interface ContestJoinModalProps {
   isUserParticipating: boolean;
 }
 
-if (typeof global.structuredClone !== 'function') {
-  global.structuredClone = function (obj) {
-    return JSON.parse(JSON.stringify(obj));
-  };
-  console.log("structuredClone polyfill added");
-}
-
-const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
-  console.log("Privy wallet details:", {
-    wallet: privyWallet,
-    hasAddress: !!privyWallet?.address,
-    hasSignTransaction: !!privyWallet?.signTransaction,
-    signTransactionType: typeof privyWallet?.signTransaction,
-    methods: Object.keys(privyWallet || {})
-  });
-
-  if (!privyWallet || !privyWallet.address) {
-    throw new Error("Privy wallet missing address");
-  }
-
-  const dummyPayer = Keypair.generate();
-  const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
-    {
-      commitment: 'confirmed',
-      disableRetryOnRateLimit: false,
-      confirmTransactionInitialTimeout: 120000
-    }
-  );
-
-  return {
-    publicKey: new PublicKey(privyWallet.address),
-    payer: dummyPayer,
-    signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
-      console.log("Signing transaction with provider...");
-      const provider = await privyWallet.getProvider();
-      const connection = getConnection();
-
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
-
-      if (tx instanceof Transaction) {
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = new PublicKey(privyWallet.address);
-
-        const { signature } = await provider.request({
-          method: 'signTransaction',
-          params: {
-            transaction: tx,
-            connection,
-            options: {
-              skipPreflight: true,
-              maxRetries: 5,
-            }
-          },
-        });
-        console.log("Transaction sent with signature:", signature);
-        return tx as T;
-      } else if (tx instanceof VersionedTransaction) {
-        const { signature } = await provider.request({
-          method: 'sign',
-          params: {
-            transaction: tx,
-            connection,
-            options: {
-              skipPreflight: true,
-              maxRetries: 5,
-            }
-          },
-        });
-        console.log("Versioned transaction sent with signature:", signature);
-        return tx as T;
-      }
-
-      throw new Error("Unsupported transaction type");
-    },
-    signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
-      console.log("Signing multiple transactions with provider...");
-      const provider = await privyWallet.getProvider();
-      const connection = getConnection();
-
-      return await Promise.all(txs.map(async (tx) => {
-        const { blockhash } = await connection.getLatestBlockhash('finalized');
-
-        if (tx instanceof Transaction) {
-          tx.recentBlockhash = blockhash;
-          tx.feePayer = new PublicKey(privyWallet.address);
-
-          await provider.request({
-            method: 'sign',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 5,
-              }
-            },
-          });
-        } else if (tx instanceof VersionedTransaction) {
-          await provider.request({
-            method: 'sign',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 5,
-              }
-            },
-          });
-        }
-        return tx;
-      }));
-    },
-  };
-};
-
-
 const { height } = Dimensions.get('window');
 
 const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating }: ContestJoinModalProps) => {
@@ -157,29 +36,16 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { wallets } = useEmbeddedSolanaWallet();
   const { user } = useUserStore();
   const [userBalance, setUserBalance] = useState<number | null>(0);
 
   const fetchUserBalance = async () => {
-    console.log("fetchUserBalance started", { wallets });
-    if (!wallets || wallets.length === 0) {
-      console.log("No wallets available for balance check");
-      return;
-    }
-    
     try {
       const connection = new Connection(
         process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
       );
       
-      console.log("Fetching balance for address:", wallets[0].address);
-      const balance = await connection.getBalance(new PublicKey(wallets[0].address));
-      const balanceInSol = balance / 1_000_000_000;
-      console.log("Balance fetched successfully:", balanceInSol, "SOL");
-      
-      setUserBalance(balanceInSol);
-      return balanceInSol;
+      setUserBalance(0);
     } catch (err) {
       console.error("Error in fetchUserBalance:", err);
       return null;
@@ -234,83 +100,15 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
       }
     }, 1800);
   };
-  
-  const handleSolanaPayment = async () => {
-    try {
-      const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
-      if(userParticipationStatus){
-        setError("You have already participated in this contest");
-        return false;
-      }
-      setIsLoading(true);
-      setError(null);
-      
-      if (!wallets || wallets.length === 0) {
-        throw new Error("No wallet connected");
-      }
-      
-      const balance = await fetchUserBalance();
-      if (balance === null || balance === undefined) {
-        throw new Error("Failed to fetch wallet balance");
-      }
 
-      const requiredAmount = contest?.entryFee || 0.2;
-      if (balance < requiredAmount) {
-        setError(`Insufficient balance. You need at least ${requiredAmount} SOL to enter this contest. Add funds by clicking on the wallet icon.`);
-        return false;
-      }
-      
-      const privyWallet = wallets[0];
-      const connection = new Connection(
-        process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
-        {
-          commitment: 'confirmed',
-          disableRetryOnRateLimit: true,
-        }
-      );
-      
-      const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
-      const sdk = new Shoot9SDK(connection, anchorWallet);
-
-      const contestId = parseInt(contest.solanaContestId);
-
-      if (!contest.contestCreator || typeof contest.contestCreator !== 'string' || 
-          !contest.contestCreator.match(/^[A-Za-z0-9]{32,44}$/)) {
-        throw new Error(`Invalid contest creator address: ${contest.contestCreator}`);
-      }
-      
-      const creatorPublicKey = new PublicKey(contest.contestCreator);
-      
-      try {
-        const txId = await sdk.enterContest(creatorPublicKey, contestId);
-        console.log("Transaction successful:", txId);
-        return true;
-      } catch (txError) {        
-        // Check if it's a duplicate transaction error
-        const errorMessage = txError instanceof Error ? txError.message : String(txError);
-        if (errorMessage.includes("already processed") || errorMessage.includes("0x1")) {
-          console.log("Detected duplicate transaction error - this likely means the transaction was successful");
-          return true;
-        }
-        
-        throw txError;
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(err instanceof Error ? err.message : "Failed to process payment");
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handlePayment = async () => {
-    const success = await handleSolanaPayment();
+    const success = true;
     if (success) {
       animateSuccess();
       setTimeout(() => {
         router.push({
-          pathname: "/video-prediction",
+          pathname: "/prediction",
           params: { contestId: contest.id },
         });
       }, 1500);
@@ -325,16 +123,8 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
     }
   }, [isVisible]);
 
-  // Add check for wallet availability
-  useEffect(() => {
-    console.log("Checking wallet availability:", {
-      wallets: wallets?.length
-    });
-  }, [wallets]);
 
   if (!contest) return null;
-
-  const thumbnailUrl = contest.event?.eventImageUrl || 'https://9shootnew.s3.us-east-1.amazonaws.com/ss1.png';
 
   return (
     <Modal
@@ -359,12 +149,12 @@ const ContestJoinModal = ({ isVisible, onClose, contest, onConfirm, isUserPartic
 
           <View style={styles.imageContainer}>
             <Image 
-              source={{ uri: thumbnailUrl }} 
+              source={{ uri: contest.match?.event?.eventImageUrl }} 
               style={styles.contestImage} 
               resizeMode="cover"
             />
             <View style={styles.questionOverlay}>
-              <Text style={styles.questionText}>{contest.name || "Will there be a goal in next 5 minutes?"}</Text>
+              <Text style={styles.questionText}>{contest.name}</Text>
               <View style={styles.timerContainer}>
                 <Text style={styles.timerText}>Ends in 4:30</Text>
               </View>

@@ -6,27 +6,23 @@ export const LOGOUT = `${backendUrl}/auth/logout`;
 export const SPORTS = `${backendUrl}/api/sports`;
 
 //contests
-export const CONTESTS = `${backendUrl}/contests`;
+export const CONTESTS = `${backendUrl}/contests/active`;
 export const CONTESTS_BY_ID = (id: string) => `${backendUrl}/contests/${id}`;
 
 
 //questions
 export const QUESTIONS =(id: string) => `${backendUrl}/submission/user/${id}`;
+export const QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/questions/contest/${contestId}`;
 
 //user
-export const USER =(publicAddress: string) => `${backendUrl}/users/address/${publicAddress}`;
+export const USER =(id: string) => `${backendUrl}/users/${id}`;
+export const USER_BALANCE = (userId: string) => `${backendUrl}/users/${userId}/balance`;
 
-
-//submission
-export const SUBMISSION = `${backendUrl}/submission`;
 
 //UserContests
 export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
 export const USER_PARTICIPATION =(userId: string)=> `${backendUrl}/user-contests/user/${userId}/participation`;
-
-// ative contest with videos
-export const ACTIVE_CONTEST_WITH_VIDEOS = `${backendUrl}/contests/active`;
-
+export const JOIN_CONTEST = `${backendUrl}/user-contests/join`;
 
 //Prediction
 export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;

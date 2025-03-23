@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import PredictionQuestion from './PredictionQuestion';
-import { IContestWithVideos } from '@/types';
+import { IContest } from '@/types';
 import { PredictionGridSkeleton } from './SkeletonLoading';
 import { useContestsStore } from '@/store/contestsStore';
 
 interface Question {
   id: string;
   question: string;
-  matchImage?: string;
-  thumbnailUrl?: string;
-  timeRemaining?: string;
+  difficultyLevel: string;
 }
 
 interface PredictionQuestionGridProps {
   questions: Question[];
-  selectedContest: IContestWithVideos | null;
+  selectedContest: IContest | null;
   isLoading?: boolean;
 }
 
@@ -24,7 +22,6 @@ const PredictionQuestionGrid = ({
   selectedContest,
   isLoading = false
 }: PredictionQuestionGridProps) => {
-  console.log("selectedContest", selectedContest);
   const { userContests } = useContestsStore();
   
   const isUserParticipatingInContest = (contestId: string): boolean => {
@@ -35,11 +32,9 @@ const PredictionQuestionGrid = ({
     return <PredictionGridSkeleton />;
   }
   
-  const contestVideos = selectedContest?.featuredVideos || [];
-  
   const questionPairs = [];
-  for (let i = 0; i < contestVideos.length; i += 2) {
-    const pair = contestVideos.slice(i, i + 2);
+  for (let i = 0; i < questions.length; i += 2) {
+    const pair = questions.slice(i, i + 2);
     questionPairs.push(pair);
   }
 
@@ -48,13 +43,12 @@ const PredictionQuestionGrid = ({
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {questionPairs.map((pair, index) => (
           <View key={index} style={styles.row}>
-            {pair.map((video) => (
-              <View key={video.id} style={styles.questionWrapper}>
+            {pair.map((questionItem) => (
+              <View key={questionItem.id} style={styles.questionWrapper}>
                 <PredictionQuestion
-                  id={video.id}
-                  question={video.question || ""}
-                  matchImage={video.thumbnailUrl || "https://9shootnew.s3.us-east-1.amazonaws.com/blur_img.png"}
-                  timeRemaining={"0:00"}
+                  id={questionItem.id}
+                  question={questionItem.question}
+                  difficultyLevel={questionItem.difficultyLevel}
                   contest={selectedContest}
                   isUserParticipating={selectedContest ? isUserParticipatingInContest(selectedContest.id) : false}
                 />

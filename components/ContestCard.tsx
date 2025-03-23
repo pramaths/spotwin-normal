@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
-import { IContest, IEvent, ITeam, ISport } from '../types';
+import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 
 interface ContestCardProps {
@@ -8,7 +8,7 @@ interface ContestCardProps {
 }
 
 export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
-  const { event, entryFee, name, currency } = contest;
+  const { event, entryFee, name, currency, match } = contest;
   
   const handlePress = () => {
     if (onPress) {
@@ -16,7 +16,7 @@ export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
     }
   };
   
-  const { formattedTime, formattedDate } = formatDateTime(event.startDate);
+  const { formattedTime, formattedDate } = formatDateTime(match?.startTime || '');
   
   return (
     <TouchableOpacity 
@@ -25,21 +25,21 @@ export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
       activeOpacity={0.8}
     >
       <View style={styles.header}>
-        <Text style={styles.leagueName}>{event.title}</Text>
+        <Text style={styles.leagueName}>{match?.title}</Text>
         <View style={styles.statusContainer}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusText}>{event.status}</Text>
+          <Text style={styles.statusText}>{match?.status}</Text>
         </View>
       </View>
       
       <View style={styles.teamsContainer}>
         <View style={styles.teamContainer}>
           <Image 
-            source={{ uri: event.teamA.imageUrl }} 
+            source={{ uri: match?.teamA.imageUrl }} 
             style={styles.teamLogo}
             resizeMode="contain" 
           />
-          <Text style={styles.teamName} numberOfLines={1}>{event.teamA.name}</Text>
+          <Text style={styles.teamName} numberOfLines={1}>{match?.teamA.name}</Text>
         </View>
         
         <View style={styles.timeContainer}>
@@ -48,11 +48,11 @@ export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
         
         <View style={styles.teamContainer}>
           <Image 
-            source={{ uri: event.teamB.imageUrl }} 
+            source={{ uri: match?.teamB.imageUrl }} 
             style={styles.teamLogo}
             resizeMode="contain" 
           />
-          <Text style={styles.teamName} numberOfLines={1}>{event.teamB.name}</Text>
+          <Text style={styles.teamName} numberOfLines={1}>{match?.teamB.name}</Text>
         </View>
       </View>
       

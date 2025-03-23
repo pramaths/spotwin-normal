@@ -3,28 +3,24 @@ import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
 import HeaderProfile from '@/components/HeaderProfile';
-import { IContestWithVideos } from '@/types';
+import { IContest, IQuestion, IOutcome, IDifficultyLevel } from '@/types';
 import { formatDateTime } from '@/utils/dateUtils';
 import { ContestCardSkeleton } from '@/components/SkeletonLoading';
-import { ACTIVE_CONTEST_WITH_VIDEOS } from '@/routes/api';
+import { CONTESTS } from '@/routes/api';
 import apiClient from '@/utils/api';
 import { useContestsStore } from '@/store/contestsStore';
-
-const BLUR_IMAGE_URL = 'https://9shootnew.s3.us-east-1.amazonaws.com/blurrrrr.png';
-
 
 interface PredictionQuestion {
   id: string;
   question: string;
-  matchImage?: string;
-  thumbnailUrl?: string;
-  timeRemaining?: string;
+  difficultyLevel: IDifficultyLevel;
+  contestId: string;
 }
 
 const FeedsScreen = () => {
-  const [selectedContest, setSelectedContest] = useState<IContestWithVideos | null>(null);
-  const [contests, setContests] = useState<IContestWithVideos[]>([]);
-  const [contestVideos, setContestVideos] = useState<PredictionQuestion[]>([]);
+  const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
+  const [contests, setContests] = useState<IContest[]>([]);
+  const [contestQuestions, setContestQuestions] = useState<IQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isContestsLoading, setIsContestsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,45 +28,25 @@ const FeedsScreen = () => {
   
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
-  const processContestsWithVideos = (contestsData: IContestWithVideos[]) => {
+  const processContestsWithQuestions = (contestsData: IContest[]) => {
     return contestsData.map(contest => {
       const processedContest = { ...contest };
       
-      const featuredVideos = Array.isArray(contest.featuredVideos) 
-        ? [...contest.featuredVideos] 
+      const questions = Array.isArray(contest.questions)   
+        ? [...contest.questions] 
         : [];
       
-      while (featuredVideos.length < 3) {
-        featuredVideos.push({
-          id: `placeholder-${contest.id}-${featuredVideos.length}`,
-          submissionId: '',
-          videoUrl: '',
-          thumbnailUrl: BLUR_IMAGE_URL,
-          userId: '',
+      while (questions.length < 3) {
+        questions.push({
+          id: `placeholder-${contest.id}-${questions.length}`,
           contestId: contest.id,
-          correctOutcome: null,
-          numberOfBets: 0,
           question: 'Want to see more questions? Join the contest now!',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          answer: IOutcome.YES,
+          difficultyLevel: IDifficultyLevel.EASY,
         });
       }
       
-      featuredVideos.push({
-        id: `dummy-${contest.id}`,
-        submissionId: '',
-        videoUrl: '',
-        thumbnailUrl: BLUR_IMAGE_URL,
-        userId: '',
-        contestId: contest.id,
-        correctOutcome: null,
-        numberOfBets: 0,
-        question: 'Want to see more questions? Join the contest now!',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      
-      processedContest.featuredVideos = featuredVideos;
+      processedContest.questions = questions;
       
       return processedContest;
     });
@@ -79,11 +55,11 @@ const FeedsScreen = () => {
   const fetchActiveContests = async () => {
     try {
       setIsContestsLoading(true);
-      const response = await apiClient<IContestWithVideos[]>(ACTIVE_CONTEST_WITH_VIDEOS, 'GET');
+      const response = await apiClient<IContest[]>(CONTESTS, 'GET');
       
       if (response.success && response.data) {
-        console.log("response.data", response.data.map(contest => contest.featuredVideos));
-        const processedContests = processContestsWithVideos(response.data);
+        console.log("response.data", response.data.map(contest => contest.questions));
+        const processedContests = processContestsWithQuestions(response.data);
         setContests(processedContests);
         setSelectedContest(processedContests[0]);
       }
@@ -107,16 +83,16 @@ const FeedsScreen = () => {
 
   useEffect(() => {
     if (selectedContest) {
-      setContestVideos(selectedContest.featuredVideos || []);
+      setContestQuestions(selectedContest.questions || []);
     }
   }, [selectedContest]);
 
-  const handleContestSelect = (contest: IContestWithVideos) => {
+  const handleContestSelect = (contest: IContest) => {
     setSelectedContest(contest);
   };
 
-  const renderContestItem = ({ item }: { item: IContestWithVideos }) => {
-    const { formattedTime, formattedDate } = formatDateTime(item.event.startDate);
+  const renderContestItem = ({ item }: { item: IContest }) => {
+    const { formattedTime, formattedDate } = formatDateTime(item.match?.startTime || '');
     return (
       <TouchableOpacity 
         style={[
@@ -128,32 +104,32 @@ const FeedsScreen = () => {
         <View style={styles.teamsContainer}>
           <View style={styles.teamSection}>
             <Image 
-              source={{uri: item.event.teamA?.imageUrl}} 
+              source={{uri: item.match?.teamA?.imageUrl}} 
               style={styles.teamLogo} 
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamA?.name || ''}</Text>
+            <Text style={styles.teamName} numberOfLines={1}>{item.match?.teamA?.name || ''}</Text>
           </View>
           
           <Text style={styles.vsText}>VS</Text>
           
           <View style={styles.teamSection}>
             <Image 
-              source={{uri: item.event.teamB?.imageUrl}} 
+              source={{uri: item.match?.teamB?.imageUrl}} 
               style={styles.teamLogo}
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1}>{item.event.teamB?.name || ''}</Text>
+            <Text style={styles.teamName} numberOfLines={1}>{item.match?.teamB?.name || ''}</Text>
           </View>
         </View>
 
         <View style={styles.contestInfo}>
           <View style={styles.contestTimeContainer}>
-            <Text style={styles.contestName}>{item.event.title}</Text>
+            <Text style={styles.contestName}>{item.match?.event?.title}</Text>
             <Text style={styles.contestTime}>{formattedTime} • {formattedDate}</Text>
           </View>
           <View style={styles.priceContainer}>
-            <Text style={styles.contestTime}>{item.entryFee} Sol</Text>
+            <Text style={styles.contestTime}>{item.entryFee} points</Text>
             <Text style={styles.entryFeeText}>Entry Fee</Text>
           </View>
         </View>
@@ -196,7 +172,7 @@ const FeedsScreen = () => {
           <ScrollView 
             style={styles.predictionScrollView}
             contentContainerStyle={{ 
-              paddingBottom: tabBarHeight + 16 // Add padding to the bottom to avoid tab bar overlap
+              paddingBottom: tabBarHeight + 16
             }}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -209,7 +185,7 @@ const FeedsScreen = () => {
             }
           >
             <PredictionQuestionGrid
-              questions={contestVideos}
+              questions={contestQuestions}
               selectedContest={selectedContest}
               isLoading={isLoading}
             />

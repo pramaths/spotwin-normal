@@ -8,8 +8,8 @@ interface UserContestCardProps {
   contest: IContest;
 }
 
-export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => {
-  const { event, entryFee, currency, id } = contest;
+export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: UserContestCardProps) => {
+  const { event, entryFee, currency, id, match } = contest;
 
   const handlePress = () => {
     router.push({
@@ -29,7 +29,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => 
 
   };
 
-  const { formattedTime, formattedDate } = formatDateTime(event.startDate);
+  const { formattedTime, formattedDate } = formatDateTime(match?.startTime || '');
   const isCompleted = contest.status === 'COMPLETED';
 
   return (
@@ -40,7 +40,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => 
         activeOpacity={0.8}
       >
         <View style={styles.header}>
-          <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{event.title}</Text>
+          <Text style={styles.leagueName} numberOfLines={1} ellipsizeMode="tail">{match?.title}</Text>
           <View style={[
             styles.statusContainer,
             { backgroundColor: isCompleted ? '#10B981' : '#3B82F6' }
@@ -54,11 +54,11 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => 
         <View style={styles.teamsContainer}>
           <View style={styles.teamContainer}>
             <Image
-              source={{ uri: event.teamA.imageUrl }}
+              source={{ uri: match?.teamA.imageUrl }}
               style={styles.teamLogo}
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamA.name}</Text>
+            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{match?.teamA.name}</Text>
           </View>
 
           <View style={styles.timeContainer}>
@@ -67,11 +67,11 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }) => 
 
           <View style={styles.teamContainer}>
             <Image
-              source={{ uri: event.teamB.imageUrl }}
+              source={{ uri: match?.teamB.imageUrl }}
               style={styles.teamLogo}
               resizeMode="contain"
             />
-            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{event.teamB.name}</Text>
+            <Text style={styles.teamName} numberOfLines={1} ellipsizeMode="tail">{match?.teamB.name}</Text>
           </View>
         </View>
 

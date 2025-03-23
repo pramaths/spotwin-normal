@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,196 +9,20 @@ import {
   Animated,
   Image,
   Easing,
-  ActivityIndicator
+  ActivityIndicator,
+  Share
 } from 'react-native';
-import { ChevronLeft, Check } from 'lucide-react-native';
+import { ChevronLeft, Check, RefreshCw } from 'lucide-react-native';
 import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
-import { router } from 'expo-router';
-import { useEmbeddedSolanaWallet, useFundSolanaWallet } from '@privy-io/expo';
-import { Connection, PublicKey, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
-import { Shoot9SDK } from '../program/contract-sdk';
-import { Wallet } from '@coral-xyz/anchor';
 import { getUserParticipationStatus } from '../services/userContestsApi';
 import { useUserStore } from '@/store/userStore';
-
-if (typeof global.structuredClone !== 'function') {
-  global.structuredClone = function (obj) {
-    return JSON.parse(JSON.stringify(obj));
-  };
-  console.log("structuredClone polyfill added");
-}
-
-const recentTransactions = new Set<string>();
-
-const adaptPrivyWalletToAnchor = (privyWallet: any): Wallet => {
-  console.log("Privy wallet details:", {
-    wallet: privyWallet,
-    hasAddress: !!privyWallet?.address,
-    hasSignTransaction: !!privyWallet?.signTransaction,
-    signTransactionType: typeof privyWallet?.signTransaction,
-    methods: Object.keys(privyWallet || {})
-  });
-
-  if (!privyWallet || !privyWallet.address) {
-    throw new Error("Privy wallet missing address");
-  }
-
-  const dummyPayer = Keypair.generate();
-  const getConnection = () => new Connection(
-    process.env.EXPO_PUBLIC_SOLANA_RPC_URL || 'https://rpc.mainnet-alpha.sonic.game',
-    {
-      commitment: 'confirmed',
-      disableRetryOnRateLimit: false,
-      confirmTransactionInitialTimeout: 120000
-    }
-  );
-
-  return {
-    publicKey: new PublicKey(privyWallet.address),
-    payer: dummyPayer,
-    signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
-      console.log("Signing transaction with provider...");
-      const provider = await privyWallet.getProvider();
-      const connection = getConnection();
-
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
-
-      if (tx instanceof Transaction) {
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = new PublicKey(privyWallet.address);
-
-        // Create a transaction signature for deduplication
-        const txSignature = tx.serializeMessage().toString('base64');
-
-        // Check if we've already processed this transaction
-        if (recentTransactions.has(txSignature)) {
-          console.log("Duplicate transaction detected, skipping send");
-          throw new Error("This transaction has already been processed");
-        }
-
-        // Add to our set of recent transactions
-        recentTransactions.add(txSignature);
-
-        try {
-          const { signature } = await provider.request({
-            method: 'signTransaction',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 1, // Reduce retries to prevent duplicates
-              }
-            },
-          });
-          return tx as T;
-        } catch (error) {
-          // If there's an error, remove from our set so we can try again
-          recentTransactions.delete(txSignature);
-          throw error;
-        }
-      } else if (tx instanceof VersionedTransaction) {
-        // Similar deduplication for versioned transactions
-        const txSignature = tx.message.serialize().toString('base64');
-
-        if (recentTransactions.has(txSignature)) {
-          console.log("Duplicate versioned transaction detected, skipping send");
-          throw new Error("This transaction has already been processed");
-        }
-
-        recentTransactions.add(txSignature);
-
-        try {
-          const { signature } = await provider.request({
-            method: 'signTransaction',
-            params: {
-              transaction: tx,
-              connection,
-              options: {
-                skipPreflight: true,
-                maxRetries: 1,
-              }
-            },
-          });
-          return tx as T;
-        } catch (error) {
-          recentTransactions.delete(txSignature);
-          throw error;
-        }
-      }
-
-      throw new Error("Unsupported transaction type");
-    },
-    signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
-      console.log("Signing multiple transactions with provider...");
-      const provider = await privyWallet.getProvider();
-      const connection = getConnection();
-
-      return await Promise.all(txs.map(async (tx) => {
-        const { blockhash } = await connection.getLatestBlockhash('finalized');
-
-        if (tx instanceof Transaction) {
-          tx.recentBlockhash = blockhash;
-          tx.feePayer = new PublicKey(privyWallet.address);
-
-          const txSignature = tx.serializeMessage().toString('base64');
-
-          if (recentTransactions.has(txSignature)) {
-            console.log("Duplicate transaction detected in batch, skipping");
-            throw new Error("This transaction has already been processed");
-          }
-
-          recentTransactions.add(txSignature);
-
-          try {
-            await provider.request({
-              method: 'signTransaction',
-              params: {
-                transaction: tx,
-                connection,
-                options: {
-                  skipPreflight: true,
-                  maxRetries: 1,
-                }
-              },
-            });
-          } catch (error) {
-            recentTransactions.delete(txSignature);
-            throw error;
-          }
-        } else if (tx instanceof VersionedTransaction) {
-          const txSignature = tx.message.serialize().toString('base64');
-
-          if (recentTransactions.has(txSignature)) {
-            console.log("Duplicate versioned transaction detected in batch, skipping");
-            throw new Error("This transaction has already been processed");
-          }
-
-          recentTransactions.add(txSignature);
-
-          try {
-            await provider.request({
-              method: 'signTransaction',
-              params: {
-                transaction: tx,
-                connection,
-                options: {
-                  skipPreflight: true,
-                  maxRetries: 1,
-                }
-              },
-            });
-          } catch (error) {
-            recentTransactions.delete(txSignature);
-            throw error;
-          }
-        }
-        return tx;
-      }));
-    },
-  };
-};
+import { getUserBalance } from '../utils/common';
+import * as Sharing from 'expo-sharing';
+import * as Linking from 'expo-linking';
+import { JOIN_CONTEST } from '../routes/api';
+import apiClient from '../utils/api';
+import { router } from 'expo-router';
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -212,15 +36,13 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | React.ReactElement | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
-  const { wallets } = useEmbeddedSolanaWallet();
   const { user } = useUserStore();
   const [userBalance, setUserBalance] = useState<number | null>(0);
-  const [isFundingWallet, setIsFundingWallet] = useState(false);
-  const { fundWallet } = useFundSolanaWallet();
 
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -272,36 +94,36 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   };
 
   const fetchUserBalance = async () => {
-    console.log("fetchUserBalance started", { wallets });
-    if (!wallets || wallets.length === 0) {
-      console.log("No wallets available for balance check");
-      return;
-    }
-
     try {
-      const connection = new Connection(
-        process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
-      );
-
-      console.log("Fetching balance for address:", wallets[0].address);
-      const balance = await connection.getBalance(new PublicKey(wallets[0].address));
-      const balanceInSol = balance / 1_000_000_000;
-      console.log("Balance fetched successfully:", balanceInSol, "SOL");
-
-      setUserBalance(balanceInSol);
-      return balanceInSol;
+      setIsRefreshing(true);
+      const balance = await getUserBalance(user?.id || '');
+      setUserBalance(balance !== undefined ? balance : null);
     } catch (err) {
-      console.error("Error in fetchUserBalance:", err);
-      console.log("Balance fetch error details:", {
-        message: err instanceof Error ? err.message : "Unknown error",
-        errorObject: err
-      });
-      return null;
+      console.error("Failed to fetch balance:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleInvite = async (referralCode: string) => {
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=YOUR_APP_ID`;
+    const appStoreUrl = `https://apps.apple.com/app/YOUR_APP_ID`;
+    
+    const link = Platform.select({
+      android: `${playStoreUrl}&referralCode=${referralCode}`,
+      ios: `${appStoreUrl}?referralCode=${referralCode}`,
+    });
+  
+    const message = `Check out this cool app! Join using my referral code (${referralCode}) 🎉:\n${link}`;
+  
+    try {
+      await Share.share({ message });
+    } catch (error) {
+      console.error('Error sharing:', error);
     }
   };
 
   const handlePayment = async () => {
-    // Prevent multiple clicks
     if (isLoading) return;
 
     try {
@@ -311,124 +133,59 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         return;
       }
       setIsLoading(true);
-      setError(null); // Clear any previous errors
-
-      if (!wallets || wallets.length === 0) {
-        throw new Error("No wallet connected");
-      }
-
-      const balance = await fetchUserBalance();
+      setError(null);
+      const balance = await getUserBalance(user?.id || '');
       if (balance === null || balance === undefined) {
         throw new Error("Failed to fetch wallet balance");
       }
 
-      const requiredAmount = contest?.entryFee || 0.2;
+      const requiredAmount = contest?.entryFee;
       if (balance < requiredAmount) {
         setIsLoading(false);
         setError(
           <Text style={styles.errorText}>
-            Insufficient balance. You need at least {requiredAmount} SOL to enter this contest. Add funds by clicking on the wallet icon.
+            Insufficient balance. You need at least {requiredAmount} points to enter this contest.
           </Text>
         );
         return;
       }
 
-      const privyWallet = wallets[0];
-      const connection = new Connection(
-        process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string,
-      );
-
-      try {
-        const anchorWallet = adaptPrivyWalletToAnchor(privyWallet);
-
-        try {
-          const sdk = new Shoot9SDK(connection, anchorWallet);
-          const contestId = parseInt(contest.solanaContestId);
-          let creatorPublicKey = new PublicKey(contest.contestCreator);
-
-          try {
-            const contestAccount = await sdk.getContest(creatorPublicKey, contestId);
-            const userPubkeyString = anchorWallet.publicKey.toString();
-
-            if (contestAccount.participants.some(p => p.toString() === userPubkeyString)) {
-              console.log("User is already a participant in this contest");
-              animateSuccess(); // Show success since they're already in
-              return;
-            }
-          } catch (checkError) {
-            console.error("Error checking participant status:", checkError);
-          }
-
-          try {
-            const txId = await sdk.enterContest(creatorPublicKey, contestId);
-            console.log("Transaction successful:", txId);
-            animateSuccess();
-          } catch (txError) {
-            console.error("Transaction error:", txError);
-            throw txError; 
-          }
-
-        } catch (sdkError) {
-          console.error("SDK error:", sdkError);
-          const errorMessage = sdkError instanceof Error ? sdkError.message : "SDK operation failed";
-          throw new Error(errorMessage);
-        }
-      } catch (adapterError) {
-        console.error("Wallet adapter error:", adapterError);
-        const errorString = JSON.stringify(adapterError);
-        if (errorString.includes("already been processed")) {
-          console.log("Transaction was already processed (adapter error), showing success");
-          animateSuccess();
-          return;
-        }
-
-        throw new Error(adapterError instanceof Error ? adapterError.message : "Failed to adapt wallet");
+      const response = await apiClient<any>(JOIN_CONTEST, "POST", { 
+        userId: user?.id,
+        contestId: contest.id,
+      });
+      if(response.success) {
+        animateSuccess(); 
+        setTimeout(() => {
+          router.push({
+            pathname: "/prediction",
+            params: { contestId: contest.id },
+          });
+        }, 1800);
+      } else {
+        setError(response.message);
       }
     } catch (err) {
       console.error("Payment error:", err);
       setError(err instanceof Error ? err.message : "Failed to process payment");
-
-      if (err instanceof Error &&
-        (err.message.includes("Insufficient balance") ||
-          err.message.includes("debit an account"))) {
-        await fetchUserBalance();
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePayAndContribute = () => {
-    if (isLoading) return;
-    handlePayment();
-
-    setTimeout(() => {
-      router.push({
-        pathname: '/(tabs)/contribute',
-        params: { contestId: contest.id }
-      });
-    }, 1800);
-  };
-
   useEffect(() => {
     if (isVisible) {
       console.log("Modal opened, fetching initial balance");
-      console.log("Fund wallet function available:", !!fundWallet);
       setAmount(contest?.entryFee || 0.2);
       setShowSuccess(false);
+      setError(null);
       fetchUserBalance();
     }
   }, [isVisible, contest]);
 
-  // Add check for fundWallet availability
-  useEffect(() => {
-    console.log("Checking fundWallet availability:", {
-      isFundWalletAvailable: !!fundWallet,
-      wallets: wallets?.length
-    });
-  }, [fundWallet, wallets]);
-
   if (!contest) return null;
+
+  const canParticipate = (userBalance !== null && userBalance >= contest.entryFee);
 
   return (
     <Modal
@@ -449,54 +206,67 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
 
           <View style={styles.matchInfo}>
             <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{contest.event.teamA.name}</Text>
-              <Image style={styles.teamLogo} source={{ uri: contest.event.teamA.imageUrl }} />
+              <Text style={styles.teamName}>{contest.match?.teamA.name}</Text>
+              <Image style={styles.teamLogo} source={{ uri: contest.match?.teamA.imageUrl }} />
             </View>
 
             <View style={styles.timeContainer}>
               <Text style={styles.timeLabel}>Start time</Text>
               <View style={styles.timeBox}>
-                <Text style={styles.timeText}>{formatFullDate(contest.event.startDate)}</Text>
+                <Text style={styles.timeText}>{formatFullDate(contest.match?.startTime || '')}</Text>
               </View>
             </View>
 
             <View style={styles.teamInfo}>
-              <Text style={styles.teamName}>{contest.event.teamB.name}</Text>
-              <Image style={styles.teamLogo} source={{ uri: contest.event.teamB.imageUrl }} />
+              <Text style={styles.teamName}>{contest.match?.teamB.name}</Text>
+              <Image style={styles.teamLogo} source={{ uri: contest.match?.teamB.imageUrl }} />
             </View>
           </View>
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Joining fee</Text>
-              <Text style={styles.statValue}>${contest.entryFee}</Text>
+              <Text style={styles.statValue}>{contest.entryFee} points</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Prize pool</Text>
-              <Text style={styles.statValue}>24 SOL</Text>
+              <Text style={styles.statLabel}>1st Prize</Text>
+              <Text style={styles.statValue}>IPL Ticket</Text>
             </View>
           </View>
 
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceText}>Your current balance: <Text style={styles.balanceAmount}>{userBalance?.toFixed(2) || '0.00'} SOL</Text></Text>
+            <View style={styles.balanceWrapper}>
+              <Text style={styles.balanceText}>Your current balance: 
+                <Text style={styles.balanceAmount}> {userBalance?.toFixed(2) || '0.00'} points</Text>
+              </Text>
+              <TouchableOpacity 
+                onPress={fetchUserBalance} 
+                style={styles.refreshButton}
+                disabled={isRefreshing}
+              >
+                <RefreshCw 
+                  color="#000" 
+                  size={20} 
+                  style={isRefreshing ? styles.refreshing : undefined} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-          {contest.status === 'OPEN' && (
-            <TouchableOpacity
-              style={styles.contributeButton}
-              onPress={handlePayAndContribute}
-            >
-              <Text style={styles.payButtonText}>Play and Contribute</Text>
-            </TouchableOpacity>
-          )}
-
+          {
+            !canParticipate && (
+              <TouchableOpacity style={styles.inviteButton} onPress={() => handleInvite(user?.referralCode || '')}>
+                <Text style={styles.payButtonText}>Invite friends to earn more points</Text>
+              </TouchableOpacity>
+            )
+          }
           <TouchableOpacity
-            style={styles.payButton}
+            style={[styles.payButton, !canParticipate && styles.payButtonDisabled]}
             onPress={handlePayment}
+            disabled={!canParticipate}
           >
-            <Text style={styles.payButtonText}>Play</Text>
+            <Text style={styles.payButtonText}>{canParticipate ? 'Play' : 'Insufficient Balance'}</Text>
           </TouchableOpacity>
 
-          {/* Loading overlay */}
           {isLoading && (
             <View style={styles.loadingOverlay}>
               <View style={styles.loadingContainer}>
@@ -506,7 +276,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             </View>
           )}
 
-          {/* Error message */}
           {error && (
             <View style={styles.errorContainer}>
               {typeof error === 'string' ? (
@@ -517,7 +286,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             </View>
           )}
 
-          {/* Success overlay with animated checkmark */}
           {showSuccess && (
             <View style={styles.successOverlay}>
               <Animated.View
@@ -657,6 +425,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  balanceWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   balanceText: {
     fontSize: 14,
     color: '#333',
@@ -665,7 +438,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
+  refreshButton: {
+    padding: 8,
+  },
+  refreshing: {
+    opacity: 0.5,
+  },
   contributeButton: {
+    backgroundColor: '#0504dc',
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  inviteButton: {
     backgroundColor: '#0504dc',
     marginHorizontal: 16,
     paddingVertical: 14,
@@ -679,6 +466,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  payButtonDisabled: {
+    backgroundColor: '#9e9e9e',
+    opacity: 0.7,
   },
   payButtonText: {
     color: '#fff',

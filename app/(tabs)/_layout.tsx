@@ -3,6 +3,7 @@ import { StyleSheet, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 import { useAuthStore } from '../../store/authstore';
+import { User2 } from 'lucide-react-native';
 
 import HomeIcon from '../../assets/icons/home.svg';
 import CupIcon from '../../assets/icons/cup.svg';
@@ -12,9 +13,6 @@ import FeedIcon from '../../assets/icons/feed.svg';
 import WhiteHome from '../../assets/icons/whitehome.svg';
 import WhiteCup from '../../assets/icons/whitecup.svg';
 import WhiteFeed from '../../assets/icons/whitefeed.svg';
-import WhiteQuestion from '../../assets/icons/whitequestion.svg';
-import { AuthBoundary } from '@privy-io/expo';
-import { PrivyWalletCheck } from '../../components/PrivyWalletCheck';
 import FullScreenLoader from '../../components/FullScreenLoader';
 import ErrorScreen from '../../components/ErrorScreen';
 
@@ -23,12 +21,6 @@ export default function TabLayout() {
   const tabBarHeight = 40 + (Platform.OS === 'ios' ? insets.bottom : 20);
 
   return (
-    <PrivyWalletCheck>
-      <AuthBoundary
-        loading={<FullScreenLoader />}
-        error={(error) => <ErrorScreen error={error} />}
-        unauthenticated={<Redirect href="/(auth)/signup" />}
-      >
         <View style={{ flex: 1 }}>
           <Tabs
             screenOptions={{
@@ -71,28 +63,20 @@ export default function TabLayout() {
               }}
             />
             <Tabs.Screen
-              name="questions"
+              name="profile"
               options={{
-                title: 'Questions',
-                tabBarIcon: ({ focused }) => focused ? <WhiteQuestion /> : <QuestionIcon />,
+                title: 'Profile',
+                tabBarIcon: ({ focused }) => focused ? <User2 color="#FFF" /> : <User2 color="rgba(255, 255, 255, 0.6)" />,
               }}
             />
             <Tabs.Screen
-              name="contribute"
-              options={{
-                href: null,
-              }}
-            />
-            <Tabs.Screen
-              name="video-prediction"
+              name="prediction"
               options={{
                 href: null,
               }}
             />
           </Tabs>
         </View>
-      </AuthBoundary>
-    </PrivyWalletCheck>
   );
 }
 

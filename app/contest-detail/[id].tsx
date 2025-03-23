@@ -79,25 +79,25 @@ export default function ContestDetailScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <ChevronLeft size={24} color="#000" />
           </TouchableOpacity>
-          <Image source={{ uri: contest.event.eventImageUrl }} style={styles.eventImage} />
+          <Image source={{ uri: contest.match?.event.eventImageUrl }} style={styles.eventImage} />
           <Text style={styles.headerTitle}> {contest.name}</Text>
         </View>
 
         <View style={styles.contestInfoContainer}>
           <View style={styles.teamsContainer}>
             <View style={styles.teamSection}>
-              {contest.event.teamA.imageUrl ? (
+              {contest.match?.teamA.imageUrl ? (
                 <Image
-                  source={{ uri: contest.event.teamA.imageUrl }}
+                  source={{ uri: contest.match?.teamA.imageUrl }}
                   style={styles.teamLogo}
                   resizeMode="contain"
                 />
               ) : (
                 <View style={[styles.teamLogoPlaceholder, { backgroundColor: '#E8F0FE' }]}>
-                  <Text style={styles.teamInitial}>{contest.event.teamA.name.charAt(0)}</Text>
+                  <Text style={styles.teamInitial}>{contest.match?.teamA.name.charAt(0)}</Text>
                 </View>
               )}
-              <Text style={styles.teamName}>{contest.event.teamA.name}</Text>
+              <Text style={styles.teamName}>{contest.match?.teamA.name}</Text>
             </View>
 
             <View style={styles.vsContainer}>
@@ -105,24 +105,24 @@ export default function ContestDetailScreen() {
             </View>
 
             <View style={styles.teamSection}>
-              {contest.event.teamB.imageUrl ? (
+              {contest.match?.teamB.imageUrl ? (
                 <Image
-                  source={{ uri: contest.event.teamB.imageUrl }}
+                  source={{ uri: contest.match?.teamB.imageUrl }}
                   style={styles.teamLogo}
                   resizeMode="contain"
                 />
               ) : (
                 <View style={[styles.teamLogoPlaceholder, { backgroundColor: '#FEE8E8' }]}>
-                  <Text style={styles.teamInitial}>{contest.event.teamB.name.charAt(0)}</Text>
+                  <Text style={styles.teamInitial}>{contest.match?.teamB.name.charAt(0)}</Text>
                 </View>
               )}
-              <Text style={styles.teamName}>{contest.event.teamB.name}</Text>
+              <Text style={styles.teamName}>{contest.match?.teamB.name}</Text>
             </View>
           </View>
 
           <View style={styles.eventInfoContainer}>
             <Text style={styles.eventDate}>
-              {new Date(contest.event.startDate).toLocaleDateString()} • {new Date(contest.event.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(contest.match.startTime).toLocaleDateString()} • {new Date(contest.match?.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         </View>

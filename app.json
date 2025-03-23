@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "9shoot",
-    "slug": "9shoot",
+    "name": "shoot-win",
+    "slug": "shoot-win",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pramaths.xnineshootmobile",
-      "buildNumber": "3",
+      "bundleIdentifier": "com.pramaths.shootwin",
+      "buildNumber": "5",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pramaths.xnineshootmobile"
+      "package": "com.pramaths.shootwin",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -57,8 +58,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "08f2a381-4166-4111-b632-866574194b79"
+        "projectId": "8cfb1985-b97a-4068-ad83-84a3753aa126"
       }
-    }
+    },
+    "owner": "pramaths"
   }
 }

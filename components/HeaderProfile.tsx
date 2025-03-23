@@ -8,21 +8,17 @@ import {
   TouchableOpacity,
   Modal,
   StatusBar,
-  Platform,
-  Alert
+  Alert,
+  Linking
 } from 'react-native';
 import { IUser } from '../types';
 import EmptyWalletIcon from '../assets/icons/empty-wallet.svg';
-import ProfileScreen from './Profile';
 import HowItWorksModal from './HowItWorksModal';
 import { CircleHelp, X, Copy } from 'lucide-react-native'
-import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
-import * as web3 from '@solana/web3.js';
-import { useFundSolanaWallet } from "@privy-io/expo";
-import { fetchSolanaBalance, formatSolBalance } from '../utils/solanaUtils';
 import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
 import QRCode from 'react-native-qrcode-svg';
+import { getUserBalance } from '../utils/common';
 
 interface HeaderProfileProps {
   user?: IUser;
@@ -35,53 +31,14 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [howItWorksModalVisible, setHowItWorksModalVisible] = useState(false);
   const [depositModalVisible, setDepositModalVisible] = useState(false);
-  const [signatureMessage, setSignatureMessage] = useState<string>('');
-  const { fundWallet } = useFundSolanaWallet();
-  const { wallets } = useEmbeddedSolanaWallet();
   const [solBalance, setSolBalance] = useState<number>(0);
   const { user, setUser } = useUserStore();
   const balanceUpdatedRef = useRef(false);
   const { isNewUser, setIsNewUser } = useAuthStore();
-  
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (!wallets || wallets.length === 0) {
-        setSolBalance(0);
-        balanceUpdatedRef.current = false;
-        return;
-      }
-      
-      try {
-        const solBalance = await fetchSolanaBalance(wallets[0]?.address || '');
-        const numBalance = Number(solBalance);
-        setSolBalance(numBalance);
-        
-        // Only update user if we have a user and the balance hasn't been updated yet
-        // or if the balance has changed
-        if (user && (!balanceUpdatedRef.current || user.balance !== numBalance)) {
-          setUser({
-            ...user,
-            balance: numBalance
-          });
-          balanceUpdatedRef.current = true;
-        }
-      } catch (error) {
-        console.error('Error fetching balance:', error);
-      }
-    };
-    
-    fetchBalance();
-  }, [wallets, setUser]); // Remove user from dependencies
+ 
 
   const handleWalletPress = () => {
     setDepositModalVisible(true);
-  };
-
-  const handleCopyAddress = () => {
-    if (wallets && wallets.length > 0) {
-      // Clipboard functionality would go here
-      Alert.alert('Address copied to clipboard');
-    }
   };
 
   const handleProfilePress = () => {
@@ -124,7 +81,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>gm, {user?.twitterUsername}</Text>
+            <Text style={styles.userName}>gm, {user?.username}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>
@@ -134,7 +91,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             activeOpacity={0.7}
           >
              {solBalance > 0 && (
-              <Text style={styles.balanceText}>{formatSolBalance(solBalance)}</Text>
+              <Text style={styles.balanceText}>{(solBalance)}</Text>
             )}
             <View style={styles.walletIconWrapper}>
               <EmptyWalletIcon />
@@ -149,20 +106,6 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={profileModalVisible}
-        onRequestClose={closeProfileModal}
-        statusBarTranslucent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
-          <ProfileScreen onClose={closeProfileModal} />
-        </View>
-      </Modal>
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -170,49 +113,6 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
         onRequestClose={closeHowItWorksModal}
       >
         <HowItWorksModal visible={howItWorksModalVisible} onClose={closeHowItWorksModal} />
-      </Modal>
-
-      <Modal
-        visible={depositModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setDepositModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setDepositModalVisible(false)}
-            >
-              <X size={20} color="#000" />
-            </TouchableOpacity>
-
-            <Text style={styles.modalTitle}>Deposit SOL</Text>
-            <Text style={styles.modalSubtitle}>Scan QR code or copy address</Text>
-
-            <View style={styles.chainInfoBox}>
-              <Text style={styles.chainInfoText}>Chain: Sonic</Text>
-              <Text style={styles.bridgeInfoText}>Convert SOL to SNIC using Sonic Bridge</Text>
-            </View>
-
-            <View style={styles.qrContainer}>
-              {wallets && wallets.length > 0 && (
-                <QRCode
-                  value={wallets[0].address}
-                  size={200}
-                  backgroundColor="white"
-                />
-              )}
-            </View>
-
-            <View style={styles.addressBox}>
-              <Text style={styles.addressText}>{wallets && wallets.length > 0 ? wallets[0].address : 'No wallet connected'}</Text>
-              <TouchableOpacity onPress={handleCopyAddress} style={styles.copyButton}>
-                <Copy size={20} color="#0504dc" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </Modal>
     </>
   );

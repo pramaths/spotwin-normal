@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert } from
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ContestJoinModal from './ContestJoinModal';
-import { IContest, IContestWithVideos } from '@/types';
+import { IContest, IDifficultyLevel } from '@/types';
 import { useContestsStore } from '@/store/contestsStore';
 
 interface PredictionQuestionProps {
@@ -11,7 +11,8 @@ interface PredictionQuestionProps {
     question: string;
     matchImage: string;
     timeRemaining: string;
-    contest: IContestWithVideos | null;
+    contest: IContest | null;
+    difficultyLevel: IDifficultyLevel;
     isUserParticipating: boolean;
 }
 
@@ -21,6 +22,7 @@ const PredictionQuestion = ({
     matchImage,
     timeRemaining,
     contest,
+    difficultyLevel,
     isUserParticipating
 }: PredictionQuestionProps) => {
     const [modalVisible, setModalVisible] = useState(false);
@@ -54,21 +56,19 @@ const PredictionQuestion = ({
             activeOpacity={0.9}
             onPress={handleContainerPress}
         >
-            <Image source={{ uri: matchImage }} style={styles.image} />
-
-            <View style={styles.overlay}>
-                <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>Ends in: {timeRemaining}</Text>
+            <View style={styles.contentContainer}>
+                <View style={styles.questionSection}>
+                    <Text style={styles.questionText}>{question}</Text>
+                    <View style={styles.difficultyBadge}>
+                        <Text style={styles.difficultyText}>
+                            {difficultyLevel}
+                        </Text>
+                    </View>
                 </View>
-
-                <View style={styles.bottomContent}>
-                    {question ? (
-                        <View style={styles.questionContainer}>
-                            <View style={styles.blurContainer}>
-                                <Text style={styles.questionText}>{question}</Text>
-                            </View>
-                        </View>
-                    ) : null}
+                
+                <View style={styles.timeSection}>
+                    <Ionicons name="time-outline" size={14} color="#666" />
+                    <Text style={styles.timeText}>{timeRemaining}</Text>
                 </View>
             </View>
             
@@ -87,63 +87,58 @@ const PredictionQuestion = ({
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: 12,
+        borderRadius: 8,
         borderWidth: 1,
         borderColor: '#E0E0E0',
         overflow: 'hidden',
-        marginBottom: 12,
+        marginBottom: 10,
+        backgroundColor: '#FFFFFF',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
+                shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.1,
-                shadowRadius: 8,
+                shadowRadius: 4,
             },
             android: {
-                elevation: 4,
+                elevation: 2,
             },
         }),
     },
-    image: {
-        width: '100%',
-        height: 260,
-    },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 12,
+    contentContainer: {
         padding: 12,
+    },
+    questionSection: {
+        flexDirection: 'row',
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(0,0,0,0.2)',
-    },
-    timeContainer: {
-        alignSelf: 'flex-start',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: 6,
-        borderRadius: 12,
-    },
-    timeText: {
-        color: '#FFF',
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    bottomContent: {
-        marginTop: 'auto',
-    },
-    questionContainer: {
-        marginBottom: 10,
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    blurContainer: {
-        paddingHorizontal: 2,
+        alignItems: 'flex-start',
+        marginBottom: 8,
     },
     questionText: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: '500',
-        color: '#fff',
-        padding: 4,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#333',
+        flex: 1,
+        marginRight: 8,
+    },
+    difficultyBadge: {
+        backgroundColor: '#f0f0f0',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    difficultyText: {
+        fontSize: 12,
+        color: '#666',
+    },
+    timeSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    timeText: {
+        fontSize: 12,
+        color: '#666',
+        marginLeft: 4,
     },
 });
 

@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react';
 import { Slot, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { PrivyProvider, PrivyElements } from '@privy-io/expo';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import * as Notifications from 'expo-notifications'
+
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,26 +34,13 @@ export default function RootLayout() {
     return null;
   }
 
-  const privyAppId = process.env.EXPO_PUBLIC_PRIVY_APP_ID as string;
-  const privyClientId = process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID as string;
 
   return (
+    <NotificationProvider>
     <SafeAreaProvider>
-      <PrivyProvider
-        appId={privyAppId}
-        clientId={privyClientId}
-        config={{
-          embedded: {
-            solana: {
-              createOnLogin: 'all-users',
-            },
-          },
-        }}
-      >
         <Slot />
-        <PrivyElements config={{ appearance: { accentColor: '#00AF55' } }} />
-      </PrivyProvider>
       <StatusBar style="light" backgroundColor="transparent" translucent />
     </SafeAreaProvider>
+    </NotificationProvider>
   );
 }
