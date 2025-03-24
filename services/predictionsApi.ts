@@ -1,47 +1,32 @@
 import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION, REMOVE_PREDICTION_API, GET_BY_A_PREDICTION, GET_PREDICTION_BY_USER_AND_CONTEST } from "../routes/api";
 import apiClient from "@/utils/api";
-import { OutcomeType } from "@/types";
-import { IUserPrediction } from "@/components/UserPredictions";
+import { IOutcome, IQuestion, IUserPrediction } from "@/types";
 
-export interface IFeaturedVideo {
-  id: string;
-  question: string;
-  videoUrl: string;
-  thumbnailUrl: string;
-  userId: string;
-  contestId: string;
-  correctOutcome: string | null;
-  numberOfBets: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-
-export const fetchFeaturedVideos = async (contestId: string): Promise<IFeaturedVideo[]> => {
+export const fetchQuestionsByContest = async (contestId: string): Promise<IQuestion[]> => {
   try {
     const response = await apiClient(GET_ALL_QUESTIONS_BY_CONTEST(contestId), "GET");
     if (response.success && response.data) {
-      return response.data as IFeaturedVideo[];
+      return response.data as IQuestion[];
     } else {
-      console.error("Error fetching featured videos:", response.message);
+      console.error("Error fetching questions by contest:", response.message);
       return [];
     }
   } catch (error) {
-    console.error("Error fetching featured videos:", error);
+    console.error("Error fetching questions by contest:", error);
     return [];
   }
 };
 
 
 export const submitPrediction = async (
-  videoId: string,
+  questionId: string,
   contestId: string,
   userId: string,
-  prediction: OutcomeType
+  prediction: IOutcome
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await apiClient(SUBMIT_PREDICTION, "POST", {
-      videoId,
+      questionId,
       contestId,
       userId,
       prediction
@@ -65,9 +50,8 @@ export const fetchUserPredictions = async (contestId: string, userId?: string): 
     if (response.success && response.data) {
       return response.data.map((prediction: IUserPrediction) => ({
         ...prediction,
-        question: prediction.video.question || '',
-        thumbnailUrl: prediction.video.thumbnailUrl,
-        outcome: prediction.prediction === 'YES' ? OutcomeType.YES : OutcomeType.NO
+        question: prediction.question || '',
+        outcome: prediction.outcome === 'YES' ? IOutcome.YES : IOutcome.NO
       }));
     }
     return [];

@@ -5,11 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ContestJoinModal from './ContestJoinModal';
 import { IContest, IDifficultyLevel } from '@/types';
 import { useContestsStore } from '@/store/contestsStore';
+import moment from 'moment';
 
 interface PredictionQuestionProps {
     id: string;
     question: string;
-    matchImage: string;
     timeRemaining: string;
     contest: IContest | null;
     difficultyLevel: IDifficultyLevel;
@@ -19,7 +19,6 @@ interface PredictionQuestionProps {
 const PredictionQuestion = ({
     id,
     question,
-    matchImage,
     timeRemaining,
     contest,
     difficultyLevel,
@@ -50,27 +49,70 @@ const PredictionQuestion = ({
         setModalVisible(false);
     };
     
+    const getDifficultyColor = () => {
+        switch (difficultyLevel) {
+            case IDifficultyLevel.EASY:
+                return '#4CAF50'; // Green
+            case IDifficultyLevel.MEDIUM:
+                return '#FF9800'; // Orange
+            case IDifficultyLevel.HARD:
+                return '#F44336'; // Red
+            default:
+                return '#E0E0E0';
+        }
+    };
+    
+    const getDifficultyGradient = () => {
+        switch (difficultyLevel) {
+            case IDifficultyLevel.EASY:
+                return ['rgba(76, 175, 80, 0.1)', 'rgba(76, 175, 80, 0.03)'] as const; // Green tint
+            case IDifficultyLevel.MEDIUM:
+                return ['rgba(255, 152, 0, 0.1)', 'rgba(255, 152, 0, 0.03)'] as const; // Orange tint
+            case IDifficultyLevel.HARD:
+                return ['rgba(244, 67, 54, 0.1)', 'rgba(244, 67, 54, 0.03)'] as const; // Red tint
+            default:
+                return ['#ffffff', '#ffffff'] as const;
+        }
+    };
+    
     return (
         <TouchableOpacity 
             style={styles.container} 
             activeOpacity={0.9}
             onPress={handleContainerPress}
         >
-            <View style={styles.contentContainer}>
-                <View style={styles.questionSection}>
-                    <Text style={styles.questionText}>{question}</Text>
-                    <View style={styles.difficultyBadge}>
-                        <Text style={styles.difficultyText}>
-                            {difficultyLevel}
-                        </Text>
+            <LinearGradient
+                colors={getDifficultyGradient()}
+                style={styles.gradientBackground}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            >
+                <View style={styles.contentContainer}>
+                    <View style={styles.headerRow}>
+                        <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor() }]}>
+                            <Text style={styles.difficultyText}>
+                                {difficultyLevel}
+                            </Text>
+                        </View>
+                        
+                        <View style={styles.timeSection}>
+                            <Ionicons name="time-outline" size={14} color="#666" />
+                            <Text style={styles.timeText}> Starting in {moment(timeRemaining).fromNow()}</Text>
+                        </View>
+                    </View>
+                    
+                    <View style={styles.questionSection}>
+                        <Text style={styles.questionText}>{question}</Text>
+                    </View>
+                    
+                    <View style={styles.actionRow}>
+                        <View style={styles.actionButton}>
+                            <Ionicons name="arrow-forward-outline" size={16} color={getDifficultyColor()} />
+                            <Text style={[styles.actionText, { color: getDifficultyColor() }]}>View Details</Text>
+                        </View>
                     </View>
                 </View>
-                
-                <View style={styles.timeSection}>
-                    <Ionicons name="time-outline" size={14} color="#666" />
-                    <Text style={styles.timeText}>{timeRemaining}</Text>
-                </View>
-            </View>
+            </LinearGradient>
             
             {contest && (
                 <ContestJoinModal
@@ -87,49 +129,55 @@ const PredictionQuestion = ({
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderRadius: 12,
+        marginBottom: 16,
         overflow: 'hidden',
-        marginBottom: 10,
         backgroundColor: '#FFFFFF',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 6,
             },
             android: {
-                elevation: 2,
+                elevation: 4,
             },
         }),
+        borderWidth: 1,
+        borderColor: '#EAEAEA',
+    },
+    gradientBackground: {
+        width: '100%',
     },
     contentContainer: {
-        padding: 12,
+        padding: 16,
     },
-    questionSection: {
+    headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    questionSection: {
+        marginBottom: 16,
     },
     questionText: {
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: 16,
+        fontWeight: '600',
         color: '#333',
-        flex: 1,
-        marginRight: 8,
+        lineHeight: 22,
     },
     difficultyBadge: {
-        backgroundColor: '#f0f0f0',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 20,
     },
     difficultyText: {
         fontSize: 12,
-        color: '#666',
+        fontWeight: '600',
+        color: '#FFFFFF',
+        textTransform: 'capitalize',
     },
     timeSection: {
         flexDirection: 'row',
@@ -138,6 +186,21 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 12,
         color: '#666',
+        marginLeft: 4,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 2,
+    },
+    actionText: {
+        fontSize: 13,
+        fontWeight: '500',
         marginLeft: 4,
     },
 });

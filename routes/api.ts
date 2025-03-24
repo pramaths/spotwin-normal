@@ -17,7 +17,8 @@ export const QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/questi
 //user
 export const USER =(id: string) => `${backendUrl}/users/${id}`;
 export const USER_BALANCE = (userId: string) => `${backendUrl}/users/${userId}/balance`;
-
+export const CHANGE_USERNAME = (userId: string) => `${backendUrl}/users/${userId}`;
+export const UPDATE_EXPO_PUSH_TOKEN = (userId: string) => `${backendUrl}/users/${userId}`;
 
 //UserContests
 export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;

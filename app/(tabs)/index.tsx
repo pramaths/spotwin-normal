@@ -72,10 +72,6 @@ export default function HomeScreen() {
         const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
 
         if (response.success && response.data && userContestsResponse.success) {
-          // console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
-          // let availableContests = response.data.filter((contest: IContest) => 
-          //   !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id)
-          // );
           setContests(response.data);
           setUserContests(userContestsResponse.data || []);
         }
@@ -130,6 +126,8 @@ export default function HomeScreen() {
 
   const renderFeaturedCard = ({ item, index }: { item: IContest, index: number }) => {
     const { formattedTime } = formatDateTime(item.match?.startTime || '');
+    const userContests = useContestsStore.getState().userContests;
+    const isParticipating = userContests.some(contest => contest.id === item.id);
 
     return (
       <View style={styles.featuredCardWrapper}>
@@ -204,11 +202,16 @@ export default function HomeScreen() {
           </View>
 
           <TouchableOpacity
-            style={styles.joinButton}
+            style={[
+              styles.joinButton,
+              isParticipating && styles.participatingButton
+            ]}
             onPress={() => handleJoinPress(item)}
             activeOpacity={0.8}
           >
-            <Text style={styles.joinButtonText}>Join</Text>
+            <Text style={styles.joinButtonText}>
+              {isParticipating ? 'Already Participating' : 'Join'}
+            </Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>
@@ -245,7 +248,7 @@ export default function HomeScreen() {
         <View style={styles.featuredSection}>
           <FlatList
             ref={featuredListRef}
-            data={contests.slice(0, 3)} // Use first 3 contests as featured
+            data={contests.slice(0, 3)}
             renderItem={renderFeaturedCard}
             keyExtractor={(item) => item.id}
             horizontal
@@ -253,7 +256,7 @@ export default function HomeScreen() {
             snapToAlignment="center"
             decelerationRate="fast"
             pagingEnabled
-            snapToInterval={width * 0.9 + width * 0.05 * 2} // Card width + horizontal margins
+            snapToInterval={width * 0.9 + width * 0.05 * 2} 
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -305,6 +308,7 @@ export default function HomeScreen() {
               key={contest.id}
               contest={contest}
               onPress={handleContestPress}
+              userContests={useContestsStore.getState().userContests}
             />
           )) : <Text style={styles.noContestsText}>No contests available</Text>}
         </View>
@@ -333,11 +337,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   featuredSection: {
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 8,
     height: 240,
   },
   featuredCardWrapper: {
@@ -456,6 +460,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  participatingButton: {
+    backgroundColor: '#10B981', // Darker green for "Already Participating"
+  },
   joinButtonText: {
     color: '#FFF',
     fontSize: 16,
@@ -469,7 +476,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     marginTop: 4,
   },
   sectionTitle: {

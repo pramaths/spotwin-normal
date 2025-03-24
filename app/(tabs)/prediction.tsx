@@ -12,15 +12,13 @@ import {
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { submitPrediction, RemovePrediction, fetchUserPredictions } from '@/services/videoApi';
+import { submitPrediction, RemovePrediction, fetchUserPredictions } from '@/services/predictionsApi';
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
 import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion } from '@/types';
 import QuestionItem from '@/components/QuestionItem';
 import { QUESTIONS_BY_CONTEST } from '@/routes/api';
 import apiClient from '@/utils/api';
-
-const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 export default function PredictionScreen() {
   const { contestId } = useLocalSearchParams();
@@ -104,7 +102,7 @@ export default function PredictionScreen() {
       setPredictions(data);
 
       const votesMap = data.reduce((acc: Record<string, IOutcome | null>, pred: IUserPrediction) => {
-        acc[pred.question.id] = pred.prediction;
+        acc[pred.question.id] = pred.outcome as unknown as IOutcome | null;
         return acc;
       }, {});
       setUserVotesMap(votesMap);
@@ -132,7 +130,6 @@ export default function PredictionScreen() {
 
   const handlePrediction = async (question: IQuestion, prediction: IOutcome) => {
     try {
-      // Check if already answered 3 in this difficulty
       const answeredQuestionsForDifficulty = predictions.filter(
         (p: IUserPrediction) => p.question.difficultyLevel === question.difficultyLevel
       );
@@ -159,14 +156,14 @@ export default function PredictionScreen() {
         [question.id]: prediction
       }));
 
-      // Add or update predictions in state
       setPredictions((prev: IUserPrediction[]) => {
         const existingIndex = prev.findIndex((p) => p.question.id === question.id);
         const newEntry: IUserPrediction = {
           id: question.id,
           userId: user?.id || '',
           contestId: contestId as string,
-          prediction: prediction,
+          outcome: prediction,
+          questionId: question.id,
           isCorrect: null,
           question
         };
@@ -221,15 +218,14 @@ export default function PredictionScreen() {
     router.back();
   };
 
-  // Render
   const currentQuestions = questionsByDifficulty[selectedDifficulty] || [];
   const answeredCount = getAnsweredCountByDifficulty(selectedDifficulty);
 
   if (loading && questions.length === 0) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
-        <ActivityIndicator size="large" color="#FFF" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+        <ActivityIndicator size="large" color="#3768E3" />
         <Text style={styles.loadingText}>Loading questions...</Text>
       </View>
     );
@@ -238,7 +234,7 @@ export default function PredictionScreen() {
   if (error && questions.length === 0) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadQuestions}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -249,12 +245,12 @@ export default function PredictionScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       <SafeAreaView style={styles.safeContainer}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <ChevronLeft color="#FFF" size={24} />
+            <ChevronLeft color="#181818" size={24} />
           </TouchableOpacity>
 
           <View style={styles.tabContainer}>
@@ -264,24 +260,24 @@ export default function PredictionScreen() {
                 style={[styles.tabButton, { backgroundColor: getTabColor(difficulty, selectedDifficulty) }]}
                 onPress={() => handleTabPress(difficulty)}
               >
-                <Text style={styles.tabText}>{difficulty}</Text>
-                <Text style={styles.countBadge}>{getAnsweredCountByDifficulty(difficulty)}/3</Text>
+                <Text style={[styles.tabText, selectedDifficulty === difficulty && styles.selectedTabText]}>
+                  {difficulty}
+                </Text>
+                <Text style={[styles.countBadge, selectedDifficulty === difficulty && styles.selectedCountBadge]}>
+                  {getAnsweredCountByDifficulty(difficulty)}/3
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-
-        <View style={styles.questionCounterContainer}>
-          <Text style={styles.questionCounterText}>{answeredCount}/3 questions answered</Text>
-        </View>
-
         <ScrollView
-          style={{ flex: 1, marginVertical: 10 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
         >
           {currentQuestions.length > 0 ? (
             currentQuestions.map((q: IQuestion) => (
               <QuestionItem
+                key={q.id}
                 question={q}
                 onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
                 userVote={userVotesMap[q.id] || null}
@@ -313,7 +309,7 @@ export default function PredictionScreen() {
 }
 
 function getTabColor(difficulty: IDifficultyLevel, selected: IDifficultyLevel) {
-  if (difficulty !== selected) return 'rgba(255, 255, 255, 0.2)';
+  if (difficulty !== selected) return '#F0F4FA';
   switch (difficulty) {
     case IDifficultyLevel.EASY:
       return '#4CAF50'; // Green
@@ -322,25 +318,28 @@ function getTabColor(difficulty: IDifficultyLevel, selected: IDifficultyLevel) {
     case IDifficultyLevel.HARD:
       return '#F44336'; // Red
     default:
-      return '#CCCCCC';
+      return '#E0E0E0';
   }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000'
+    backgroundColor: '#FFFFFF'
   },
   safeContainer: {
     flex: 1,
-    backgroundColor: '#000'
+    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingTop: 45,
     paddingBottom: 10,
     flexDirection: 'column',
     alignItems: 'center',
-    zIndex: 10
+    zIndex: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0'
   },
   centerContent: {
     justifyContent: 'center',
@@ -348,21 +347,21 @@ const styles = StyleSheet.create({
     padding: 20
   },
   loadingText: {
-    color: '#FFF',
+    color: '#333',
     marginTop: 10,
     fontSize: 16
   },
   errorText: {
-    color: '#FFF',
+    color: '#F44336',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20
   },
   retryButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3768E3',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 5
+    borderRadius: 8
   },
   retryButtonText: {
     color: '#FFF',
@@ -372,9 +371,8 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     left: 16,
-    top: 0,
+    top: 25,
     padding: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     zIndex: 10
   },
@@ -382,7 +380,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     paddingHorizontal: 50,
-    marginTop: 12,
+    marginTop: 20,
     zIndex: 5,
     width: '100%'
   },
@@ -397,32 +395,39 @@ const styles = StyleSheet.create({
     minWidth: 80
   },
   tabText: {
-    color: '#FFF',
+    color: '#666',
     fontWeight: 'bold',
     fontSize: 14
   },
+  selectedTabText: {
+    color: '#FFF'
+  },
   countBadge: {
-    color: '#FFF',
+    color: '#666',
     fontSize: 12,
     fontWeight: 'bold',
     marginLeft: 4,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 6
   },
+  selectedCountBadge: {
+    color: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.2)'
+  },
   questionCounterContainer: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: '#F0F4FA',
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    marginTop: 8,
+    marginTop: 10,
     marginBottom: 16,
     zIndex: 10
   },
   questionCounterText: {
-    color: '#FFF',
+    color: '#3768E3',
     fontWeight: 'bold',
     fontSize: 14
   },
@@ -433,7 +438,7 @@ const styles = StyleSheet.create({
     padding: 20
   },
   noQuestionsText: {
-    color: '#FFF',
+    color: '#666',
     fontSize: 16,
     textAlign: 'center'
   },
@@ -456,5 +461,12 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 14
+  },
+  scrollView: {
+    flex: 1, 
+    marginVertical: 10
+  },
+  scrollViewContent: {
+    paddingBottom: 40
   }
 });

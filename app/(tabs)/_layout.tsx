@@ -51,7 +51,7 @@ export default function TabLayout() {
             <Tabs.Screen
               name="contests"
               options={{
-                title: 'Contests',
+                title: 'My Contests',
                 tabBarIcon: ({ focused }) => focused ? <WhiteCup /> : <CupIcon />,
               }}
             />

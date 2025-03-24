@@ -37,6 +37,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | React.ReactElement | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isParticipating, setIsParticipating] = useState(false);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
@@ -123,15 +124,27 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
     }
   };
 
+  const checkIfParticipating = async () => {
+    if (!user?.id || !contest?.id) return;
+    
+    try {
+      const status = await getUserParticipationStatus(user.id, contest.id);
+      setIsParticipating(status);
+    } catch (error) {
+      console.error("Error checking participation status:", error);
+    }
+  };
+
   const handlePayment = async () => {
     if (isLoading) return;
 
+    // If user is already participating, just close the modal
+    if (isParticipating) {
+      onClose();
+      return;
+    }
+
     try {
-      const userParticipationStatus = await getUserParticipationStatus(user?.id || '');
-      if (userParticipationStatus) {
-        setError("You have already participated in this contest");
-        return;
-      }
       setIsLoading(true);
       setError(null);
       const balance = await getUserBalance(user?.id || '');
@@ -155,6 +168,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
         contestId: contest.id,
       });
       if(response.success) {
+        setIsParticipating(true);
         animateSuccess(); 
         setTimeout(() => {
           router.push({
@@ -163,7 +177,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
           });
         }, 1800);
       } else {
-        setError(response.message);
+        setError(response.message || "Failed to join contest");
       }
     } catch (err) {
       console.error("Payment error:", err);
@@ -180,6 +194,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       setShowSuccess(false);
       setError(null);
       fetchUserBalance();
+      checkIfParticipating();
     }
   }, [isVisible, contest]);
 
@@ -200,7 +215,9 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
             <TouchableOpacity onPress={onClose} style={styles.backButton}>
               <ChevronLeft color="#000" size={24} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Fee Payment</Text>
+            <Text style={styles.headerTitle}>
+              {isParticipating ? 'Contest Details' : 'Fee Payment'}
+            </Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -252,20 +269,44 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
               </TouchableOpacity>
             </View>
           </View>
+
           {
-            !canParticipate && (
+            !canParticipate && !isParticipating && (
               <TouchableOpacity style={styles.inviteButton} onPress={() => handleInvite(user?.referralCode || '')}>
                 <Text style={styles.payButtonText}>Invite friends to earn more points</Text>
               </TouchableOpacity>
             )
           }
-          <TouchableOpacity
-            style={[styles.payButton, !canParticipate && styles.payButtonDisabled]}
-            onPress={handlePayment}
-            disabled={!canParticipate}
-          >
-            <Text style={styles.payButtonText}>{canParticipate ? 'Play' : 'Insufficient Balance'}</Text>
-          </TouchableOpacity>
+
+          {isParticipating ? (
+            <View style={styles.participatingContainer}>
+              <View style={styles.participatingIcon}>
+                <Check color="#fff" size={24} strokeWidth={3} />
+              </View>
+              <Text style={styles.participatingText}>You are already participating in this contest</Text>
+              
+              <TouchableOpacity
+                style={[styles.payButton, styles.viewPredictionsButton]}
+                onPress={() => {
+                  onClose();
+                  router.push({
+                    pathname: "/prediction",
+                    params: { contestId: contest.id },
+                  });
+                }}
+              >
+                <Text style={styles.payButtonText}>View Your Predictions</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.payButton, !canParticipate && styles.payButtonDisabled]}
+              onPress={handlePayment}
+              disabled={!canParticipate}
+            >
+              <Text style={styles.payButtonText}>{canParticipate ? 'Play' : 'Insufficient Balance'}</Text>
+            </TouchableOpacity>
+          )}
 
           {isLoading && (
             <View style={styles.loadingOverlay}>
@@ -576,6 +617,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  participatingContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    paddingHorizontal: 20,
+  },
+  participatingIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  participatingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  viewPredictionsButton: {
+    backgroundColor: '#0504dc',
   },
 });
 

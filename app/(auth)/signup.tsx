@@ -11,7 +11,7 @@ import XIcon from '../../assets/icons/x.svg';
 import apiClient from '@/utils/api';
 import { LOGIN } from '@/routes/api';
 
-import { useLoginWithOAuth, useOAuthTokens } from '@privy-io/expo';
+import { OtplessModule } from "otpless-react-native";
 
 export default function SignupScreen() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
@@ -21,6 +21,13 @@ export default function SignupScreen() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [isPressing, setIsPressing] = useState(false);
   const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
+  const [oauthState, setOauthState] = useState<{
+    status: 'idle' | 'loading' | 'error';
+    error: null | { message: string };
+  }>({
+    status: 'idle',
+    error: null
+  });
   
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -76,52 +83,33 @@ export default function SignupScreen() {
     startRotateAnimation();
   }, []);
 
-  const { login, state: oauthState } = useLoginWithOAuth({
-    onSuccess: async (user, isNewUser) => {
-      console.log('Login successful', { user, isNewUser });
-      console.log('User:', JSON.stringify(user));
-      setIsNewUser(isNewUser || false);
-      try {
-        const userAny = user as any;
-        
-        const twitterAccount = userAny.linked_accounts?.find((account: any) => account.type === 'twitter_oauth');
-        const walletAccount = userAny.linked_accounts?.find((account: any) => account.type === 'wallet');
-        
-        const response = await apiClient(LOGIN, 'POST', {
-          twitterUsername: twitterAccount?.username || '',
-          address: walletAccount?.address || '',
+  
+
+  const handleOtplessLogin = () => {
+    setOauthState({ status: 'loading', error: null });
+    
+    const module = new OtplessModule();
+    const extra = {
+      method: "get",
+      params: {
+        appId: "yketet03g0vdoukjxlkj", // Replace with your actual OTPless App ID
+      },
+    };
+    
+    // module.showFabButton(false);
+    module.showLoginPage((data) => {
+      if (data.data === null || data.data === undefined) {
+        setOauthState({ 
+          status: 'error', 
+          error: { message: data.errorMessage || 'Authentication failed' } 
         });
-        
-        if(response.success){
-          setAuthenticated(true);
-          router.replace('/(tabs)');
-        }
-      }catch(error){
-        console.log('Login error:', error);
+      } else {
+        console.log("OTPless token:", data.data.token);
+        setAuthenticated(true);
+        setIsNewUser(true);
+        router.replace('/(tabs)');
       }
-      setAuthenticated(true);
-      router.replace('/(tabs)');
-    },
-    onError: (error) => {
-      console.error('Login error:', error);
-    }
-  });
-
-  useOAuthTokens({
-    onOAuthTokenGrant: ({
-      provider
-    }) => {
-      console.log('OAuth tokens received', { provider });
-    }
-  });
-
-  const handleTwitterLogin = () => {
-    login({ provider: 'twitter' });
-  };
-
-  const handleSignup = () => {
-    setAuthenticated(true);
-    router.replace('/(tabs)');
+    }, extra);
   };
 
   return (
@@ -155,7 +143,7 @@ export default function SignupScreen() {
               }}>
                 <TouchableOpacity
                   style={styles.buttonWrapper}
-                  onPress={handleTwitterLogin}
+                  onPress={handleOtplessLogin}
                   disabled={oauthState.status === 'loading'}
                   activeOpacity={0.7}
                   onPressIn={() => setIsPressing(true)}
@@ -170,10 +158,7 @@ export default function SignupScreen() {
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
                         <>
-                          
-                            <XIcon width={20} height={20} />
-                          <Text style={styles.twitterButtonText}>Sign in with Twitter</Text>
-                        
+                          <Text style={styles.twitterButtonText}>Sign in with OTPless</Text>
                           <View style={styles.glow} />
                         </>
                       )}

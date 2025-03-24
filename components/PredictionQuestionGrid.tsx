@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import PredictionQuestion from './PredictionQuestion';
-import { IContest } from '@/types';
+import { IContest, IDifficultyLevel } from '@/types';
 import { PredictionGridSkeleton } from './SkeletonLoading';
 import { useContestsStore } from '@/store/contestsStore';
 
@@ -32,31 +32,22 @@ const PredictionQuestionGrid = ({
     return <PredictionGridSkeleton />;
   }
   
-  const questionPairs = [];
-  for (let i = 0; i < questions.length; i += 2) {
-    const pair = questions.slice(i, i + 2);
-    questionPairs.push(pair);
-  }
-
   return (
     <>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {questionPairs.map((pair, index) => (
-          <View key={index} style={styles.row}>
-            {pair.map((questionItem) => (
+            {questions.map((questionItem) => (
               <View key={questionItem.id} style={styles.questionWrapper}>
                 <PredictionQuestion
                   id={questionItem.id}
                   question={questionItem.question}
-                  difficultyLevel={questionItem.difficultyLevel}
+                  difficultyLevel={questionItem.difficultyLevel as IDifficultyLevel}
                   contest={selectedContest}
+                  timeRemaining={selectedContest?.match?.endTime || ''}
                   isUserParticipating={selectedContest ? isUserParticipatingInContest(selectedContest.id) : false}
                 />
               </View>
             ))}
-            {pair.length === 1 && <View style={styles.emptySlot} />}
-          </View>
-        ))}
+            {questions.length === 1 && <View style={styles.emptySlot} />}
       </ScrollView>
     </>
   );

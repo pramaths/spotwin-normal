@@ -1,14 +1,43 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
+import { useState, useEffect } from 'react';
+import { useUserStore } from '../store/userStore';
+import { getUserParticipationStatus } from '../services/userContestsApi';
 
 interface ContestCardProps {
   contest: IContest;
   onPress?: (contest: IContest) => void;
+  userContests?: IContest[];
 }
 
-export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
+export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCardProps) => {
   const { event, entryFee, name, currency, match } = contest;
+  const [isParticipating, setIsParticipating] = useState(false);
+  const { user } = useUserStore();
+  
+  useEffect(() => {
+    // Check if user is already participating in this contest
+    const checkParticipation = async () => {
+      if (!user?.id) return;
+      
+      // Check if the contest is in the user's contests list if provided
+      if (userContests.length > 0) {
+        const isInUserContests = userContests.some(userContest => userContest.id === contest.id);
+        setIsParticipating(isInUserContests);
+      } else {
+        // Otherwise make an API call to check
+        try {
+          const status = await getUserParticipationStatus(user.id, contest.id);
+          setIsParticipating(status);
+        } catch (error) {
+          console.error("Error checking participation:", error);
+        }
+      }
+    };
+
+    checkParticipation();
+  }, [contest.id, user?.id, userContests]);
   
   const handlePress = () => {
     if (onPress) {
@@ -69,10 +98,13 @@ export const ContestCard = ({ contest, onPress }: ContestCardProps) => {
       </View>
       
       <TouchableOpacity 
-        style={styles.joinButton}
+        style={[styles.joinButton, isParticipating && styles.participatingButton]}
         onPress={handlePress}
+        disabled={isParticipating}
       >
-        <Text style={styles.joinButtonText}>Join Contest</Text>
+        <Text style={styles.joinButtonText}>
+          {isParticipating ? 'Already Participating' : 'Join Contest'}
+        </Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -217,6 +249,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  participatingButton: {
+    backgroundColor: '#10B981', // Green color for "Already Participating"
   },
   joinButtonText: {
     color: '#fff',

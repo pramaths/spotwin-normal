@@ -36,6 +36,15 @@ export default function ContestDetailScreen() {
     router.push('/(tabs)/contests');
   };
 
+  const formatEventDate = (startTime?: string, endTime?: string) => {
+    if (!startTime || !endTime) return '';
+    
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    return `${start.toLocaleDateString()} • ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -77,18 +86,25 @@ export default function ContestDetailScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <ChevronLeft size={24} color="#000" />
+            <ChevronLeft size={24} color="#1A1A2E" />
           </TouchableOpacity>
-          <Image source={{ uri: contest.match?.event.eventImageUrl }} style={styles.eventImage} />
-          <Text style={styles.headerTitle}> {contest.name}</Text>
+          <Text style={styles.headerTitle}>{contest.name}</Text>
         </View>
 
         <View style={styles.contestInfoContainer}>
+          {contest.match?.event.eventImageUrl && (
+            <Image 
+              source={{ uri: contest.match.event.eventImageUrl }} 
+              style={styles.eventBanner}
+              resizeMode="cover"
+            />
+          )}
+          
           <View style={styles.teamsContainer}>
             <View style={styles.teamSection}>
               {contest.match?.teamA.imageUrl ? (
                 <Image
-                  source={{ uri: contest.match?.teamA.imageUrl }}
+                  source={{ uri: contest.match.teamA.imageUrl }}
                   style={styles.teamLogo}
                   resizeMode="contain"
                 />
@@ -107,7 +123,7 @@ export default function ContestDetailScreen() {
             <View style={styles.teamSection}>
               {contest.match?.teamB.imageUrl ? (
                 <Image
-                  source={{ uri: contest.match?.teamB.imageUrl }}
+                  source={{ uri: contest.match.teamB.imageUrl }}
                   style={styles.teamLogo}
                   resizeMode="contain"
                 />
@@ -119,13 +135,8 @@ export default function ContestDetailScreen() {
               <Text style={styles.teamName}>{contest.match?.teamB.name}</Text>
             </View>
           </View>
-
-          <View style={styles.eventInfoContainer}>
-            <Text style={styles.eventDate}>
-              {new Date(contest.match.startTime).toLocaleDateString()} • {new Date(contest.match?.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </View>
         </View>
+        
         <View style={styles.predictionsContainer}>
           <UserPredictions contestId={contestId} userId={user?.id || ''} />
         </View>
@@ -137,24 +148,24 @@ export default function ContestDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#F9FAFC',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#F9FAFC',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: '#FFF',
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: 'rgba(0,0,0,0.06)',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
-        shadowRadius: 1,
+        shadowRadius: 5,
       },
       android: {
         elevation: 2,
@@ -165,15 +176,13 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 8,
   },
-  eventImage: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A2E',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -192,55 +201,59 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contestInfoContainer: {
-    padding: 20,
+    margin: 16,
     backgroundColor: '#FFF',
-    marginTop: 12,
-    marginHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
       },
       android: {
         elevation: 3,
       },
     }),
   },
+  eventBanner: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#f0f0f0',
+  },
   teamsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 20,
   },
   teamSection: {
     flex: 2,
     alignItems: 'center',
   },
   teamLogo: {
-    width: 60,
-    height: 60,
-    marginBottom: 8,
+    width: 70,
+    height: 70,
+    marginBottom: 12,
   },
   teamLogoPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   teamInitial: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#555',
   },
   teamName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#1A1A2E',
     textAlign: 'center',
   },
   vsContainer: {
@@ -248,42 +261,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   vsText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#888',
   },
   eventInfoContainer: {
-    backgroundColor: '#F8F8F8',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 4,
+    backgroundColor: '#F8FAFD',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F5',
   },
   eventDate: {
     fontSize: 14,
+    fontWeight: '500',
     color: '#555',
-    marginBottom: 4,
-  },
-  eventLocation: {
-    fontSize: 14,
-    color: '#555',
-  },
-  descriptionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#666',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 16,
-    marginHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginHorizontal: 16,
-    marginBottom: 12,
+    textAlign: 'center',
   },
   predictionsContainer: {
     flex: 1,

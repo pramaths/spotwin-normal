@@ -92,7 +92,7 @@ export interface IUserPrediction {
   id: string;
   userId: string;
   contestId: string;
-  prediction: string;
+  questionId: string;
   isCorrect: boolean | null;
   question: IQuestion;
   outcome?: IOutcome;

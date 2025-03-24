@@ -6,6 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { getUserBalance } from '../../utils/common';
 import { IUser } from '../../types';
+import { CHANGE_USERNAME } from '@/routes/api';
+import apiClient from '@/utils/api';
 
 const defaultUser: IUser = {
   "id": "72e02e8e-071d-4a3f-8e0a-094ae0fa1291",
@@ -20,15 +22,15 @@ const defaultUser: IUser = {
   referrals: []
 }
 
-export default function ProfileScreen() {
+const ProfileScreen = () => {
   const router = useRouter();
   const { user, setUser } = useUserStore();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || '');
   const [copied, setCopied] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Function to generate a random color
   const getRandomColor = () => {
     const colors = [
       '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
@@ -38,13 +40,30 @@ export default function ProfileScreen() {
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // Get the first letter of username for avatar placeholder
   const getInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
   };
 
+  const fetchUserBalance = async () => {
+    try {
+      setIsLoading(true);
+      if (user?.id) {
+        const balance = await getUserBalance(user.id);
+        setUser({
+          ...user,
+          points: balance
+        } as IUser);
+      }
+    } catch (error) {
+      console.error('Failed to fetch balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setUser(defaultUser);
+    fetchUserBalance();
   }, []);
 
   const handleLogOut = () => {
@@ -78,23 +97,29 @@ export default function ProfileScreen() {
 
   const handleSaveUsername = async () => {
     try {
-      // Call your API to update username
-      // await updateUsername(newUsername);
-
-      // Update local state
-      setUser({
-        ...user,
+      const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PUT', {
         username: newUsername
-      } as IUser)
-      setIsEditingUsername(false);
+      });
+      if (response.success) {
+        setUser({
+          ...user,
+          username: newUsername
+        } as IUser)
+        setIsEditingUsername(false);
+      }
     } catch (error) {
       console.error('Failed to update username:', error);
     }
   };
 
+  const openInstagram = () => {
+    // Open Instagram profile
+    Linking.openURL('https://www.instagram.com/shootwin');
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['right', 'bottom', 'left', 'top']}>
-      <ScrollView style={styles.scrollView}>
+    <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.header}>
           <View style={styles.profileContainer}>
             {user?.imageUrl ? (
@@ -117,6 +142,7 @@ export default function ProfileScreen() {
                     value={newUsername}
                     onChangeText={setNewUsername}
                     autoFocus
+                    placeholder="Enter new username"
                   />
                   <TouchableOpacity
                     style={styles.saveButton}
@@ -152,7 +178,20 @@ export default function ProfileScreen() {
 
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Points</Text>
-            <Text style={styles.pointsValue}>{user?.points || 0}</Text>
+            <View style={styles.pointsContainer}>
+              <Text style={styles.pointsValue}>{user?.points || 0}</Text>
+              <TouchableOpacity 
+                style={styles.refreshButton} 
+                onPress={fetchUserBalance}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#0504dc" />
+                ) : (
+                  <RefreshCcw size={18} color="#0504dc" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.infoItem}>
@@ -181,14 +220,20 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => setIsEditingUsername(true)}
+          >
             <View style={styles.menuIconContainer}>
               <Settings size={24} color="#000" />
             </View>
-            <Text style={styles.menuText}>Settings</Text>
+            <Text style={styles.menuText}>Change Username</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={openInstagram}
+          >
             <View style={styles.menuIconContainer}>
               <HelpCircle size={24} color="#000" />
             </View>
@@ -208,6 +253,8 @@ export default function ProfileScreen() {
   );
 }
 
+export default ProfileScreen;
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -215,7 +262,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingBottom: 100,
+  },
+  scrollViewContent: {
+    paddingBottom: 100, // Add padding to ensure content doesn't get hidden by tab bar
   },
   header: {
     paddingHorizontal: 16,
@@ -233,6 +282,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     marginLeft: 16,
+    flex: 1,
   },
   profileName: {
     fontFamily: 'Inter-Bold',
@@ -245,35 +295,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0504dc',
   },
-  walletCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  walletLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
-  chainInfo: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  bridgeInfo: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-  },
   walletAmount: {
     fontFamily: 'Inter-Bold',
     fontSize: 32,
@@ -285,10 +306,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 20,
-  },
-  walletActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   depositButton: {
     flexDirection: 'row',
@@ -529,10 +546,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
   },
+  pointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   pointsValue: {
     fontFamily: 'Inter-Bold',
     fontSize: 24,
     color: '#0504dc',
+  },
+  refreshButton: {
+    marginLeft: 12,
+    padding: 8,
+    backgroundColor: '#F5F7FA',
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -563,11 +594,16 @@ const styles = StyleSheet.create({
   },
   editButton: {
     marginLeft: 8,
-    padding: 4,
+    padding: 8,
+    backgroundColor: '#F5F7FA',
+    borderRadius: 20,
   },
   editUsernameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: 8,
+    padding: 4,
   },
   usernameInput: {
     fontFamily: 'Inter-Regular',
@@ -578,6 +614,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   saveButton: {
     marginLeft: 8,
@@ -592,8 +629,8 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   profileImagePlaceholder: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',

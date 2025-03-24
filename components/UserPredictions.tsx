@@ -5,14 +5,12 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Platform
 } from 'react-native';
 import { router } from 'expo-router';
 import { Pencil } from 'lucide-react-native';
 import { IContest, IUserPrediction, IOutcome } from '@/types';
-import { formatDateTime } from '@/utils/dateUtils';
 import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
 import apiClient from '@/utils/api';
 
@@ -29,7 +27,7 @@ const fetchUserPredictions = async (contestId: string, userId?: string): Promise
       return response.data.map((prediction: IUserPrediction) => ({
         ...prediction,
         question: prediction.question,
-        outcome: prediction.prediction === 'YES' ? IOutcome.YES : IOutcome.NO
+        outcome: prediction.outcome === 'YES' ? IOutcome.YES : IOutcome.NO
       }));
     }
     return [];
@@ -103,6 +101,8 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
     );
   }
 
+  const progressPercentage = (predictions.length / totalPredictionsNeeded) * 100;
+
   return (
     <View style={styles.mainContainer}>
       <View style={styles.progressContainer}>
@@ -118,7 +118,7 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
           <View 
             style={[
               styles.progressBarFill, 
-              { width: `${(predictions.length / totalPredictionsNeeded) * 100}%` }
+              { width: `${progressPercentage}%` }
             ]} 
           />
         </View>
@@ -141,13 +141,13 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
                 <View style={styles.bottomSection}>
                   <View style={[
                     styles.outcomeContainer,
-                    (item.outcome === IOutcome.YES || item.prediction === 'YES') ? styles.yesContainer : styles.noContainer
+                    (item.outcome === IOutcome.YES) ? styles.yesContainer : styles.noContainer
                   ]}>
                     <Text style={[
                       styles.outcomeText,
-                      (item.outcome === IOutcome.YES || item.prediction === 'YES') ? styles.yesText : styles.noText
+                      (item.outcome === IOutcome.YES) ? styles.yesText : styles.noText
                     ]}>
-                      {(item.outcome === IOutcome.YES || item.prediction === 'YES') ? 'YES' : 'NO'}
+                        {item.outcome === IOutcome.YES ? 'YES' : 'NO'}
                     </Text>
                   </View>
 
@@ -174,22 +174,22 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: '#F9FAFC',
   },
   progressContainer: {
-    marginBottom: 16,
+    marginVertical: 20,
     paddingHorizontal: 16,
   },
   progressTextContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   progressTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A2E',
   },
   progressCount: {
     fontSize: 16,
@@ -202,19 +202,19 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   progressBarBackground: {
-    height: 8,
+    height: 6,
     backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    borderRadius: 8,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#0504dc',
-    borderRadius: 4,
+    borderRadius: 8,
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 100, // Add space at the bottom for tab navigation
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
@@ -234,13 +234,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    margin: 20,
     padding: 24,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    margin: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0,0,0,0.1)',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   emptyText: {
     color: '#666',
@@ -249,62 +259,55 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   predictionCard: {
-    flexDirection: 'row',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 16,
+    marginBottom: 12,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: 'rgba(0,0,0,0.06)',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 3,
+        elevation: 2,
       },
     }),
   },
-  thumbnail: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#f0f0f0',
-  },
   contentContainer: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
+    padding: 16,
   },
   questionContainer: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   questionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#333',
-    lineHeight: 20,
+    color: '#1A1A2E',
+    lineHeight: 22,
   },
   bottomSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
   },
   outcomeContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   yesContainer: {
-    backgroundColor: 'rgba(0, 200, 83, 0.1)',
+    backgroundColor: 'rgba(0, 200, 83, 0.12)',
   },
   noContainer: {
-    backgroundColor: 'rgba(255, 45, 85, 0.1)',
+    backgroundColor: 'rgba(255, 45, 85, 0.12)',
   },
   outcomeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   yesText: {
@@ -317,15 +320,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: 'rgba(5, 4, 220, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(5, 4, 220, 0.08)',
   },
   editButtonText: {
-    marginLeft: 4,
-    fontSize: 12,
-    fontWeight: '500',
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#0504dc',
   },
 });

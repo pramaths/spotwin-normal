@@ -17,7 +17,6 @@ import HowItWorksModal from './HowItWorksModal';
 import { CircleHelp, X, Copy } from 'lucide-react-native'
 import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
-import QRCode from 'react-native-qrcode-svg';
 import { getUserBalance } from '../utils/common';
 
 interface HeaderProfileProps {
@@ -31,11 +30,18 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [howItWorksModalVisible, setHowItWorksModalVisible] = useState(false);
   const [depositModalVisible, setDepositModalVisible] = useState(false);
-  const [solBalance, setSolBalance] = useState<number>(0);
   const { user, setUser } = useUserStore();
   const balanceUpdatedRef = useRef(false);
   const { isNewUser, setIsNewUser } = useAuthStore();
- 
+  const [balance, setBalance] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const balance = await getUserBalance(user?.id || '');
+      setBalance(balance);
+    };
+    fetchBalance();
+  }, [user?.id]);
 
   const handleWalletPress = () => {
     setDepositModalVisible(true);
@@ -90,8 +96,8 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             onPress={handleWalletPress}
             activeOpacity={0.7}
           >
-             {solBalance > 0 && (
-              <Text style={styles.balanceText}>{(solBalance)}</Text>
+            {balance > 0 && (
+              <Text style={styles.balanceText}>{(balance)}</Text>
             )}
             <View style={styles.walletIconWrapper}>
               <EmptyWalletIcon />
@@ -163,6 +169,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 2,
     height: 40,
+    gap: 4,
   },
   walletIconWrapper: {
     justifyContent: 'center',
@@ -190,9 +197,9 @@ const styles = StyleSheet.create({
   },
   balanceText: {
     color: '#0504dc',
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   modalContent: {
     backgroundColor: 'white',

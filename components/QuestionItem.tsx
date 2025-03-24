@@ -15,9 +15,9 @@ export default function QuestionItem({
   onRemovePrediction
 }: QuestionItemProps) {
   const difficultyColors = {
-    [IDifficultyLevel.EASY]: '#4CAF50',   // Green for easy
-    [IDifficultyLevel.MEDIUM]: '#FF9800', // Orange for medium
-    [IDifficultyLevel.HARD]: '#F44336'    // Red for hard
+    [IDifficultyLevel.EASY]: '#4CAF50',  
+    [IDifficultyLevel.MEDIUM]: '#FF9800',   
+    [IDifficultyLevel.HARD]: '#F44336'    
   };
 
   const difficultyColor = difficultyColors[question.difficultyLevel];
@@ -29,7 +29,9 @@ export default function QuestionItem({
           <Text style={styles.difficultyText}>{question.difficultyLevel}</Text>
         </View>
 
-        <Text style={styles.questionText}>{question.question}</Text>
+        <Text style={styles.questionText} numberOfLines={3} ellipsizeMode="tail">
+          {question.question}
+        </Text>
 
         {userVote ? (
           <View style={styles.predictionContainer}>
@@ -71,51 +73,53 @@ export default function QuestionItem({
 const styles = StyleSheet.create({
   itemContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 20
+    paddingVertical: 8,
+    marginBottom: 12
   },
   questionCard: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     position: 'relative'
   },
   difficultyBadge: {
     position: 'absolute',
-    top: -12,
-    right: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16
+    top: -10,
+    right: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12
   },
   difficultyText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 12
+    fontSize: 10
   },
   questionText: {
-    fontSize: 16,
-    color: '#FFF',
-    fontWeight: '600',
-    marginTop: 20,
-    marginBottom: 20,
-    textAlign: 'center'
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+    marginTop: 16,
+    marginBottom: 16,
+    lineHeight: 20,
+    paddingRight: 8
   },
   predictionContainer: {
     alignItems: 'center',
-    marginTop: 20
+    marginTop: 16
   },
   predictionBadge: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginBottom: 16
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginBottom: 12
   },
   yesBadge: {
     backgroundColor: '#4CAF50'
@@ -125,29 +129,30 @@ const styles = StyleSheet.create({
   },
   predictionText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold'
   },
   changeButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: '#2196F3',
-    borderRadius: 10
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    backgroundColor: '#3768E3',
+    borderRadius: 8
   },
   changeButtonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold'
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'center',
+    marginTop: 8
   },
   button: {
-    flex: 1,
     paddingVertical: 8,
-    borderRadius: 10,
-    marginHorizontal: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -159,7 +164,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold'
   }
 });

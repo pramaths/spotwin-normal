@@ -41,11 +41,17 @@ const FeedsScreen = () => {
           id: `placeholder-${contest.id}-${questions.length}`,
           contestId: contest.id,
           question: 'Want to see more questions? Join the contest now!',
-          answer: IOutcome.YES,
+          outcome: IOutcome.YES,
           difficultyLevel: IDifficultyLevel.EASY,
         });
       }
-      
+      questions.push({
+        id: `placeholder-${contest.id}-${questions.length}`,
+        contestId: contest.id,
+        question: 'Want to see more questions? Join the contest now!',
+        outcome: IOutcome.YES,
+        difficultyLevel: IDifficultyLevel.EASY,
+      }) 
       processedContest.questions = questions;
       
       return processedContest;
