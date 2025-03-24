@@ -41,10 +41,9 @@
         }
       ],
       [
-        "expo-video",
+      "expo-dev-client",
         {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
+          "launchMode": "most-recent"
         }
       ],
       "expo-secure-store",

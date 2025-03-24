@@ -1,5 +1,6 @@
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL as string;
 export const LOGIN = `${backendUrl}/auth/login`;
+export const VERIFY_OTP = `${backendUrl}/auth/verify-otp`;
 export const LOGOUT = `${backendUrl}/auth/logout`;
 
 //sports
