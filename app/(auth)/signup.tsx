@@ -21,6 +21,7 @@ export default function SignupScreen() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [isPressing, setIsPressing] = useState(false);
   const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
+  const { isAuthenticated } = useAuthStore();
   const [oauthState, setOauthState] = useState<{
     status: 'idle' | 'loading' | 'error';
     error: null | { message: string };
@@ -28,6 +29,7 @@ export default function SignupScreen() {
     status: 'idle',
     error: null
   });
+
   
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -97,7 +99,7 @@ export default function SignupScreen() {
     };
     
     // module.showFabButton(false);
-    module.showLoginPage((data) => {
+    module.showLoginPage((data: any) => {
       if (data.data === null || data.data === undefined) {
         setOauthState({ 
           status: 'error', 

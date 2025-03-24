@@ -26,6 +26,7 @@ import apiClient from '../../utils/api';
 import { useUserStore } from '../../store/userStore';
 import { USER, USER_CONTESTS, CONTESTS } from '../../routes/api';
 import { useNotification } from '@/contexts/NotificationContext';
+import { useAuthStore } from '../../store/authstore';
 
 const sportsCategories = [
   { id: '1', name: 'Cricket', icon: '🏏' },
@@ -44,7 +45,13 @@ export default function HomeScreen() {
   const featuredListRef = useRef<FlatList>(null);
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
+  const {isAuthenticated} = useAuthStore();
 
+  useEffect(() => {
+    if(!isAuthenticated) {
+      router.replace('/(auth)/signup');
+    }
+  }, [isAuthenticated]);
   const { notification, expoPushToken, error } = useNotification();
 
   if (error) {
