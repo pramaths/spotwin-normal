@@ -9,19 +9,6 @@ import { IUser } from '../../types';
 import { CHANGE_USERNAME } from '@/routes/api';
 import apiClient from '@/utils/api';
 
-const defaultUser: IUser = {
-  "id": "72e02e8e-071d-4a3f-8e0a-094ae0fa1291",
-  "imageUrl": "https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250",
-  "username": "pramaths",
-  "phoneNumber": "+916364125737",
-  "referralCode": "1234567890",
-  points: 0,
-  totalContests: 0,
-  totalContestsWon: 0,
-  totalContestsLost: 0,
-  referrals: []
-}
-
 const ProfileScreen = () => {
   const router = useRouter();
   const { user, setUser } = useUserStore();
@@ -43,27 +30,10 @@ const ProfileScreen = () => {
   const getInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
   };
-
-  const fetchUserBalance = async () => {
-    try {
-      setIsLoading(true);
-      if (user?.id) {
-        const balance = await getUserBalance(user.id);
-        setUser({
-          ...user,
-          points: balance
-        } as IUser);
-      }
-    } catch (error) {
-      console.error('Failed to fetch balance:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  
 
   useEffect(() => {
-    setUser(defaultUser);
-    fetchUserBalance();
+    getUserBalance(user?.id || '');
   }, []);
 
   const handleLogOut = () => {
@@ -182,7 +152,7 @@ const ProfileScreen = () => {
               <Text style={styles.pointsValue}>{user?.points || 0}</Text>
               <TouchableOpacity 
                 style={styles.refreshButton} 
-                onPress={fetchUserBalance}
+                onPress={() => getUserBalance(user?.id || '')}
                 disabled={isLoading}
               >
                 {isLoading ? (

@@ -1,170 +1,160 @@
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { IQuestion, IOutcome, IDifficultyLevel } from '@/types';
 
-export interface QuestionItemProps {
+interface Props {
   question: IQuestion;
   userVote: IOutcome | null;
   onPrediction: (prediction: IOutcome) => void;
   onRemovePrediction: () => void;
+  isDisabled?: boolean;
 }
+
+const difficultyColors = {
+  [IDifficultyLevel.EASY]: '#6DD5FA',
+  [IDifficultyLevel.MEDIUM]: '#FDC830',
+  [IDifficultyLevel.HARD]: '#FF758C',
+};
 
 export default function QuestionItem({
   question,
   userVote,
   onPrediction,
-  onRemovePrediction
-}: QuestionItemProps) {
-  const difficultyColors = {
-    [IDifficultyLevel.EASY]: '#4CAF50',  
-    [IDifficultyLevel.MEDIUM]: '#FF9800',   
-    [IDifficultyLevel.HARD]: '#F44336'    
-  };
-
+  onRemovePrediction,
+  isDisabled = false,
+}: Props) {
   const difficultyColor = difficultyColors[question.difficultyLevel];
 
   return (
-    <View style={styles.itemContainer}>
-      <View style={[styles.questionCard, { borderColor: difficultyColor }]}>
-        <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor }]}>
-          <Text style={styles.difficultyText}>{question.difficultyLevel}</Text>
-        </View>
+    <View style={styles.card}>
+      <LinearGradient
+        colors={[difficultyColor, `${difficultyColor}BB`]}
+        style={styles.badge}
+      >
+        <Text style={styles.badgeText}>{question.difficultyLevel}</Text>
+      </LinearGradient>
 
-        <Text style={styles.questionText} numberOfLines={3} ellipsizeMode="tail">
-          {question.question}
-        </Text>
+      <Text style={styles.questionText}>{question.question}</Text>
 
-        {userVote ? (
-          <View style={styles.predictionContainer}>
-            <View style={[
-              styles.predictionBadge,
-              userVote === IOutcome.YES ? styles.yesBadge : styles.noBadge
+      <View style={styles.buttonContainer}>
+        {[IOutcome.YES, IOutcome.NO].map((outcome) => (
+          <TouchableOpacity
+            key={outcome}
+            onPress={() => onPrediction(outcome)}
+            disabled={isDisabled && !userVote}
+            style={[
+              styles.option,
+              userVote === outcome ? styles.selectedOption : {},
+              userVote !== null && userVote !== outcome ? styles.unselectedOption : {},
+              outcome === IOutcome.YES ? styles.yesOption : styles.noOption,
+              isDisabled && !userVote ? styles.disabledOption : {}
+            ]}
+          >
+            <Ionicons
+              name={outcome === IOutcome.YES ? 'checkmark' : 'close'}
+              size={20}
+              color={userVote !== null && userVote !== outcome ? '#ffffff80' : '#fff'}
+            />
+            <Text style={[
+              styles.optionText,
+              userVote !== null && userVote !== outcome ? styles.unselectedOptionText : {}
             ]}>
-              <Text style={styles.predictionText}>
-                You predicted: {userVote}
-              </Text>
-            </View>
-
-            <TouchableOpacity style={styles.changeButton} onPress={onRemovePrediction}>
-              <Text style={styles.changeButtonText}>Change</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.yesButton]}
-              onPress={() => onPrediction(IOutcome.YES)}
-            >
-              <Text style={styles.buttonText}>YES</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.noButton]}
-              onPress={() => onPrediction(IOutcome.NO)}
-            >
-              <Text style={styles.buttonText}>NO</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+              {outcome}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
+
+      {userVote && (
+        <TouchableOpacity onPress={onRemovePrediction} style={styles.removeBtn}>
+          <Text style={styles.removeText}>Change Selection</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  itemContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 12
-  },
-  questionCard: {
+  card: {
     backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderRadius: 16,
+    padding: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    position: 'relative'
+    shadowRadius: 6,
+    elevation: 5,
+    marginVertical: 8,
+    marginHorizontal: 12,
   },
-  difficultyBadge: {
-    position: 'absolute',
-    top: -10,
-    right: 16,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 6,
   },
-  difficultyText: {
-    color: '#FFF',
+  badgeText: {
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 10
+    fontSize: 12,
   },
   questionText: {
-    fontSize: 15,
+    fontSize: 20,
     color: '#333',
-    fontWeight: '500',
-    marginTop: 16,
-    marginBottom: 16,
-    lineHeight: 20,
-    paddingRight: 8
-  },
-  predictionContainer: {
-    alignItems: 'center',
-    marginTop: 16
-  },
-  predictionBadge: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 12
-  },
-  yesBadge: {
-    backgroundColor: '#4CAF50'
-  },
-  noBadge: {
-    backgroundColor: '#F44336'
-  },
-  predictionText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold'
-  },
-  changeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: '#3768E3',
-    borderRadius: 8
-  },
-  changeButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold'
+    fontWeight: '600',
+    marginBottom: 12,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8
+    justifyContent: 'space-between',
   },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginHorizontal: 12,
+  option: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
+    flex: 0.48,
   },
-  yesButton: {
-    backgroundColor: '#4CAF50'
+  yesOption: {
+    backgroundColor: '#4CAF50',
   },
-  noButton: {
-    backgroundColor: '#F44336'
+  noOption: {
+    backgroundColor: '#F44336',
   },
-  buttonText: {
-    color: '#FFF',
+  selectedOption: {
+    borderWidth: 2,
+    borderColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  unselectedOption: {
+    opacity: 0.6,
+  },
+  unselectedOptionText: {
+    opacity: 0.8,
+  },
+  disabledOption: {
+    opacity: 0.4,
+  },
+  optionText: {
+    color: '#fff',
     fontSize: 14,
-    fontWeight: 'bold'
-  }
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
+  removeBtn: {
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+  removeText: {
+    color: '#3768E3',
+    fontWeight: 'bold',
+  },
 });

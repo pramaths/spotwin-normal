@@ -177,17 +177,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFC',
   },
   progressContainer: {
-    marginVertical: 20,
+    marginVertical: 10,
     paddingHorizontal: 16,
   },
   progressTextContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   progressTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1A2E',
   },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   predictionCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   questionContainer: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
   questionText: {
     fontSize: 15,

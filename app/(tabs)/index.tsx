@@ -46,12 +46,20 @@ export default function HomeScreen() {
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
   const {isAuthenticated} = useAuthStore();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if(!isAuthenticated) {
-      router.replace('/(auth)/signup');
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if(isMounted && !isAuthenticated) {
+      setTimeout(() => {
+        router.replace('/(auth)/signup');
+      }, 0);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isMounted, router]);
+
   const { notification, expoPushToken, error } = useNotification();
 
   if (error) {

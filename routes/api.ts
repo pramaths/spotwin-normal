@@ -1,7 +1,10 @@
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-export const LOGIN = `${backendUrl}/auth/login`;
+
+//auth
+export const LOGIN = `${backendUrl}/auth/otp`;
 export const VERIFY_OTP = `${backendUrl}/auth/verify-otp`;
 export const LOGOUT = `${backendUrl}/auth/logout`;
+export const AUTH_ME = `${backendUrl}/auth/me`;
 
 //sports
 export const SPORTS = `${backendUrl}/api/sports`;
@@ -36,3 +39,7 @@ export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: st
 
 //leaderboard
 export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboard/${contestId}`;
+
+//referral
+export const REFERRAL_CODE = (userId: string) => `${backendUrl}/users/${userId}/referral-code-used`;
+

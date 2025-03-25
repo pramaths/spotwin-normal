@@ -91,15 +91,7 @@ export default function ContestDetailScreen() {
           <Text style={styles.headerTitle}>{contest.name}</Text>
         </View>
 
-        <View style={styles.contestInfoContainer}>
-          {contest.match?.event.eventImageUrl && (
-            <Image 
-              source={{ uri: contest.match.event.eventImageUrl }} 
-              style={styles.eventBanner}
-              resizeMode="cover"
-            />
-          )}
-          
+        <View style={styles.contestInfoContainer}>          
           <View style={styles.teamsContainer}>
             <View style={styles.teamSection}>
               {contest.match?.teamA.imageUrl ? (
@@ -158,7 +150,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 8,
     backgroundColor: '#FFF',
     ...Platform.select({
       ios: {
@@ -219,28 +211,28 @@ const styles = StyleSheet.create({
   },
   eventBanner: {
     width: '100%',
-    height: 120,
+    height: 80,
     backgroundColor: '#f0f0f0',
   },
   teamsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
   },
   teamSection: {
     flex: 2,
     alignItems: 'center',
   },
   teamLogo: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     marginBottom: 12,
   },
   teamLogoPlaceholder: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,

@@ -12,21 +12,18 @@ interface ContestCardProps {
 }
 
 export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCardProps) => {
-  const { event, entryFee, name, currency, match } = contest;
+  const { entryFee, name, currency, match } = contest;
   const [isParticipating, setIsParticipating] = useState(false);
   const { user } = useUserStore();
   
   useEffect(() => {
-    // Check if user is already participating in this contest
     const checkParticipation = async () => {
       if (!user?.id) return;
       
-      // Check if the contest is in the user's contests list if provided
       if (userContests.length > 0) {
         const isInUserContests = userContests.some(userContest => userContest.id === contest.id);
         setIsParticipating(isInUserContests);
       } else {
-        // Otherwise make an API call to check
         try {
           const status = await getUserParticipationStatus(user.id, contest.id);
           setIsParticipating(status);

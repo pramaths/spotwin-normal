@@ -87,7 +87,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>gm, {user?.username}</Text>
+            <Text style={styles.userName}>Hi, {user?.username}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>
