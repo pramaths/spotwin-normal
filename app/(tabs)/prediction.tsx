@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { submitPrediction, RemovePrediction, fetchUserPredictions } from '@/services/predictionsApi';
+import { submitPrediction, RemovePrediction, fetchUserPredictions, ChangePrediction } from '@/services/predictionsApi';
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
 import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion, IContest } from '@/types';
@@ -153,7 +153,7 @@ export default function PredictionScreen() {
 
       if (answeredQuestionsForDifficulty.length >= 3 && !userVotesMap[question.id]) {
         setPredictionMessage({
-          text: `Maximum limit reached! You can only select 3 questions in ${question.difficultyLevel} difficulty. Try changing your previous selections or switch to another difficulty.`,
+          text: `You have already answered 3 questions in ${question.difficultyLevel} section.`,
           type: IOutcome.NO
         });
         
@@ -167,7 +167,17 @@ export default function PredictionScreen() {
         return;
       }
 
-      await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
+      // Check if this question already has a prediction
+      const existingPredictionIndex = predictions.findIndex(p => p.question.id === question.id);
+      
+      if (existingPredictionIndex > -1) {
+        // If prediction exists, use ChangePrediction
+        const existingPrediction = predictions[existingPredictionIndex];
+        await handleChangePrediction(existingPrediction.id, prediction, question.id);
+      } else {
+        // If no prediction exists, create a new one
+        await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
+      }
 
       if (!answeredQuestions.includes(question.id)) {
         setAnsweredQuestions((prev: string[]) => [...prev, question.id]);
@@ -181,7 +191,7 @@ export default function PredictionScreen() {
       setPredictions((prev: IUserPrediction[]) => {
         const existingIndex = prev.findIndex((p) => p.question.id === question.id);
         const newEntry: IUserPrediction = {
-          id: question.id,
+          id: existingIndex > -1 ? prev[existingIndex].id : question.id, // Keep the same ID if updating
           userId: user?.id || '',
           contestId: contestId as string,
           outcome: prediction,
@@ -233,6 +243,39 @@ export default function PredictionScreen() {
       setPredictions((prev) => prev.filter((p: IUserPrediction) => p.question.id !== questionId));
     } catch (err) {
       console.error('Error removing prediction:', err);
+    }
+  };
+
+  const handleChangePrediction = async (predictionId: string, prediction: IOutcome, questionId: string) => {
+    try {
+      await ChangePrediction(predictionId, prediction, questionId);
+      
+      // Update UI state for the changed prediction
+      setUserVotesMap((prev) => ({
+        ...prev,
+        [questionId]: prediction
+      }));
+      
+      setPredictions((prev) => {
+        return prev.map((p) => {
+          if (p.id === predictionId) {
+            return {
+              ...p,
+              outcome: prediction
+            };
+          }
+          return p;
+        });
+      });
+    } catch (err) {
+      console.error('Error changing prediction:', err);
+      setPredictionMessage({
+        text: 'Failed to change prediction. Please try again.',
+        type: IOutcome.NO
+      });
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
     }
   };
 
@@ -334,7 +377,6 @@ export default function PredictionScreen() {
                 onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
                 userVote={userVotesMap[q.id] || null}
                 onRemovePrediction={() => handleRemovePrediction(q.id)}
-                isDisabled={answeredCount >= 3 && !userVotesMap[q.id]}
               />
             ))
           ) : (
@@ -461,9 +503,9 @@ const styles = StyleSheet.create({
 
   },
   tabButton: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     marginHorizontal: 8,
     flexDirection: 'row',
@@ -520,7 +562,7 @@ const styles = StyleSheet.create({
   },
   predictionMessage: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 100,
     alignSelf: 'center',
     borderRadius: 12,
     paddingVertical: 12,
@@ -553,7 +595,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1, 
-    marginVertical: 10
+    marginVertical: 6
   },
   scrollViewContent: {
     paddingBottom: 60

@@ -6,8 +6,9 @@ import React, { useEffect, useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { getUserBalance } from '../../utils/common';
 import { IUser } from '../../types';
-import { CHANGE_USERNAME } from '@/routes/api';
+import { CHANGE_USERNAME, AUTH_ME } from '@/routes/api';
 import apiClient from '@/utils/api';
+import * as SecureStore from 'expo-secure-store';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -32,12 +33,19 @@ const ProfileScreen = () => {
   };
   
 
+  const fetchUser = async () => {
+    const response = await apiClient(AUTH_ME, 'GET');
+    if (response.success && response.data) {
+      setUser(response.data as IUser);
+    }
+  };
+
   useEffect(() => {
-    getUserBalance(user?.id || '');
+    fetchUser();
   }, []);
 
-  const handleLogOut = () => {
-    // logout();
+  const handleLogOut = async() => {
+    await SecureStore.deleteItemAsync("token")
     router.push('/(auth)/signup');
   };
 
@@ -67,7 +75,7 @@ const ProfileScreen = () => {
 
   const handleSaveUsername = async () => {
     try {
-      const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PUT', {
+      const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PATCH', {
         username: newUsername
       });
       if (response.success) {
@@ -152,7 +160,7 @@ const ProfileScreen = () => {
               <Text style={styles.pointsValue}>{user?.points || 0}</Text>
               <TouchableOpacity 
                 style={styles.refreshButton} 
-                onPress={() => getUserBalance(user?.id || '')}
+                onPress={() => fetchUser()}
                 disabled={isLoading}
               >
                 {isLoading ? (

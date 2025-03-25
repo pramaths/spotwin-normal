@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import UserPredictions from '@/components/UserPredictions';
-import { IContest } from '@/types';
+import { IContest,IContestStatus } from '@/types';
 import { useUserStore } from '@/store/userStore';
 import { CONTESTS_BY_ID } from '@/routes/api';
 import apiClient from '@/utils/api';
@@ -130,7 +130,7 @@ export default function ContestDetailScreen() {
         </View>
         
         <View style={styles.predictionsContainer}>
-          <UserPredictions contestId={contestId} userId={user?.id || ''} />
+          <UserPredictions contestId={contestId} userId={user?.id || ''} status={contest.status as IContestStatus}/>
         </View>
       </View>
     </SafeAreaView>

@@ -29,15 +29,16 @@ interface PaymentModalProps {
   onClose: () => void;
   contest: IContest;
   onConfirm?: () => void;
+  isUserParticipating?: boolean;
 }
 
-const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalProps) => {
+const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating = false }: PaymentModalProps) => {
   const [amount, setAmount] = useState(contest?.entryFee || 0.2);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | React.ReactElement | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isParticipating, setIsParticipating] = useState(false);
+  const [isParticipating, setIsParticipating] = useState(isUserParticipating);
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
@@ -125,6 +126,11 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
   };
 
   const checkIfParticipating = async () => {
+    if (isUserParticipating !== undefined) {
+      setIsParticipating(isUserParticipating);
+      return;
+    }
+    
     if (!user?.id || !contest?.id) return;
     
     try {
@@ -169,6 +175,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       });
       if(response.success) {
         setIsParticipating(true);
+        // Update user balance after successful payment
+        fetchUserBalance();
         animateSuccess(); 
         setTimeout(() => {
           router.push({
@@ -196,7 +204,11 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
       fetchUserBalance();
       checkIfParticipating();
     }
-  }, [isVisible, contest]);
+  }, [isVisible, contest, isUserParticipating]);
+
+  useEffect(() => {
+    setIsParticipating(isUserParticipating);
+  }, [isUserParticipating]);
 
   if (!contest) return null;
 
@@ -242,7 +254,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm }: PaymentModalPr
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Joining fee</Text>
+              <Text style={styles.statLabel}>Joining Points</Text>
               <Text style={styles.statValue}>{contest.entryFee} points</Text>
             </View>
             <View style={styles.statItem}>
@@ -516,6 +528,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    paddingHorizontal: 10,
   },
   successOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',

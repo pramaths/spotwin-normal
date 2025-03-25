@@ -22,7 +22,7 @@ export const QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/questi
 export const USER =(id: string) => `${backendUrl}/users/${id}`;
 export const USER_BALANCE = (userId: string) => `${backendUrl}/users/${userId}/balance`;
 export const CHANGE_USERNAME = (userId: string) => `${backendUrl}/users/${userId}`;
-export const UPDATE_EXPO_PUSH_TOKEN = (userId: string) => `${backendUrl}/users/${userId}`;
+export const UPDATE_EXPO_PUSH_TOKEN = (userId: string) => `${backendUrl}/users/${userId}/expo-push-token`;
 
 //UserContests
 export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
@@ -31,14 +31,16 @@ export const JOIN_CONTEST = `${backendUrl}/user-contests/join`;
 
 //Prediction
 export const SUBMIT_PREDICTION = `${backendUrl}/predictions`;
-export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
-export const REMOVE_PREDICTION_API = (videoId: string, userId: string) => `${backendUrl}/predictions/video/${videoId}/user/${userId}`;
+export const REMOVE_PREDICTION = (questionId: string, userId: string) => `${backendUrl}/predictions/question/${questionId}/user/${userId}`;
+export const CHANGE_PREDICTION = (questionId: string, userId: string) => `${backendUrl}/predictions/question/${questionId}/user/${userId}`;
+export const UPDATE_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;
+export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
 
 
 //leaderboard
-export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboard/${contestId}`;
+export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboards/contest/${contestId}`;
 
 //referral
 export const REFERRAL_CODE = (userId: string) => `${backendUrl}/users/${userId}/referral-code-used`;

@@ -334,6 +334,7 @@ export default function HomeScreen() {
             onClose={() => setPaymentModalVisible(false)}
             onConfirm={handleClosePaymentModal}
             contest={selectedContest}
+            isUserParticipating={useContestsStore.getState().userContests.some(contest => contest.id === selectedContest.id)}
           />
         )}
       </ScrollView>

@@ -54,12 +54,13 @@ export default function Index() {
         // Try to get the token
         let token = null;
         try {
+            console.log("i entered here 3");
           token = await SecureStore.getItemAsync('token');
           console.log("token from SecureStore:", token);
         } catch (tokenError) {
           console.error('Error retrieving token from SecureStore:', tokenError);
         }
-        
+        console.log("token:", token);
         if (!token) {
           console.log('No token found, setting authenticated to false');
           setAuthenticated(false);
@@ -74,7 +75,7 @@ export default function Index() {
         if (response.success && response.data) {
           if(!response.data.expoPushToken && expoPushToken){
             console.log('Updating expo push token', expoPushToken);
-            const res = await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'PATCH', { 
+            const res = await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'POST', { 
               expoPushToken: expoPushToken
             });
             console.log("res:", res);

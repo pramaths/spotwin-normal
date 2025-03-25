@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import ContestJoinModal from './ContestJoinModal';
+import PaymentModal from './PaymentModal';
 import { IContest, IDifficultyLevel } from '@/types';
 import { useContestsStore } from '@/store/contestsStore';
 import moment from 'moment';
@@ -115,7 +115,7 @@ const PredictionQuestion = ({
             </LinearGradient>
             
             {contest && (
-                <ContestJoinModal
+                <PaymentModal
                     isVisible={modalVisible}
                     onClose={handleCloseModal}
                     contest={contest}

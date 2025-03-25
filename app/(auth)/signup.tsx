@@ -1,19 +1,15 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Animated, Easing, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Animated, Easing, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useRef, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-
-import SignupBg from '../../assets/images/signupbg.svg';
-import Logo from '../../assets/logo.svg';
-import XIcon from '../../assets/icons/x.svg';
 import apiClient from '@/utils/api';
-import { LOGIN, VERIFY_OTP, REFERRAL_CODE } from '@/routes/api';
+import { LOGIN, VERIFY_OTP, REFERRAL_CODE, UPDATE_EXPO_PUSH_TOKEN } from '@/routes/api';
 import { IUser } from '@/types';
 import Referral from '@/components/Referral';
 import * as SecureStore from 'expo-secure-store';
 import { useUserStore } from '@/store/userStore';
+import { useNotification } from '@/contexts/NotificationContext';
 
 async function save(key: string, value: string) {
   try {
@@ -29,8 +25,6 @@ async function save(key: string, value: string) {
     }
   } catch (error) {
     console.error(`Error saving ${key} to SecureStore:`, error);
-    // As a fallback, we could use AsyncStorage, but that's less secure
-    // This would require importing AsyncStorage
   }
 }
 
@@ -52,6 +46,7 @@ export default function SignupScreen() {
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const otpInputRefs = useRef<Array<TextInput | null>>([]);
+  const {expoPushToken} = useNotification();
   
   const [authState, setAuthState] = useState<{
     status: 'idle' | 'loading' | 'error';
@@ -202,10 +197,14 @@ export default function SignupScreen() {
         const responseData = response.data as VerifyOtpResponse;
 
         setAuthenticated(true);
+        setUser(responseData.user);
+
+        const res = await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.user.id), 'POST', { 
+          expoPushToken: expoPushToken
+        });
         
         if (!responseData.user.isReferralCodeUsed) {
           setShowReferralScreen(true);
-          setUser(responseData.user);
           setIsNewUser(true);
           setAuthState({ status: 'idle', error: null });
         } else {
@@ -232,7 +231,7 @@ export default function SignupScreen() {
     try {
       const user = useUserStore.getState().user;
       const response = await apiClient(REFERRAL_CODE(user?.id || ''), 'PATCH', { 
-        referralCode: code || null 
+        referralCode: code 
       });
       
       if (response.success) {
@@ -266,20 +265,20 @@ export default function SignupScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.container}>
           <View style={styles.backgroundContainer}>
-            <SignupBg width={Dimensions.get('window').width} height="100%" preserveAspectRatio="xMidYMid slice" />
           </View>
 
           <View style={styles.overlay}>
             <View style={styles.contentWrapper}>
-              <Logo width={80} height={80} style={styles.trophyIcon} />
+              <Image 
+                source={require('../../assets/logo.png')} 
+                style={styles.logo} 
+                resizeMode="contain"
+              />
 
               <View style={styles.contentContainer}>
                 {!showReferralScreen ? (
                   <>
-                    <Text style={styles.title}>Watch, Play, Win, Repeat</Text>
-                    <Text style={styles.subtitle}>
-                      Join contests, vote on videos, and earn rewards!
-                    </Text>
+                    <Text style={styles.title}>Play Fantasy Cricket for free and win IPL Tickets</Text>
 
                     {authState.status === 'error' && (
                       <View style={styles.errorContainer}>
@@ -290,7 +289,6 @@ export default function SignupScreen() {
                     )}
 
                     {!showOtp ? (
-                      // Phone Number Input UI
                       <View style={styles.authContainer}>
                         <View style={styles.phoneInputContainer}>
                           <Text style={styles.phonePrefix}>+91</Text>
@@ -403,7 +401,7 @@ export default function SignupScreen() {
                   <>
                     <View style={styles.referralWrapper}>
                       <Text style={styles.referralHeading}>Invite & Earn</Text>
-                      <Text style={styles.referralSubheading}>Get bonus rewards when you enter a friend's referral code</Text>
+                      <Text style={styles.referralSubheading}>Get bonus points when you enter a friend's referral code</Text>
                       <Referral 
                         onSubmit={handleSubmitReferralCode}
                         errorMessage={authState.status === 'error' ? authState.error?.message : undefined}
@@ -424,14 +422,6 @@ export default function SignupScreen() {
                     {showOtp ? 'Verifying...' : 'Sending OTP...'}
                   </Text>
                 )}
-
-                {!showReferralScreen && (
-                  <Text style={styles.footerText}>
-                    By signing in, you agree to the{' '}
-                    <Text style={styles.linkText}>User Agreement</Text> &{' '}
-                    <Text style={styles.linkText}>Privacy Policy</Text>
-                  </Text>
-                )}
               </View>
             </View>
           </View>
@@ -447,11 +437,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     width: '100%',
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
     overflow: 'hidden',
   },
   overlay: {
@@ -464,13 +455,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  trophyIcon: {
+  logo: {
     alignSelf: 'center',
-    marginBottom: 120,
+    marginBottom: 80,
+    width: 120,
+    height: 120,
   },
   contentContainer: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 4,
     width: '100%',
   },
   title: {
@@ -478,14 +471,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 10,
+    marginBottom: 40,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#000',
   },
   authContainer: {
     width: '100%',
@@ -497,33 +489,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '80%',
     height: 54,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#fff',
     borderRadius: 10,
     marginBottom: 20,
     paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#000',
   },
   phonePrefix: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     marginRight: 10,
+    fontWeight: 'bold',
   },
   phoneInput: {
     flex: 1,
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     height: '100%',
   },
   otpTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#000',
   },
   otpSubtitle: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#000',
     marginBottom: 20,
     textAlign: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000',
   },
   otpContainer: {
     flexDirection: 'row',
@@ -534,49 +542,57 @@ const styles = StyleSheet.create({
   otpInput: {
     width: 40,
     height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#fff',
     borderRadius: 8,
     textAlign: 'center',
-    color: '#fff',
+    color: '#000',
     fontSize: 22,
     fontWeight: 'bold',
+    borderWidth: 1,
+    borderColor: '#000',
   },
   resendContainer: {
     marginTop: 15,
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000',
   },
   resendText: {
-    color: '#1d9bf0',
+    color: '#000',
     fontSize: 14,
     textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   buttonWrapper: {
     width: '80%',
     borderRadius: 30,
     marginBottom: 16,
-    shadowColor: '#1d9bf0',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
     elevation: 6,
     alignSelf: 'center',
-
   },
   loginButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
     paddingVertical: 14,
     borderRadius: 28,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#1d9bf0',
+    borderWidth: 2,
+    borderColor: '#000',
   },
   loginButtonPressed: {
-    backgroundColor: '#111',
+    backgroundColor: '#f0f0f0',
     transform: [{ scale: 0.98 }],
   },
   loginButtonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
     fontSize: 16,
   },
@@ -593,7 +609,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     width: 50,
     height: '100%',
     transform: [{ skewX: '-20deg' }],
@@ -607,44 +623,58 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: 'rgba(29, 155, 240, 0.2)',
+    borderColor: 'rgba(0, 0, 0, 0.2)',
     opacity: 0.6,
   },
   errorContainer: {
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    backgroundColor: '#fff',
     padding: 10,
     borderRadius: 8,
     marginBottom: 20,
     width: '80%',
+    borderWidth: 1,
+    borderColor: '#ff0000',
   },
   errorText: {
-    color: '#ff6b6b',
+    color: '#ff0000',
     textAlign: 'center',
   },
   loadingText: {
     color: '#fff',
     marginTop: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
   },
   footerText: {
-    color: '#ccc',
+    color: '#fff',
     fontSize: 12,
     marginTop: 20,
     textAlign: 'center',
     paddingHorizontal: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 5,
+    borderRadius: 5,
   },
   linkText: {
     color: '#fff',
     textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   skipButton: {
     marginTop: 20,
     padding: 12,
     alignSelf: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000',
   },
   skipButtonText: {
-    color: '#9EA3AE',
+    color: '#000',
     fontSize: 16,
-    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   referralWrapper: {
     width: '100%',
@@ -655,13 +685,26 @@ const styles = StyleSheet.create({
   referralHeading: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#000',
   },
   referralSubheading: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#000',
     marginBottom: 20,
     textAlign: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000',
   },
 });

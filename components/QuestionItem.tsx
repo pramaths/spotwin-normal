@@ -9,7 +9,6 @@ interface Props {
   userVote: IOutcome | null;
   onPrediction: (prediction: IOutcome) => void;
   onRemovePrediction: () => void;
-  isDisabled?: boolean;
 }
 
 const difficultyColors = {
@@ -23,9 +22,16 @@ export default function QuestionItem({
   userVote,
   onPrediction,
   onRemovePrediction,
-  isDisabled = false,
 }: Props) {
   const difficultyColor = difficultyColors[question.difficultyLevel];
+
+  const handlePrediction = (outcome: IOutcome) => {
+    if (userVote === outcome) {
+      onRemovePrediction();
+    } else {
+      onPrediction(outcome);
+    }
+  };
 
   return (
     <View style={styles.card}>
@@ -42,36 +48,22 @@ export default function QuestionItem({
         {[IOutcome.YES, IOutcome.NO].map((outcome) => (
           <TouchableOpacity
             key={outcome}
-            onPress={() => onPrediction(outcome)}
-            disabled={isDisabled && !userVote}
+            onPress={() => handlePrediction(outcome)}
             style={[
               styles.option,
-              userVote === outcome ? styles.selectedOption : {},
-              userVote !== null && userVote !== outcome ? styles.unselectedOption : {},
               outcome === IOutcome.YES ? styles.yesOption : styles.noOption,
-              isDisabled && !userVote ? styles.disabledOption : {}
+              userVote === outcome ? styles.selectedOption : userVote !== null ? styles.unselectedOption : null,
             ]}
           >
             <Ionicons
               name={outcome === IOutcome.YES ? 'checkmark' : 'close'}
               size={20}
-              color={userVote !== null && userVote !== outcome ? '#ffffff80' : '#fff'}
+              color="#fff"
             />
-            <Text style={[
-              styles.optionText,
-              userVote !== null && userVote !== outcome ? styles.unselectedOptionText : {}
-            ]}>
-              {outcome}
-            </Text>
+            <Text style={styles.optionText}>{outcome}</Text>
           </TouchableOpacity>
         ))}
       </View>
-
-      {userVote && (
-        <TouchableOpacity onPress={onRemovePrediction} style={styles.removeBtn}>
-          <Text style={styles.removeText}>Change Selection</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -86,7 +78,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
-    marginVertical: 8,
+    marginVertical: 6,
     marginHorizontal: 12,
   },
   badge: {
@@ -99,10 +91,10 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 8,
   },
   questionText: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#333',
     fontWeight: '600',
     marginBottom: 12,
@@ -115,7 +107,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 12,
     flex: 0.48,
   },
@@ -127,7 +119,7 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: '#337eef',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -137,24 +129,10 @@ const styles = StyleSheet.create({
   unselectedOption: {
     opacity: 0.6,
   },
-  unselectedOptionText: {
-    opacity: 0.8,
-  },
-  disabledOption: {
-    opacity: 0.4,
-  },
   optionText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 6,
-  },
-  removeBtn: {
-    marginTop: 10,
-    alignSelf: 'center',
-  },
-  removeText: {
-    color: '#3768E3',
-    fontWeight: 'bold',
   },
 });

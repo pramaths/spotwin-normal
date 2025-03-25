@@ -13,7 +13,6 @@ Buffer.prototype.subarray = function subarray(
     return result;
   };
   
-import '@ethersproject/shims';
 
 class Crypto {
     getRandomValues = expoCryptoGetRandomValues;
@@ -36,28 +35,5 @@ if (typeof global.crypto === 'undefined') {
     global.crypto = new Crypto();
 }
 
-// Ensure crypto is available in the window object
-(() => {
-    if (typeof crypto === "undefined") {
-        Object.defineProperty(window, "crypto", {
-            configurable: true,
-            enumerable: true,
-            get: () => webCrypto,
-        });
-    }
-})();
 
-// Polyfill for assert
-if (typeof global.process === 'undefined') {
-    global.process = {};
-}
-if (typeof global.process.env === 'undefined') {
-    global.process.env = {};
-}
-
-// Add other Node.js globals that might be used
-global.process.browser = true;
-global.process.version = '';
-global.process.versions = { node: 'N/A' }; 
-// Then import the expo router
 import 'expo-router/entry';
