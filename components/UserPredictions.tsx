@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Pencil } from 'lucide-react-native';
-import { IContest, IUserPrediction, IOutcome } from '@/types';
+import { IContest, IUserPrediction, IOutcome, IContestStatus } from '@/types';
 import { GET_PREDICTION_BY_USER_AND_CONTEST } from '@/routes/api';
 import apiClient from '@/utils/api';
 
 interface UserPredictionsProps {
   contestId: string;
   userId?: string;
+  status: IContestStatus
 }
 
 const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
@@ -37,7 +38,7 @@ const fetchUserPredictions = async (contestId: string, userId?: string): Promise
   }
 };
 
-const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
+const UserPredictions = ({ contestId, userId, status }: UserPredictionsProps) => {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -74,15 +75,17 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
   }, [contestId, userId]);
 
   const handleEditPrediction = (prediction: IUserPrediction) => {
-    router.push({
-      pathname: '/(tabs)/prediction',
-      params: {
-        predictionId: prediction.id,
-        questionId: prediction.question.id,
-        contestId: contestId,
-        edit: 'true'
-      }
-    });
+    if (status !== IContestStatus.COMPLETED) {
+      router.push({
+        pathname: '/(tabs)/prediction',
+        params: {
+          predictionId: prediction.id,
+          questionId: prediction.question.id,
+          contestId: contestId,
+          edit: 'true'
+        }
+      });
+    }
   };
 
   if (loading) {
@@ -113,13 +116,13 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
             <Text style={styles.totalCount}>/{totalPredictionsNeeded}</Text>
           </Text>
         </View>
-        
+
         <View style={styles.progressBarBackground}>
-          <View 
+          <View
             style={[
-              styles.progressBarFill, 
+              styles.progressBarFill,
               { width: `${progressPercentage}%` }
-            ]} 
+            ]}
           />
         </View>
       </View>
@@ -147,13 +150,14 @@ const UserPredictions = ({ contestId, userId }: UserPredictionsProps) => {
                       styles.outcomeText,
                       (item.outcome === IOutcome.YES) ? styles.yesText : styles.noText
                     ]}>
-                        {item.outcome === IOutcome.YES ? 'YES' : 'NO'}
+                      {item.outcome === IOutcome.YES ? 'YES' : 'NO'}
                     </Text>
                   </View>
 
                   <TouchableOpacity
                     style={styles.editButton}
                     onPress={() => handleEditPrediction(item)}
+                    disabled={status === IContestStatus.COMPLETED}
                   >
                     <Pencil size={16} color="#0504dc" />
                     <Text style={styles.editButtonText}>Edit</Text>
@@ -177,17 +181,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFC',
   },
   progressContainer: {
-    marginVertical: 20,
+    marginVertical: 10,
     paddingHorizontal: 16,
   },
   progressTextContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   progressTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1A2E',
   },
@@ -261,7 +265,7 @@ const styles = StyleSheet.create({
   predictionCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -279,7 +283,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   questionContainer: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
   questionText: {
     fontSize: 15,

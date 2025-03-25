@@ -8,17 +8,19 @@ import {
   SafeAreaView,
   Dimensions,
   Text,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { submitPrediction, RemovePrediction, fetchUserPredictions } from '@/services/predictionsApi';
+import { submitPrediction, RemovePrediction, fetchUserPredictions, ChangePrediction } from '@/services/predictionsApi';
 import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
-import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion } from '@/types';
+import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion, IContest } from '@/types';
 import QuestionItem from '@/components/QuestionItem';
-import { QUESTIONS_BY_CONTEST } from '@/routes/api';
+import { QUESTIONS_BY_CONTEST, CONTESTS_BY_ID } from '@/routes/api';
 import apiClient from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function PredictionScreen() {
   const { contestId } = useLocalSearchParams();
@@ -26,7 +28,7 @@ export default function PredictionScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<IDifficultyLevel>(IDifficultyLevel.EASY);
-
+  const [contest, setContest] = useState<IContest | null>(null);
   const [predictionMessage, setPredictionMessage] = useState<{ text: string; type: IOutcome } | null>(null);
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [userVotesMap, setUserVotesMap] = useState<Record<string, IOutcome | null>>({});
@@ -51,6 +53,21 @@ export default function PredictionScreen() {
     return predictions.filter((p: IUserPrediction) => p.question.difficultyLevel === difficulty).length;
   };
 
+  // Function to determine if max predictions reached for a difficulty level
+  const isMaxPredictionsReached = (difficulty: IDifficultyLevel) => {
+    const count = getAnsweredCountByDifficulty(difficulty);
+    return count >= 3;
+  };
+
+  useEffect(() => {
+    const loadContest = async () => {
+      const response = await apiClient<IContest>(CONTESTS_BY_ID(contestId as string), 'GET');
+      if (response.success && response.data) {
+        setContest(response.data);
+      }
+    };
+    loadContest();
+  }, [contestId]);
   const loadQuestions = useCallback(async () => {
     if (!contestId) {
       setError('Contest ID is required');
@@ -136,16 +153,31 @@ export default function PredictionScreen() {
 
       if (answeredQuestionsForDifficulty.length >= 3 && !userVotesMap[question.id]) {
         setPredictionMessage({
-          text: `You can only answer 3 questions in ${question.difficultyLevel} level`,
+          text: `You have already answered 3 questions in ${question.difficultyLevel} section.`,
           type: IOutcome.NO
         });
+        
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(200);
+        }
+        
         setTimeout(() => {
           setPredictionMessage(null);
-        }, 2000);
+        }, 4000);
         return;
       }
 
-      await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
+      // Check if this question already has a prediction
+      const existingPredictionIndex = predictions.findIndex(p => p.question.id === question.id);
+      
+      if (existingPredictionIndex > -1) {
+        // If prediction exists, use ChangePrediction
+        const existingPrediction = predictions[existingPredictionIndex];
+        await handleChangePrediction(existingPrediction.id, prediction, question.id);
+      } else {
+        // If no prediction exists, create a new one
+        await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
+      }
 
       if (!answeredQuestions.includes(question.id)) {
         setAnsweredQuestions((prev: string[]) => [...prev, question.id]);
@@ -159,7 +191,7 @@ export default function PredictionScreen() {
       setPredictions((prev: IUserPrediction[]) => {
         const existingIndex = prev.findIndex((p) => p.question.id === question.id);
         const newEntry: IUserPrediction = {
-          id: question.id,
+          id: existingIndex > -1 ? prev[existingIndex].id : question.id, // Keep the same ID if updating
           userId: user?.id || '',
           contestId: contestId as string,
           outcome: prediction,
@@ -214,6 +246,39 @@ export default function PredictionScreen() {
     }
   };
 
+  const handleChangePrediction = async (predictionId: string, prediction: IOutcome, questionId: string) => {
+    try {
+      await ChangePrediction(predictionId, prediction, questionId);
+      
+      // Update UI state for the changed prediction
+      setUserVotesMap((prev) => ({
+        ...prev,
+        [questionId]: prediction
+      }));
+      
+      setPredictions((prev) => {
+        return prev.map((p) => {
+          if (p.id === predictionId) {
+            return {
+              ...p,
+              outcome: prediction
+            };
+          }
+          return p;
+        });
+      });
+    } catch (err) {
+      console.error('Error changing prediction:', err);
+      setPredictionMessage({
+        text: 'Failed to change prediction. Please try again.',
+        type: IOutcome.NO
+      });
+      setTimeout(() => {
+        setPredictionMessage(null);
+      }, 2000);
+    }
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -251,19 +316,49 @@ export default function PredictionScreen() {
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <ChevronLeft color="#181818" size={24} />
+            <Text>Back</Text>
+            <View style={styles.matchdetials}>
+              {contest?.match?.teamA?.imageUrl && (
+                <Image 
+                  source={{ uri: contest.match.teamA.imageUrl }} 
+                  style={styles.teamSmallImage} 
+                  resizeMode="contain"
+                />
+              )}
+              <Text style={{fontSize: 12, fontWeight: 'bold'}}> {contest?.match?.teamA.name}</Text>
+              <Text style={{fontSize: 12, fontWeight: 'bold'}}> vs </Text>
+              {contest?.match?.teamB?.imageUrl && (
+                <Image 
+                  source={{ uri: contest.match.teamB.imageUrl }} 
+                  style={styles.teamSmallImage} 
+                  resizeMode="contain"
+                />
+              )}
+              <Text style={{fontSize: 12, fontWeight: 'bold'}}> {contest?.match?.teamB.name}</Text>
+            </View>
           </TouchableOpacity>
 
           <View style={styles.tabContainer}>
             {difficultyTabs.map((difficulty: IDifficultyLevel) => (
               <TouchableOpacity
                 key={difficulty}
-                style={[styles.tabButton, { backgroundColor: getTabColor(difficulty, selectedDifficulty) }]}
+                style={[
+                  styles.tabButton, 
+                  { backgroundColor: getTabColor(difficulty, selectedDifficulty) },
+                  isMaxPredictionsReached(difficulty) && styles.maxReachedTab
+                ]}
                 onPress={() => handleTabPress(difficulty)}
               >
                 <Text style={[styles.tabText, selectedDifficulty === difficulty && styles.selectedTabText]}>
                   {difficulty}
                 </Text>
-                <Text style={[styles.countBadge, selectedDifficulty === difficulty && styles.selectedCountBadge]}>
+                <Text 
+                  style={[
+                    styles.countBadge, 
+                    selectedDifficulty === difficulty && styles.selectedCountBadge,
+                    isMaxPredictionsReached(difficulty) && styles.maxReachedBadge
+                  ]}
+                >
                   {getAnsweredCountByDifficulty(difficulty)}/3
                 </Text>
               </TouchableOpacity>
@@ -301,6 +396,12 @@ export default function PredictionScreen() {
             predictionMessage.type === IOutcome.YES ? styles.yesMessage : styles.noMessage
           ]}
         >
+          <Ionicons 
+            name={predictionMessage.type === IOutcome.YES ? "checkmark-circle" : "alert-circle"} 
+            size={24} 
+            color="#FFF" 
+            style={styles.predictionIcon}
+          />
           <Text style={styles.predictionMessageText}>{predictionMessage.text}</Text>
         </View>
       )}
@@ -332,7 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    paddingTop: 45,
+    paddingTop: 50,
     paddingBottom: 10,
     flexDirection: 'column',
     alignItems: 'center',
@@ -370,24 +471,41 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    left: 16,
+    left: 8,
     top: 25,
     padding: 8,
     borderRadius: 20,
-    zIndex: 10
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  backButtonText: {
+    color: '#181818',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  matchdetials: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 30,
+    fontSize: 12,
+    fontWeight: 'bold'
   },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     paddingHorizontal: 50,
-    marginTop: 20,
+    marginTop: 30,
     zIndex: 5,
     width: '100%'
+
   },
   tabButton: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     marginHorizontal: 8,
     flexDirection: 'row',
@@ -444,29 +562,55 @@ const styles = StyleSheet.create({
   },
   predictionMessage: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 100,
     alignSelf: 'center',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    zIndex: 20
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+    width: '90%',
+    maxWidth: 400,
+  },
+  predictionIcon: {
+    marginRight: 8,
   },
   yesMessage: {
-    backgroundColor: '#4CAF50'
+    backgroundColor: 'rgba(76, 175, 80, 0.95)'
   },
   noMessage: {
-    backgroundColor: '#F44336'
+    backgroundColor: 'rgba(244, 67, 54, 0.95)'
   },
   predictionMessageText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 14
+    fontSize: 16,
+    flex: 1,
   },
   scrollView: {
     flex: 1, 
-    marginVertical: 10
+    marginVertical: 6
   },
   scrollViewContent: {
-    paddingBottom: 40
-  }
+    paddingBottom: 60
+  },
+  teamSmallImage: {
+    width: 20,
+    height: 20,
+  },
+  maxReachedTab: {
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.2)',
+  },
+  maxReachedBadge: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
 });

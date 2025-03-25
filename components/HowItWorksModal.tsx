@@ -66,51 +66,34 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
   };
 
   const currentSlide = howItWorksSlides[currentSlideIndex];
-  const Svg = currentSlide.SvgComponent;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={handleClose}
-      >
-        <TouchableOpacity 
-          style={styles.container} 
-          activeOpacity={1} 
-          onPress={(e) => e.stopPropagation()}
-        >
-          {/* Close button */}
+      <View style={styles.overlay}>
+        <View style={styles.container}>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
 
-          {/* Title or "How it works" header */}
           <Text style={styles.headerTitle}>How it works</Text>
 
-          {/* Current slide */}
           <View style={styles.slide}>
-            {/* Render the imported SVG */}
-            <Svg width={220} height={220} style={styles.svgImage} />
-
             <Text style={styles.slideTitle}>{currentSlide.title}</Text>
             <Text style={styles.slideDescription}>{currentSlide.description}</Text>
           </View>
 
-          {/* Slide indicators */}
           <View style={styles.indicatorContainer}>
             {howItWorksSlides.map((_, index) => (
-              <View 
-                key={index} 
+              <View
+                key={index}
                 style={[
-                  styles.indicator, 
-                  index === currentSlideIndex && styles.activeIndicator
-                ]} 
+                  styles.indicator,
+                  index === currentSlideIndex && styles.activeIndicator,
+                ]}
               />
             ))}
           </View>
 
-          {/* Navigation buttons */}
           {isLastSlide ? (
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
@@ -125,8 +108,8 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
               <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
           )}
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
   );
 }

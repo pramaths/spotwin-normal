@@ -53,7 +53,6 @@
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.8",
-    "expo-video": "~2.0.5",
     "expo-web-browser": "~14.0.2",
     "fast-text-encoding": "^1.0.6",
     "firebase": "^11.5.0",
@@ -62,7 +61,6 @@
     "lucide-react-native": "^0.477.0",
     "nineshoot-mobile": "file:",
     "os-browserify": "^0.3.0",
-    "otpless-react-native": "^1.2.4",
     "path-browserify": "^1.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -82,7 +80,8 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "stream-browserify": "^3.0.0",
-    "stream-http": "^3.2.0"
+    "stream-http": "^3.2.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

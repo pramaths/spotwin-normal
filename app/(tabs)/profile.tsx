@@ -6,21 +6,9 @@ import React, { useEffect, useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { getUserBalance } from '../../utils/common';
 import { IUser } from '../../types';
-import { CHANGE_USERNAME } from '@/routes/api';
+import { CHANGE_USERNAME, AUTH_ME } from '@/routes/api';
 import apiClient from '@/utils/api';
-
-const defaultUser: IUser = {
-  "id": "72e02e8e-071d-4a3f-8e0a-094ae0fa1291",
-  "imageUrl": "https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250",
-  "username": "pramaths",
-  "phoneNumber": "+916364125737",
-  "referralCode": "1234567890",
-  points: 0,
-  totalContests: 0,
-  totalContestsWon: 0,
-  totalContestsLost: 0,
-  referrals: []
-}
+import * as SecureStore from 'expo-secure-store';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -43,31 +31,21 @@ const ProfileScreen = () => {
   const getInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
   };
+  
 
-  const fetchUserBalance = async () => {
-    try {
-      setIsLoading(true);
-      if (user?.id) {
-        const balance = await getUserBalance(user.id);
-        setUser({
-          ...user,
-          points: balance
-        } as IUser);
-      }
-    } catch (error) {
-      console.error('Failed to fetch balance:', error);
-    } finally {
-      setIsLoading(false);
+  const fetchUser = async () => {
+    const response = await apiClient(AUTH_ME, 'GET');
+    if (response.success && response.data) {
+      setUser(response.data as IUser);
     }
   };
 
   useEffect(() => {
-    setUser(defaultUser);
-    fetchUserBalance();
+    fetchUser();
   }, []);
 
-  const handleLogOut = () => {
-    // logout();
+  const handleLogOut = async() => {
+    await SecureStore.deleteItemAsync("token")
     router.push('/(auth)/signup');
   };
 
@@ -97,7 +75,7 @@ const ProfileScreen = () => {
 
   const handleSaveUsername = async () => {
     try {
-      const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PUT', {
+      const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PATCH', {
         username: newUsername
       });
       if (response.success) {
@@ -182,7 +160,7 @@ const ProfileScreen = () => {
               <Text style={styles.pointsValue}>{user?.points || 0}</Text>
               <TouchableOpacity 
                 style={styles.refreshButton} 
-                onPress={fetchUserBalance}
+                onPress={() => fetchUser()}
                 disabled={isLoading}
               >
                 {isLoading ? (

@@ -1,3 +1,5 @@
+import * as SecureStore from 'expo-secure-store';
+
 interface RequestBody {
   [key: string]: any;
 }
@@ -9,12 +11,24 @@ export interface ApiResponse<T> {
   status: number;
 }
 
+async function getValueFor(key: string) {
+  try {
+    console.log(`Attempting to retrieve ${key} from SecureStore`);
+    const result = await SecureStore.getItemAsync(key);
+    console.log(`${key} retrieval result:`, result ? 'Found token' : 'No token found');
+    return result;
+  } catch (error) {
+    console.error(`Error retrieving ${key} from SecureStore:`, error);
+    return null;
+  }
+}
+
 export interface ErrorResponse {
   success: false;
   type: "BadRequest" | "Unauthorized" | "RateLimitExceeded" | "ServerError" | "UnknownError";
   status: number;
   message: string;
-  serverMessage?: string; // Full server-provided message for debugging
+  serverMessage?: string;
   details?: any;
 }
 
@@ -23,14 +37,22 @@ console.log("API_BASE_URL:", API_BASE_URL);
 
 const apiClient = async <T,>(
   endpoint: string,
-  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" = "GET",
   body: RequestBody | FormData | null = null,
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
   console.log("endpoint:", endpoint);
   const headers: Record<string, string> = {};
+  
   if (!(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
+    const token = await getValueFor("token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      console.log("Authorization header set with token");
+    } else {
+      console.log("No token available for Authorization header");
+    }
   }
 
   const options: RequestInit = {
@@ -40,7 +62,11 @@ const apiClient = async <T,>(
   };
 
   try {
-    console.log("Sending request with options:", JSON.stringify(options));
+    console.log("Sending request with options:", JSON.stringify({
+      method: options.method,
+      headers: options.headers,
+      hasBody: !!options.body
+    }));
     const response = await fetch(endpoint, options);
     console.log("Received response status:", response.status);
     

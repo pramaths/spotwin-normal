@@ -34,7 +34,6 @@ export default function RootLayout() {
     return null;
   }
 
-
   return (
     <NotificationProvider>
     <SafeAreaProvider>

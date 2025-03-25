@@ -25,8 +25,9 @@ export interface IUser {
   points: number
   totalContests: number
   totalContestsWon: number
-  totalContestsLost: number
-  referrals: IUser[]
+  referrals?: IUser[]
+  isReferralCodeUsed?: boolean
+  expoPushToken?: string
 }
 export interface ITeam {
   id: string

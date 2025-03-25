@@ -17,8 +17,7 @@ import HowItWorksModal from './HowItWorksModal';
 import { CircleHelp, X, Copy } from 'lucide-react-native'
 import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
-import { getUserBalance } from '../utils/common';
-
+import { useRouter } from 'expo-router';
 interface HeaderProfileProps {
   user?: IUser;
   onProfilePress?: () => void;
@@ -27,32 +26,18 @@ interface HeaderProfileProps {
 const HeaderProfile: React.FC<HeaderProfileProps> = ({
   onProfilePress,
 }) => {
-  const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [howItWorksModalVisible, setHowItWorksModalVisible] = useState(false);
   const [depositModalVisible, setDepositModalVisible] = useState(false);
   const { user, setUser } = useUserStore();
-  const balanceUpdatedRef = useRef(false);
   const { isNewUser, setIsNewUser } = useAuthStore();
-  const [balance, setBalance] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const balance = await getUserBalance(user?.id || '');
-      setBalance(balance);
-    };
-    fetchBalance();
-  }, [user?.id]);
+  const router = useRouter();
 
   const handleWalletPress = () => {
     setDepositModalVisible(true);
   };
 
   const handleProfilePress = () => {
-    if (onProfilePress) {
-      onProfilePress();
-    } else {
-      setProfileModalVisible(true);
-    }
+    router.push('/profile');
   };
 
   useEffect(() => {
@@ -63,10 +48,6 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
 
   const handleHowItWorksPress = () => {
     setHowItWorksModalVisible(true);
-  };
-
-  const closeProfileModal = () => {
-    setProfileModalVisible(false);
   };
 
   const closeHowItWorksModal = () => {
@@ -87,7 +68,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>gm, {user?.username}</Text>
+            <Text style={styles.userName}>Hi, {user?.username}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>
@@ -96,8 +77,8 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             onPress={handleWalletPress}
             activeOpacity={0.7}
           >
-            {balance > 0 && (
-              <Text style={styles.balanceText}>{(balance)}</Text>
+            {user?.points && user?.points > 0 && (
+              <Text style={styles.balanceText}>{user?.points}</Text>
             )}
             <View style={styles.walletIconWrapper}>
               <EmptyWalletIcon />

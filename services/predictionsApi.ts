@@ -1,4 +1,4 @@
-import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION, REMOVE_PREDICTION_API, GET_BY_A_PREDICTION, GET_PREDICTION_BY_USER_AND_CONTEST } from "../routes/api";
+import { GET_ALL_QUESTIONS_BY_CONTEST, SUBMIT_PREDICTION, REMOVE_PREDICTION, GET_BY_A_PREDICTION, GET_PREDICTION_BY_USER_AND_CONTEST, CHANGE_PREDICTION, UPDATE_PREDICTION } from "../routes/api";
 import apiClient from "@/utils/api";
 import { IOutcome, IQuestion, IUserPrediction } from "@/types";
 
@@ -61,9 +61,9 @@ export const fetchUserPredictions = async (contestId: string, userId?: string): 
   }
 };
 
-export const RemovePrediction = async(predictionId: string, userId: string):Promise<{success: boolean, message: string}> => {
+export const RemovePrediction = async(questionId: string, userId: string):Promise<{success: boolean, message: string}> => {
   try {
-    const response = await apiClient(REMOVE_PREDICTION_API(predictionId, userId), "DELETE");
+    const response = await apiClient(REMOVE_PREDICTION(questionId, userId), "DELETE");
     if (response.success) {
       return { success: true, message: "Prediction removed successfully" };
     } else {
@@ -74,3 +74,21 @@ export const RemovePrediction = async(predictionId: string, userId: string):Prom
     return { success: false, message: "An error occurred" };
   }
 }
+
+  export const ChangePrediction = async(predictionId: string, prediction: IOutcome, questionId: string):Promise<{success: boolean, message: string}> => {
+    try {
+      const response = await apiClient(UPDATE_PREDICTION(predictionId), "PATCH", {
+        prediction,
+        questionId,
+      });
+      if (response.success) {
+        return { success: true, message: "Prediction changed successfully" };
+      } else {
+        return { success: false, message: "An error occurred" };
+      }
+    } catch (error) {
+      console.error('Error changing prediction:', error);
+      return { success: false, message: "An error occurred" };
+    }
+  }
+
