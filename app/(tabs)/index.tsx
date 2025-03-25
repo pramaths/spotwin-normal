@@ -211,7 +211,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Prize pool</Text>
               <Text style={styles.footerValue}>
-                TBD
+                IPL Tickets
               </Text>
             </View>
           </View>
