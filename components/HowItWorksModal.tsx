@@ -21,30 +21,21 @@ const { width } = Dimensions.get('window');
 interface SlideData {
   title: string;
   description: string;
-  SvgComponent: React.FC<React.SVGProps<SVGSVGElement>>; 
 }
 
 
 const howItWorksSlides: SlideData[] = [
   {
     title: 'Join the contest!',
-    description: 'Tap "Join" on any contest you like and jump into the action!',
-    SvgComponent: FirstHowItWorks,
+    description: 'Tap "Join" to enter the contest for FREE',
   },
   {
     title: 'Answer ANY 9 Questions',
-    description: 'Out of the 30 questions, answer any 9 with YES or NO options',
-    SvgComponent: SecondHowItWorks,
-  },
-  {
-    title: 'Play and Contribute',
-    description: 'Upload relevant videos and questions and stand a chance to get a rank boost in the leaderboard i.e more rewards',
-    SvgComponent: ThirdHowItWorks,
+    description: 'Answer 3 questions each from Easy, Medium and Hard sections',
   },
   {
     title: 'Leaderboard',
-    description: 'Winners share the prize pool. Earn, repeat, and keep playing!, To understand more about the our rankin mechanism, click on the check details button',
-    SvgComponent: leaderboard,
+    description: 'Lucky winners get FREE IPL Tickets',
   },
 ];
 
