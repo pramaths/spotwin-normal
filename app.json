@@ -9,6 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "icon":{
+        "light":"./assets/images/apple.png",
+        "dark":"./assets/images/apple.png",
+        "tinted":"./assets/images/apple.png"
+      },
       "supportsTablet": true,
       "bundleIdentifier": "com.pramaths.spotwin",
       "buildNumber": "1",
