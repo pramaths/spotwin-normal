@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, RefreshControl } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
 import HeaderProfile from '../../components/HeaderProfile';
 import { UserContestCard } from '../../components/UserContest';
 import { IContest } from '../../types';
@@ -11,8 +10,6 @@ import { useContestsStore } from '../../store/contestsStore';
 import apiClient from '../../utils/api';
 import { CONTESTS, USER_CONTESTS } from '../../routes/api';
 import { useUserStore } from '../../store/userStore';
-
-export type ContestStatus = 'LIVE' | 'OPEN' | 'COMPLETED' | 'UPCOMING';
 
 type TabOption = 'ACTIVE' | 'COMPLETED';
 

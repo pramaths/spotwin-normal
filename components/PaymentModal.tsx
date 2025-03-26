@@ -18,8 +18,6 @@ import { formatFullDate } from '../utils/dateUtils';
 import { getUserParticipationStatus } from '../services/userContestsApi';
 import { useUserStore } from '@/store/userStore';
 import { getUserBalance } from '../utils/common';
-import * as Sharing from 'expo-sharing';
-import * as Linking from 'expo-linking';
 import { JOIN_CONTEST } from '../routes/api';
 import apiClient from '../utils/api';
 import { router } from 'expo-router';

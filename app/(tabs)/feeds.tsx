@@ -8,7 +8,6 @@ import { formatDateTime } from '@/utils/dateUtils';
 import { ContestCardSkeleton } from '@/components/SkeletonLoading';
 import { CONTESTS } from '@/routes/api';
 import apiClient from '@/utils/api';
-import { useContestsStore } from '@/store/contestsStore';
 
 interface PredictionQuestion {
   id: string;

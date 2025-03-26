@@ -20,24 +20,6 @@ if (!config.resolver.sourceExts.includes('tsx')) {
 config.resolver.blockList = [/node_modules\/fsevents\/.*/];
 config.watchFolders = config.watchFolders || [];
 
-global.Buffer = global.Buffer || require('buffer').Buffer;
-
-// Add Node.js module polyfills
-config.resolver.extraNodeModules = {
-  ...config.resolver.extraNodeModules,
-  buffer: path.resolve(__dirname, 'node_modules/buffer'),
-  assert: path.resolve(__dirname, 'node_modules/assert'),
-  stream: path.resolve(__dirname, 'node_modules/stream-browserify'),
-  crypto: path.resolve(__dirname, 'node_modules/crypto-browserify'),
-  http: path.resolve(__dirname, 'node_modules/stream-http'),
-  https: path.resolve(__dirname, 'node_modules/https-browserify'),
-  os: path.resolve(__dirname, 'node_modules/os-browserify/browser'),
-  path: path.resolve(__dirname, 'node_modules/path-browserify'),
-  fs: path.resolve(__dirname, 'node_modules/react-native-fs'),
-  zlib: path.resolve(__dirname, 'node_modules/browserify-zlib'),
-  url: path.resolve(__dirname, 'node_modules/url'),
-};
-
 // Add additional configurations for TypeScript
 config.transformer.getTransformOptions = async () => ({
   transform: {

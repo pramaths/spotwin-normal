@@ -23,7 +23,6 @@ const debugTokenStorage = async () => {
       console.log('SecureStore failed to retrieve test value');
     }
     
-    // Clean up test value
     await SecureStore.deleteItemAsync('test_token');
   } catch (error) {
     console.error('SecureStore test error:', error);

@@ -1,10 +1,9 @@
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard, Linking, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, Shield, LogOut, ArrowDown, ArrowUp, X, RefreshCcw, Copy, Key } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, LogOut, RefreshCcw, Copy } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useUserStore } from '../../store/userStore';
-import { getUserBalance } from '../../utils/common';
 import { IUser } from '../../types';
 import { CHANGE_USERNAME, AUTH_ME } from '@/routes/api';
 import apiClient from '@/utils/api';

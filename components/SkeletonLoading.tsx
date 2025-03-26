@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Get screen width to calculate dimensions
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 32) / 2; // Accounting for margins and padding
 

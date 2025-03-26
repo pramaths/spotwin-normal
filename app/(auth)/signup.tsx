@@ -14,9 +14,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 async function save(key: string, value: string) {
   try {
     console.log(`Attempting to save ${key} to SecureStore`);
-    await SecureStore.setItemAsync(key, value);
-    
-    // Verify the save worked
+    await SecureStore.setItemAsync(key, value);    
     const savedValue = await SecureStore.getItemAsync(key);
     if (savedValue === value) {
       console.log(`Successfully saved and verified ${key} in SecureStore`);

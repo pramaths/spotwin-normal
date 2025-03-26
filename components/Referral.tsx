@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
-  Keyboard,
   Dimensions
 } from 'react-native';
 import { ClipboardPaste, ArrowRight } from 'lucide-react-native';
