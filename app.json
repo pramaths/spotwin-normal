@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pramaths.shootwin",
-      "buildNumber": "5",
+      "bundleIdentifier": "com.pramaths.spotwin",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pramaths.shootwin",
+      "package": "com.pramaths.spotwin",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -44,7 +44,7 @@
         }
       ],
       [
-      "expo-dev-client",
+        "expo-dev-client",
         {
           "launchMode": "most-recent"
         }
@@ -61,14 +61,14 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "pramaths",
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "8cfb1985-b97a-4068-ad83-84a3753aa126"
+        "projectId": "14da54a5-7894-4e8e-9a8d-b8a54de22b9d"
       }
-    },
-    "owner": "pramaths"
+    }
   }
 }

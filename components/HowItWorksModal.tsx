@@ -9,11 +9,6 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 
-import FirstHowItWorks from '../assets/images/1sthowitworks.svg';
-import SecondHowItWorks from '../assets/images/2ndhowitworks.svg';
-import ThirdHowItWorks from '../assets/images/3rdhowitworks.svg';
-import leaderboard from '../assets/images/leaderboard.svg';
-
 import { useAuthStore } from '../store/authstore';
 
 const { width } = Dimensions.get('window');
@@ -57,13 +52,11 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
   };
 
   const handleClose = () => {
-    setCurrentSlideIndex(0); // Reset to first slide when closing
+    setCurrentSlideIndex(0);
+    setIsNewUser(false);
     onClose();
   };
 
-  const openLearnMoreLink = () => {
-    Linking.openURL('https://9shoot.fun/how-it-works');
-  };
 
   const currentSlide = howItWorksSlides[currentSlideIndex];
 
@@ -98,9 +91,6 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
                 <Text style={styles.doneButtonText}>Got it!</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.learnMoreButton} onPress={openLearnMoreLink}>
-                <Text style={styles.learnMoreButtonText}>Check Details</Text>
               </TouchableOpacity>
             </View>
           ) : (
