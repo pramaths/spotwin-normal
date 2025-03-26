@@ -92,7 +92,7 @@ const ProfileScreen = () => {
 
   const openInstagram = () => {
     // Open Instagram profile
-    Linking.openURL('https://www.instagram.com/shootwin');
+    Linking.openURL('https://www.instagram.com/spotwin');
   };
 
   return (

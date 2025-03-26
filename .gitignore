@@ -4,11 +4,10 @@
 node_modules/
 android/
 ios/
-shoot-fd51a-firebase-adminsdk-fbsvc-17299cf1a4.json
 
 # google-services.json
 google-services.json
-
+spotwin-f1282-firebase-adminsdk-fbsvc-e12e444baf.json
 
 # Expo
 .expo/
