@@ -204,10 +204,10 @@ export default function SignupScreen() {
         
         if (!responseData.user.isReferralCodeUsed) {
           setShowReferralScreen(true);
-          setIsNewUser(true);
+          setIsNewUser(!user?.isReferralCodeUsed);
           setAuthState({ status: 'idle', error: null });
         } else {
-          setIsNewUser(false);
+          setIsNewUser(!user?.isReferralCodeUsed);
           router.replace('/(tabs)');
         }
       } else {
@@ -320,7 +320,7 @@ export default function SignupScreen() {
                             ]}>
                               <View style={styles.buttonContent}>
                                 {authState.status === 'loading' ? (
-                                  <ActivityIndicator size="small" color="#fff" />
+                                  <ActivityIndicator size="small" color="#000" />
                                 ) : (
                                   <>
                                     <Text style={styles.loginButtonText}>Send OTP</Text>
@@ -374,7 +374,7 @@ export default function SignupScreen() {
                             ]}>
                               <View style={styles.buttonContent}>
                                 {authState.status === 'loading' ? (
-                                  <ActivityIndicator size="small" color="#fff" />
+                                  <ActivityIndicator size="small" color="#000" />
                                 ) : (
                                   <>
                                     <Text style={styles.loginButtonText}>Verify OTP</Text>
@@ -468,11 +468,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     textAlign: 'center',
     marginBottom: 40,
     paddingHorizontal: 15,
     paddingVertical: 5,
+    backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,

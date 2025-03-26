@@ -1,5 +1,4 @@
 import {
-  Modal,
   View,
   Text,
   StyleSheet,
@@ -7,7 +6,7 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useAuthStore } from '../store/authstore';
 
@@ -45,6 +44,13 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
   const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
   const isNewUser = useAuthStore((state) => state.isNewUser);
 
+  // Reset slide index when modal is opened
+  useEffect(() => {
+    if (visible) {
+      setCurrentSlideIndex(0);
+    }
+  }, [visible]);
+
   const handleNextSlide = () => {
     if (currentSlideIndex < howItWorksSlides.length - 1) {
       setCurrentSlideIndex(currentSlideIndex + 1);
@@ -52,55 +58,54 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
   };
 
   const handleClose = () => {
+    // Reset slide index and close modal
     setCurrentSlideIndex(0);
     setIsNewUser(false);
     onClose();
   };
 
-
   const currentSlide = howItWorksSlides[currentSlideIndex];
 
+  // We don't need to use Modal here since it's already wrapped in a Modal in HeaderProfile
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Text style={styles.closeButtonText}>×</Text>
-          </TouchableOpacity>
+    <View style={styles.overlay}>
+      <View style={styles.container}>
+        <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+          <Text style={styles.closeButtonText}>×</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>How it works</Text>
+        <Text style={styles.headerTitle}>How it works</Text>
 
-          <View style={styles.slide}>
-            <Text style={styles.slideTitle}>{currentSlide.title}</Text>
-            <Text style={styles.slideDescription}>{currentSlide.description}</Text>
-          </View>
-
-          <View style={styles.indicatorContainer}>
-            {howItWorksSlides.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  index === currentSlideIndex && styles.activeIndicator,
-                ]}
-              />
-            ))}
-          </View>
-
-          {isLastSlide ? (
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
-                <Text style={styles.doneButtonText}>Got it!</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.nextButton} onPress={handleNextSlide}>
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
-          )}
+        <View style={styles.slide}>
+          <Text style={styles.slideTitle}>{currentSlide.title}</Text>
+          <Text style={styles.slideDescription}>{currentSlide.description}</Text>
         </View>
+
+        <View style={styles.indicatorContainer}>
+          {howItWorksSlides.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.indicator,
+                index === currentSlideIndex && styles.activeIndicator,
+              ]}
+            />
+          ))}
+        </View>
+
+        {isLastSlide ? (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
+              <Text style={styles.doneButtonText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.nextButton} onPress={handleNextSlide}>
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        )}
       </View>
-    </Modal>
+    </View>
   );
 }
 

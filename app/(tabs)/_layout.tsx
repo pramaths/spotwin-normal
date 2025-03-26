@@ -13,8 +13,6 @@ import FeedIcon from '../../assets/icons/feed.svg';
 import WhiteHome from '../../assets/icons/whitehome.svg';
 import WhiteCup from '../../assets/icons/whitecup.svg';
 import WhiteFeed from '../../assets/icons/whitefeed.svg';
-import FullScreenLoader from '../../components/FullScreenLoader';
-import ErrorScreen from '../../components/ErrorScreen';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();

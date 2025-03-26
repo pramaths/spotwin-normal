@@ -33,14 +33,34 @@ const ProfileScreen = () => {
   
 
   const fetchUser = async () => {
-    const response = await apiClient(AUTH_ME, 'GET');
-    if (response.success && response.data) {
-      setUser(response.data as IUser);
+    setIsLoading(true);
+    try {
+      const response = await apiClient(AUTH_ME, 'GET');
+      if (response.success && response.data) {
+        const newUserData = response.data as IUser;
+        
+        // Only update if there are actual changes to prevent unnecessary re-renders
+        if (JSON.stringify(user) !== JSON.stringify(newUserData)) {
+          // If current username exists and is different from the new data, preserve the current username
+          if (user?.username && user.username !== newUserData.username) {
+            console.log('Preserving existing username: ', user.username);
+            newUserData.username = user.username;
+          }
+          setUser(newUserData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUser();
+    // Only fetch user data if it's not already loaded
+    if (!user || !user.id) {
+      fetchUser();
+    }
   }, []);
 
   const handleLogOut = async() => {
@@ -159,7 +179,10 @@ const ProfileScreen = () => {
               <Text style={styles.pointsValue}>{user?.points || 0}</Text>
               <TouchableOpacity 
                 style={styles.refreshButton} 
-                onPress={() => fetchUser()}
+                onPress={() => {
+                  setIsLoading(true);
+                  fetchUser();
+                }}
                 disabled={isLoading}
               >
                 {isLoading ? (

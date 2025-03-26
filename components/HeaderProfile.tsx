@@ -40,19 +40,15 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
     router.push('/profile');
   };
 
-  useEffect(() => {
-    if (isNewUser) {
-      setHowItWorksModalVisible(true);
-    }
-  }, [isNewUser]);
-
   const handleHowItWorksPress = () => {
     setHowItWorksModalVisible(true);
   };
 
   const closeHowItWorksModal = () => {
     setIsNewUser(false);
-    setHowItWorksModalVisible(false);
+    setTimeout(() => {
+      setHowItWorksModalVisible(false);
+    }, 100);
   };
 
   return (
@@ -68,7 +64,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>Hi, {user?.username}</Text>
+            <Text style={styles.userName}>Hi, {user?.username || 'User'}</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.headerIcons}>
@@ -94,7 +90,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
         </View>
       </View>
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={howItWorksModalVisible}
         onRequestClose={closeHowItWorksModal}
