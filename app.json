@@ -53,6 +53,11 @@
         {
           "launchMode": "most-recent"
         }
+      ],[
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sound.wav"]
+        }
       ],
       [
         "expo-secure-store",

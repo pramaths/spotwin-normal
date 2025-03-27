@@ -47,7 +47,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const animateSuccess = () => {
     setShowSuccess(true);
 
-    // Reset animation values
     successScale.setValue(0);
     successOpacity.setValue(0);
     checkmarkStroke.setValue(0);

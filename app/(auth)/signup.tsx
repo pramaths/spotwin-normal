@@ -251,6 +251,7 @@ export default function SignupScreen() {
   };
 
   const handleSkipReferral = async () => {
+    await handleSubmitReferralCode('');
     setAuthState({ status: 'idle', error: null });
     router.replace('/(tabs)');
   };
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: 'flex-end',
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   contentWrapper: {
     alignItems: 'center',
@@ -468,12 +469,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#fff',
     textAlign: 'center',
     marginBottom: 40,
     paddingHorizontal: 15,
     paddingVertical: 5,
-    backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
@@ -511,9 +511,8 @@ const styles = StyleSheet.create({
   otpTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#fff',
     marginBottom: 8,
-    backgroundColor: '#fff',
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 8,
@@ -523,10 +522,9 @@ const styles = StyleSheet.create({
   },
   otpSubtitle: {
     fontSize: 14,
-    color: '#000',
+    color: '#fff',
     marginBottom: 20,
     textAlign: 'center',
-    backgroundColor: '#fff',
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 8,
@@ -552,8 +550,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
   },
   resendContainer: {
-    marginTop: 15,
-    backgroundColor: '#fff',
+    marginTop: 8,
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 8,
@@ -561,7 +558,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
   },
   resendText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 14,
     textDecorationLine: 'underline',
     fontWeight: 'bold',
@@ -685,9 +682,8 @@ const styles = StyleSheet.create({
   referralHeading: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#fff',
     marginBottom: 8,
-    backgroundColor: '#fff',
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 8,
@@ -697,10 +693,9 @@ const styles = StyleSheet.create({
   },
   referralSubheading: {
     fontSize: 14,
-    color: '#000',
+    color: '#fff',
     marginBottom: 20,
     textAlign: 'center',
-    backgroundColor: '#fff',
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 8,
