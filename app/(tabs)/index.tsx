@@ -24,7 +24,7 @@ import { IContest, IUser } from '../../types';
 import { useContestsStore } from '../../store/contestsStore';
 import apiClient from '../../utils/api';
 import { useUserStore } from '../../store/userStore';
-import { USER, USER_CONTESTS, CONTESTS } from '../../routes/api';
+import { AUTH_ME, USER_CONTESTS, CONTESTS } from '../../routes/api';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useAuthStore } from '../../store/authstore';
 
@@ -69,12 +69,12 @@ export default function HomeScreen() {
   console.log("Expo Push Token:", expoPushToken);
 
   useEffect(() => {
-    fetchContests();
     fetchUser();
+    fetchContests();
   }, []);
 
   const fetchUser = async () => {
-    const response = await apiClient<IUser>(USER(user?.id || ''), 'GET');
+    const response = await apiClient<IUser>(AUTH_ME, 'GET');
     if (response.success && response.data) {
       setUser(response.data);
     }

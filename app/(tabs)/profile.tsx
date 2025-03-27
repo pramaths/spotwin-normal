@@ -37,11 +37,8 @@ const ProfileScreen = () => {
     try {
       const response = await apiClient(AUTH_ME, 'GET');
       if (response.success && response.data) {
-        const newUserData = response.data as IUser;
-        
-        // Only update if there are actual changes to prevent unnecessary re-renders
+        const newUserData = response.data as IUser;        
         if (JSON.stringify(user) !== JSON.stringify(newUserData)) {
-          // If current username exists and is different from the new data, preserve the current username
           if (user?.username && user.username !== newUserData.username) {
             console.log('Preserving existing username: ', user.username);
             newUserData.username = user.username;
@@ -57,7 +54,6 @@ const ProfileScreen = () => {
   };
 
   useEffect(() => {
-    // Only fetch user data if it's not already loaded
     if (!user || !user.id) {
       fetchUser();
     }

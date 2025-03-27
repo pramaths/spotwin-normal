@@ -41,7 +41,7 @@ export default function Index() {
         const response = await apiClient<IUser>(AUTH_ME, 'GET');
         
         if (response.success && response.data) {
-          if(!response.data.expoPushToken && expoPushToken){
+          if(!response.data.expoPushToken && expoPushToken && response.data.expoPushToken !== expoPushToken){
             await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'POST', { 
               expoPushToken: expoPushToken
             });

@@ -196,7 +196,7 @@ export default function SignupScreen() {
 
         setAuthenticated(true);
         setUser(responseData.user);
-        if(!responseData.user.expoPushToken || responseData.user.expoPushToken === '' && expoPushToken) {
+        if(!responseData.user.expoPushToken || responseData.user.expoPushToken === '' && expoPushToken && responseData.user.expoPushToken !== expoPushToken) {
           const res = await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.user.id), 'POST', { 
             expoPushToken: expoPushToken
           });

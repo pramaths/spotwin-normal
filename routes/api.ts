@@ -18,8 +18,6 @@ export const CONTESTS_BY_ID = (id: string) => `${backendUrl}/contests/${id}`;
 export const QUESTIONS =(id: string) => `${backendUrl}/submission/user/${id}`;
 export const QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/questions/contest/${contestId}`;
 
-//user
-export const USER =(id: string) => `${backendUrl}/users/${id}`;
 export const USER_BALANCE = (userId: string) => `${backendUrl}/users/${userId}/balance`;
 export const CHANGE_USERNAME = (userId: string) => `${backendUrl}/users/${userId}`;
 export const UPDATE_EXPO_PUSH_TOKEN = (userId: string) => `${backendUrl}/users/${userId}/expo-push-token`;
