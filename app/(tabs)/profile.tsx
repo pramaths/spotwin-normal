@@ -17,6 +17,7 @@ const ProfileScreen = () => {
   const [copied, setCopied] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
 
   const getRandomColor = () => {
     const colors = [
@@ -89,6 +90,9 @@ const ProfileScreen = () => {
   };
 
   const handleSaveUsername = async () => {
+    if (isSavingUsername) return; // Prevent multiple clicks
+    
+    setIsSavingUsername(true);
     try {
       const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PATCH', {
         username: newUsername
@@ -102,6 +106,8 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       console.error('Failed to update username:', error);
+    } finally {
+      setIsSavingUsername(false);
     }
   };
 
@@ -145,10 +151,15 @@ const ProfileScreen = () => {
                     placeholder="Enter new username"
                   />
                   <TouchableOpacity
-                    style={styles.saveButton}
+                    style={[styles.saveButton, isSavingUsername && styles.disabledButton]}
                     onPress={handleSaveUsername}
+                    disabled={isSavingUsername}
                   >
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    {isSavingUsername ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -223,16 +234,6 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.menuSection}>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => setIsEditingUsername(true)}
-          >
-            <View style={styles.menuIconContainer}>
-              <Settings size={24} color="#000" />
-            </View>
-            <Text style={styles.menuText}>Change Username</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={openInstagram}

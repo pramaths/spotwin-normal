@@ -29,6 +29,7 @@ async function save(key: string, value: string) {
 interface VerifyOtpResponse {
   token: string;
   user: IUser;
+  isNewUser: boolean;
 }
 
 export default function SignupScreen() {
@@ -193,7 +194,7 @@ export default function SignupScreen() {
       if (response.success && response.data) {
         await save('token', response.data.token);
         const responseData = response.data as VerifyOtpResponse;
-
+        setIsNewUser(responseData.isNewUser);
         setAuthenticated(true);
         setUser(responseData.user);
         if(!responseData.user.expoPushToken || responseData.user.expoPushToken === '' && expoPushToken && responseData.user.expoPushToken !== expoPushToken) {

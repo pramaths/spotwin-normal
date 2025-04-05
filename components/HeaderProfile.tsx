@@ -32,6 +32,13 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const { isNewUser, setIsNewUser } = useAuthStore();
   const router = useRouter();
 
+  // Open how it works modal when isNewUser is true
+  useEffect(() => {
+    if (isNewUser) {
+      setHowItWorksModalVisible(true);
+    }
+  }, [isNewUser]);
+
   const handleWalletPress = () => {
     setDepositModalVisible(true);
   };
@@ -74,7 +81,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             activeOpacity={0.7}
           >
             {user?.points && user?.points > 0 && (
-              <Text style={styles.balanceText}>{user?.points}</Text>
+              <Text style={styles.balanceText}>{user?.points || 0}</Text>
             )}
             <View style={styles.walletIconWrapper}>
               <EmptyWalletIcon />
