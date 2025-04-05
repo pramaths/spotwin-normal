@@ -171,11 +171,9 @@ export default function PredictionScreen() {
       const existingPredictionIndex = predictions.findIndex(p => p.question.id === question.id);
       
       if (existingPredictionIndex > -1) {
-        // If prediction exists, use ChangePrediction
         const existingPrediction = predictions[existingPredictionIndex];
         await handleChangePrediction(existingPrediction.id, prediction, question.id);
       } else {
-        // If no prediction exists, create a new one
         await submitPrediction(question.id, contestId as string, user?.id || '', prediction);
       }
 
@@ -250,7 +248,6 @@ export default function PredictionScreen() {
     try {
       await ChangePrediction(predictionId, prediction, questionId);
       
-      // Update UI state for the changed prediction
       setUserVotesMap((prev) => ({
         ...prev,
         [questionId]: prediction

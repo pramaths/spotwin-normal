@@ -105,8 +105,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   };
 
   const handleInvite = async (referralCode: string) => {
-    const playStoreUrl = `https://play.google.com/store/apps/details?id=YOUR_APP_ID`;
-    const appStoreUrl = `https://apps.apple.com/app/YOUR_APP_ID`;
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=`;
+    const appStoreUrl = `https://apps.apple.com/in/app/spotwin/id6743806381`;
     
     const link = Platform.select({
       android: `${playStoreUrl}&referralCode=${referralCode}`,

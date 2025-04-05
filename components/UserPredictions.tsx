@@ -25,10 +25,10 @@ const fetchUserPredictions = async (contestId: string, userId?: string): Promise
     const response = await apiClient<IUserPrediction[]>(GET_PREDICTION_BY_USER_AND_CONTEST(contestId, userId || ''), 'GET');
     console.log('response', response);
     if (response.success && response.data) {
-      return response.data.map((prediction: IUserPrediction) => ({
+      return response.data.map((prediction: any) => ({
         ...prediction,
         question: prediction.question,
-        outcome: prediction.outcome === 'YES' ? IOutcome.YES : IOutcome.NO
+        outcome: prediction.prediction === 'YES' ? IOutcome.YES : IOutcome.NO
       }));
     }
     return [];
@@ -153,15 +153,15 @@ const UserPredictions = ({ contestId, userId, status }: UserPredictionsProps) =>
                       {item.outcome === IOutcome.YES ? 'YES' : 'NO'}
                     </Text>
                   </View>
-
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => handleEditPrediction(item)}
-                    disabled={status === IContestStatus.COMPLETED}
+                  {status === IContestStatus.OPEN && (
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => handleEditPrediction(item)}
                   >
                     <Pencil size={16} color="#0504dc" />
                     <Text style={styles.editButtonText}>Edit</Text>
                   </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </View>

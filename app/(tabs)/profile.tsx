@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard, Linking, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, LogOut, RefreshCcw, Copy } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, LogOut, RefreshCcw, Copy, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useUserStore } from '../../store/userStore';
@@ -106,8 +106,15 @@ const ProfileScreen = () => {
   };
 
   const openInstagram = () => {
-    // Open Instagram profile
-    Linking.openURL('https://www.instagram.com/spotwin');
+    Linking.openURL('https://www.instagram.com/spotwin.in');
+  };
+
+  const handleDeleteAccount = () => {
+    const subject = encodeURIComponent('Delete my account');
+    const email = 'rahul@sizzil.app';
+    const body = encodeURIComponent(`Hello,\n\nI would like to request deletion of my account.\n\nPhone Number: ${user?.phoneNumber || 'N/A'}\nUsername: ${user?.username || 'N/A'}\n\nThank you.`);
+    
+    Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
   };
 
   return (
@@ -244,6 +251,14 @@ const ProfileScreen = () => {
           <LogOut size={20} color="#FF3B30" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+        >
+          <Trash2 size={20} color="#FF3B30" />
+          <Text style={styles.deleteAccountText}>Delete Account</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -377,11 +392,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 16,
     marginTop: 24,
-    marginBottom: 40,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#FF3B30',
-    borderRadius: 12,
+    borderRadius: 8,
   },
   logoutText: {
     fontFamily: 'Inter-SemiBold',
@@ -635,5 +649,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 36,
     color: '#FFFFFF',
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 40,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    borderRadius: 8,
+  },
+  deleteAccountText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#FF3B30',
+    marginLeft: 8,
   },
 });
