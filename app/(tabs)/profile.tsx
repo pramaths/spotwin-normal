@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Modal, Clipboard, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Share, Clipboard, Linking, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, LogOut, RefreshCcw, Copy, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -31,14 +31,14 @@ const ProfileScreen = () => {
   const getInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
   };
-  
+
 
   const fetchUser = async () => {
     setIsLoading(true);
     try {
       const response = await apiClient(AUTH_ME, 'GET');
       if (response.success && response.data) {
-        const newUserData = response.data as IUser;        
+        const newUserData = response.data as IUser;
         if (JSON.stringify(user) !== JSON.stringify(newUserData)) {
           if (user?.username && user.username !== newUserData.username) {
             console.log('Preserving existing username: ', user.username);
@@ -60,7 +60,7 @@ const ProfileScreen = () => {
     }
   }, []);
 
-  const handleLogOut = async() => {
+  const handleLogOut = async () => {
     await SecureStore.deleteItemAsync("token")
     router.push('/(auth)/signup');
   };
@@ -91,7 +91,7 @@ const ProfileScreen = () => {
 
   const handleSaveUsername = async () => {
     if (isSavingUsername) return; // Prevent multiple clicks
-    
+
     setIsSavingUsername(true);
     try {
       const response = await apiClient(CHANGE_USERNAME(user?.id || ''), 'PATCH', {
@@ -115,11 +115,28 @@ const ProfileScreen = () => {
     Linking.openURL('https://www.instagram.com/spotwin.in');
   };
 
+  const handleInvite = async (referralCode: string) => {
+    const playStoreUrl = `https://spotwin.in`;
+    const appStoreUrl = `https://apps.apple.com/in/app/spotwin/id6743806381`;
+
+    const message = `🏆 Ready to WIN IPL TICKETS? Join me on Spotwin! 🏆
+    \n\nPredict questions, earn points, and redeem for IPL tickets! Use my referral code (${referralCode}) to get bonus points.
+    \n\nJoin contests 🎮 → Earn points 🎯 → Buy tickets 🎟️\n\nDownload now:\n
+    ios: ${appStoreUrl}
+    android: ${playStoreUrl}`;
+
+    try {
+      await Share.share({ message });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   const handleDeleteAccount = () => {
     const subject = encodeURIComponent('Delete my account');
     const email = 'rahul@sizzil.app';
     const body = encodeURIComponent(`Hello,\n\nI would like to request deletion of my account.\n\nPhone Number: ${user?.phoneNumber || 'N/A'}\nUsername: ${user?.username || 'N/A'}\n\nThank you.`);
-    
+
     Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
   };
 
@@ -191,8 +208,8 @@ const ProfileScreen = () => {
             <Text style={styles.infoLabel}>Points</Text>
             <View style={styles.pointsContainer}>
               <Text style={styles.pointsValue}>{user?.points || 0}</Text>
-              <TouchableOpacity 
-                style={styles.refreshButton} 
+              <TouchableOpacity
+                style={styles.refreshButton}
                 onPress={() => {
                   setIsLoading(true);
                   fetchUser();
@@ -234,7 +251,7 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.menuSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={openInstagram}
           >
@@ -242,6 +259,18 @@ const ProfileScreen = () => {
               <HelpCircle size={24} color="#000" />
             </View>
             <Text style={styles.menuText}>Help & support</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.menuSection}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => handleInvite(user?.referralCode || '')}
+          >
+            <View style={styles.menuIconContainer}>
+              <HelpCircle size={24} color="#000" />
+            </View>
+            <Text style={styles.menuText}>Invite friends</Text>
           </TouchableOpacity>
         </View>
 
@@ -276,24 +305,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 100, // Add padding to ensure content doesn't get hidden by tab bar
+    paddingBottom: 80,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     resizeMode: 'contain',
   },
   profileInfo: {
-    marginLeft: 16,
+    marginLeft: 14,
     flex: 1,
   },
   profileName: {
@@ -356,31 +385,31 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginTop: 24,
+    borderRadius: 14,
+    marginHorizontal: 14,
+    marginTop: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 6,
+    elevation: 3,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#EFEFEF',
   },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F5F7FA',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   menuText: {
     fontFamily: 'Inter-Medium',
@@ -391,9 +420,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
-    marginTop: 24,
-    paddingVertical: 12,
+    marginHorizontal: 14,
+    marginTop: 18,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#FF3B30',
     borderRadius: 8,
@@ -530,17 +559,17 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    padding: 20,
+    borderRadius: 14,
+    marginHorizontal: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 6,
+    elevation: 3,
   },
   infoItem: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   infoLabel: {
     fontFamily: 'Inter-Medium',
@@ -567,20 +596,20 @@ const styles = StyleSheet.create({
     color: '#0504dc',
   },
   refreshButton: {
-    marginLeft: 12,
-    padding: 8,
+    marginLeft: 10,
+    padding: 6,
     backgroundColor: '#F5F7FA',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 14,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: '#EFEFEF',
   },
@@ -604,10 +633,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButton: {
-    marginLeft: 8,
-    padding: 8,
+    marginLeft: 6,
+    padding: 6,
     backgroundColor: '#F5F7FA',
-    borderRadius: 20,
+    borderRadius: 16,
   },
   editUsernameContainer: {
     flexDirection: 'row',
@@ -640,9 +669,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   profileImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -655,10 +684,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 40,
-    paddingVertical: 12,
+    marginHorizontal: 14,
+    marginTop: 14,
+    marginBottom: 30,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#FF3B30',
     borderRadius: 8,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -367,15 +368,55 @@ export default function PredictionScreen() {
           contentContainerStyle={styles.scrollViewContent}
         >
           {currentQuestions.length > 0 ? (
-            currentQuestions.map((q: IQuestion) => (
-              <QuestionItem
-                key={q.id}
-                question={q}
-                onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
-                userVote={userVotesMap[q.id] || null}
-                onRemovePrediction={() => handleRemovePrediction(q.id)}
-              />
-            ))
+            <>
+              {currentQuestions.map((q: IQuestion) => (
+                <QuestionItem
+                  key={q.id}
+                  question={q}
+                  onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
+                  userVote={userVotesMap[q.id] || null}
+                  onRemovePrediction={() => handleRemovePrediction(q.id)}
+                />
+              ))}
+              
+              {/* Next button for Easy and Medium difficulties */}
+              {(selectedDifficulty === IDifficultyLevel.EASY || 
+                selectedDifficulty === IDifficultyLevel.MEDIUM) && 
+                getAnsweredCountByDifficulty(selectedDifficulty) >= 3 && (
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => {
+                    const nextIndex = difficultyTabs.indexOf(selectedDifficulty) + 1;
+                    if (nextIndex < difficultyTabs.length) {
+                      setSelectedDifficulty(difficultyTabs[nextIndex]);
+                    }
+                  }}
+                >
+                  <Text style={styles.actionButtonText}>Next</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                </TouchableOpacity>
+              )}
+              
+              {selectedDifficulty === IDifficultyLevel.HARD && 
+                getAnsweredCountByDifficulty(IDifficultyLevel.HARD) >= 3 && (
+                <TouchableOpacity 
+                  style={[styles.actionButton, styles.submitButton]}
+                  onPress={() => {
+                    setPredictionMessage({
+                      text: "Successfully Submitted your predictions",
+                      type: IOutcome.YES
+                    });
+                    setTimeout(() => {
+                      setPredictionMessage(null);
+                    }, 3000);
+                    router.push('/');
+                  }}
+                >
+                  <Text style={styles.actionButtonText}>Submit</Text>
+                  <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                </TouchableOpacity>
+              )}
+            </>
           ) : (
             <View style={styles.noQuestionsContainer}>
               <Text style={styles.noQuestionsText}>
@@ -487,7 +528,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginLeft: 30,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold'
   },
   tabContainer: {
@@ -598,8 +639,8 @@ const styles = StyleSheet.create({
     paddingBottom: 60
   },
   teamSmallImage: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
   },
   maxReachedTab: {
     borderWidth: 2,
@@ -609,5 +650,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     color: '#FFF',
     fontWeight: 'bold',
+  },
+  actionButton: {
+    backgroundColor: '#3768E3',
+    padding: 15,
+    borderRadius: 12,
+    marginVertical: 20,
+    marginHorizontal: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  submitButton: {
+    backgroundColor: 'rgba(76, 175, 80, 0.95)',
   },
 });

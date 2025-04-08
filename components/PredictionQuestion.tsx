@@ -12,7 +12,7 @@ interface PredictionQuestionProps {
     question: string;
     timeRemaining: string;
     contest: IContest | null;
-    difficultyLevel: IDifficultyLevel;
+    difficultyLevel: IDifficultyLevel | string;
     isUserParticipating: boolean;
 }
 

@@ -52,9 +52,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     checkmarkStroke.setValue(0);
     checkmarkScale.setValue(0);
 
-    // Sequence of animations
     Animated.sequence([
-      // First fade in the background
       Animated.parallel([
         Animated.timing(successScale, {
           toValue: 1,
@@ -67,7 +65,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
           useNativeDriver: true,
         })
       ]),
-      // Then animate the checkmark
       Animated.parallel([
         Animated.timing(checkmarkScale, {
           toValue: 1,
@@ -108,13 +105,11 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     const playStoreUrl = `https://play.google.com/store/apps/details?id=`;
     const appStoreUrl = `https://apps.apple.com/in/app/spotwin/id6743806381`;
     
-    const link = Platform.select({
-      android: `${playStoreUrl}&referralCode=${referralCode}`,
-      ios: `${appStoreUrl}?referralCode=${referralCode}`,
-    });
-  
-    const message = `Check out this cool app! Join using my referral code (${referralCode}) 🎉:\n${link}`;
-  
+    const message = `🏆 Ready to WIN IPL TICKETS? Join me on Spotwin! 🏆
+    \n\nPredict questions, earn points, and redeem for IPL tickets! Use my referral code (${referralCode}) to get bonus points.
+    \n\nJoin contests 🎮 → Earn points 🎯 → Buy tickets 🎟️\n\nDownload now:\n
+    ios: ${appStoreUrl}
+    android: ${playStoreUrl}`;
     try {
       await Share.share({ message });
     } catch (error) {

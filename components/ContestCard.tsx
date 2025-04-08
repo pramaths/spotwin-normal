@@ -100,7 +100,7 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
         disabled={isParticipating}
       >
         <Text style={styles.joinButtonText}>
-          {isParticipating ? 'Already Participating' : 'Join Contest'}
+          {isParticipating ? 'Already Participating' : 'Join for FREE'}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>

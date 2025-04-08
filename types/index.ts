@@ -98,3 +98,13 @@ export interface IUserPrediction {
   question: IQuestion;
   outcome?: IOutcome;
 }
+
+export interface ITicket {
+  id: string;
+  stadium: string;
+  date: string;
+  time: string;
+  teamA: ITeam;
+  teamB: ITeam;
+  costPoints: number;
+}

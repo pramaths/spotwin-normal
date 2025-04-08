@@ -27,6 +27,7 @@ import { useUserStore } from '../../store/userStore';
 import { AUTH_ME, USER_CONTESTS, CONTESTS } from '../../routes/api';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useAuthStore } from '../../store/authstore';
+import { ContestCardSkeleton, SkeletonItem } from '../../components/SkeletonLoading';
 
 const sportsCategories = [
   { id: '1', name: 'Cricket', icon: '🏏' },
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
   const [filteredContests, setFilteredContests] = useState<IContest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { contests, setContests, setUserContests } = useContestsStore();
   const router = useRouter();
   const featuredListRef = useRef<FlatList>(null);
@@ -65,8 +67,6 @@ export default function HomeScreen() {
   if (error) {
     console.log("Error:", error);
   }
-  console.log("Notification:", JSON.stringify(notification, null, 2));
-  console.log("Expo Push Token:", expoPushToken);
 
   useEffect(() => {
     fetchUser();
@@ -81,6 +81,7 @@ export default function HomeScreen() {
   };
 
   const fetchContests = async () => {
+    setLoading(true);
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
       if (user?.id) {
@@ -100,6 +101,8 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error("Error fetching contests:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,6 +143,10 @@ export default function HomeScreen() {
   };
 
   const renderFeaturedCard = ({ item, index }: { item: IContest, index: number }) => {
+    if (!item || !item.match) {
+      return renderFeaturedSkeleton();
+    }
+    
     const { formattedTime } = formatDateTime(item.match?.startTime || '');
     const userContests = useContestsStore.getState().userContests;
     const isParticipating = userContests.some(contest => contest.id === item.id);
@@ -205,13 +212,13 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
               <Text style={styles.footerValue}>
-                {item.entryFee} {item.currency}
+                {Number(item.entryFee).toFixed(0)} Points
               </Text>
             </View>
             <View style={styles.footerItem}>
-              <Text style={styles.footerLabel}>Prize pool</Text>
+              <Text style={styles.footerLabel}>Prize</Text>
               <Text style={styles.footerValue}>
-                IPL Tickets
+                IPL Ticket
               </Text>
             </View>
           </View>
@@ -225,10 +232,97 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.joinButtonText}>
-              {isParticipating ? 'Already Participating' : 'Join'}
+              {isParticipating ? 'Already Participating' : 'Join for FREE'}
             </Text>
           </TouchableOpacity>
         </LinearGradient>
+      </View>
+    );
+  };
+
+  const renderFeaturedSkeleton = () => {
+    return (
+      <View style={styles.featuredCardWrapper}>
+        <View style={[
+          styles.stackedCard, 
+          styles.secondStackedCard, 
+          { 
+            backgroundColor: '#9797e8', // Enhanced color for stacked card
+            ...Platform.select({
+              ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+              },
+              android: {
+                elevation: 6,
+              },
+              web: {
+                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+              },
+            })
+          }
+        ]} />
+        <View style={[
+          styles.featuredCard, 
+          { 
+            backgroundColor: '#e0e0ff', // Enhanced color for main card
+            ...Platform.select({
+              ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.25,
+                shadowRadius: 6,
+              },
+              android: {
+                elevation: 5,
+              },
+              web: {
+                boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.25)',
+              },
+            })
+          }
+        ]}>
+          <View style={styles.cardHeader}>
+            <SkeletonItem width={'60%'} height={18} style={{ marginBottom: 5 }} />
+            <SkeletonItem width={30} height={30} borderRadius={15} />
+          </View>
+          
+          <View style={styles.teamsContainer}>
+            <View style={styles.teamContainer}>
+              <SkeletonItem width={36} height={36} borderRadius={18} style={{ marginBottom: 6 }} />
+              <SkeletonItem width={'80%'} height={14} />
+            </View>
+            
+            <View style={styles.vsContainer}>
+              <SkeletonItem width={24} height={16} style={{ marginBottom: 4 }} />
+              <View style={styles.timeContainer}>
+                <SkeletonItem width={45} height={16} />
+              </View>
+            </View>
+            
+            <View style={styles.teamContainer}>
+              <SkeletonItem width={36} height={36} borderRadius={18} style={{ marginBottom: 6 }} />
+              <SkeletonItem width={'80%'} height={14} />
+            </View>
+          </View>
+          
+          <View style={styles.cardFooter}>
+            <View style={styles.footerItem}>
+              <SkeletonItem width={70} height={12} style={{ marginBottom: 4 }} />
+              <SkeletonItem width={80} height={14} />
+            </View>
+            <View style={styles.footerItem}>
+              <SkeletonItem width={40} height={12} style={{ marginBottom: 4 }} />
+              <SkeletonItem width={70} height={14} />
+            </View>
+          </View>
+          
+          <View style={{ marginTop: 8 }}>
+            <SkeletonItem width={'100%'} height={36} borderRadius={12} />
+          </View>
+        </View>
       </View>
     );
   };
@@ -242,9 +336,25 @@ export default function HomeScreen() {
     setPaymentModalVisible(true);
   };
 
+  const renderEmptyContestMessage = () => {
+    return (
+      <View style={styles.emptyContestContainer}>
+        <Text style={styles.emptyContestText}>No contests available</Text>
+        <Text style={styles.emptyContestSubText}>Check out My contests page to see your contests</Text>
+        <TouchableOpacity 
+          style={styles.emptyContestButton}
+          onPress={() => router.push('/(tabs)/contests')}
+        >
+          <Text style={styles.emptyContestButtonText}>My Contests</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
+      <HeaderProfile />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -258,29 +368,38 @@ export default function HomeScreen() {
           />
         }
       >
-        <HeaderProfile />
 
         <View style={styles.featuredSection}>
-          <FlatList
-            ref={featuredListRef}
-            data={contests.slice(0, 3)}
-            renderItem={renderFeaturedCard}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToAlignment="center"
-            decelerationRate="fast"
-            pagingEnabled
-            snapToInterval={width * 0.9 + width * 0.05 * 2} 
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={['#3498db']}
-                tintColor="#3498db"
-              />
-            }
-          />
+          {loading ? (
+            <View style={styles.skeletonContainer}>
+              {renderFeaturedSkeleton()}
+            </View>
+          ) : contests.length > 0 ? (
+            <FlatList
+              ref={featuredListRef}
+              data={contests.slice(0, 3)}
+              renderItem={renderFeaturedCard}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToAlignment="center"
+              decelerationRate="fast"
+              pagingEnabled
+              snapToInterval={width * 0.9 + width * 0.05 * 2} 
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={['#3498db']}
+                  tintColor="#3498db"
+                />
+              }
+            />
+          ) : (
+            <View style={styles.emptyFeaturedContainer}>
+              {renderEmptyContestMessage()}
+            </View>
+          )}
         </View>
 
         <View style={styles.eventsSection}>
@@ -318,14 +437,24 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.contestCardContainer}>
-          {filteredContests.length > 0 ? filteredContests.map((contest) => (
-            <ContestCard
-              key={contest.id}
-              contest={contest}
-              onPress={handleContestPress}
-              userContests={useContestsStore.getState().userContests}
-            />
-          )) : <Text style={styles.noContestsText}>No contests available</Text>}
+          {loading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <View key={index} style={{ marginBottom: 16 }}>
+                <ContestCardSkeleton />
+              </View>
+            ))
+          ) : filteredContests.length > 0 ? (
+            filteredContests.map((contest) => (
+              <ContestCard
+                key={contest.id}
+                contest={contest}
+                onPress={handleContestPress}
+                userContests={useContestsStore.getState().userContests}
+              />
+            ))
+          ) : (
+            renderEmptyContestMessage()
+          )}
         </View>
 
         {paymentModalVisible && selectedContest && (
@@ -383,6 +512,10 @@ const styles = StyleSheet.create({
     padding: 16,
     height: '100%',
     zIndex: 3,
+  },
+  featuredCardSkeleton: {
+    backgroundColor: '#F5F5F5',
+    opacity: 0.9,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -492,7 +625,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
     marginTop: 4,
   },
   sectionTitle: {
@@ -506,7 +639,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   categoriesScroll: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   categoriesContent: {
     paddingVertical: 8,
@@ -553,7 +686,7 @@ const styles = StyleSheet.create({
   contestCardContainer: {
     paddingHorizontal: 16,
     marginBottom: 100, // Increased bottom margin to ensure content doesn't get hidden behind tab bar
-    marginTop: 8,
+    marginTop: 2,
   },
   noContestsText: {
     fontSize: 16,
@@ -562,4 +695,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
+  skeletonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  emptyContestContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginVertical: 10,
+  },
+  emptyFeaturedContainer: {
+    height: '100%',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyContestText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyContestSubText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  emptyContestButton: {
+    backgroundColor: '#0504dc',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  emptyContestButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
+

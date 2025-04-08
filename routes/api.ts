@@ -21,6 +21,8 @@ export const QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/questi
 export const USER_BALANCE = (userId: string) => `${backendUrl}/users/${userId}/balance`;
 export const CHANGE_USERNAME = (userId: string) => `${backendUrl}/users/${userId}`;
 export const UPDATE_EXPO_PUSH_TOKEN = (userId: string) => `${backendUrl}/users/${userId}/expo-push-token`;
+export const GET_ALL_TICKETS = `${backendUrl}/tickets`;
+export const BUY_TICKET = `${backendUrl}/users/buy-ticket`;
 
 //UserContests
 export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;

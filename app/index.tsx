@@ -30,7 +30,6 @@ export default function Index() {
         } catch (tokenError) {
           console.error('Error retrieving token from SecureStore:', tokenError);
         }
-        console.log("token:", token);
         if (!token) {
           console.log('No token found, setting authenticated to false');
           setAuthenticated(false);
@@ -41,7 +40,7 @@ export default function Index() {
         const response = await apiClient<IUser>(AUTH_ME, 'GET');
         
         if (response.success && response.data) {
-          if(!response.data.expoPushToken && expoPushToken && response.data.expoPushToken !== expoPushToken){
+          if(!response.data.expoPushToken || expoPushToken && response.data.expoPushToken !== expoPushToken){
             await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'POST', { 
               expoPushToken: expoPushToken
             });

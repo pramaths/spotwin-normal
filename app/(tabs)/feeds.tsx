@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect,} from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, FlatList, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PredictionQuestionGrid from '../../components/PredictionQuestionGrid';
@@ -9,12 +10,6 @@ import { ContestCardSkeleton } from '@/components/SkeletonLoading';
 import { CONTESTS } from '@/routes/api';
 import apiClient from '@/utils/api';
 
-interface PredictionQuestion {
-  id: string;
-  question: string;
-  difficultyLevel: IDifficultyLevel;
-  contestId: string;
-}
 
 const FeedsScreen = () => {
   const [selectedContest, setSelectedContest] = useState<IContest | null>(null);
@@ -99,6 +94,8 @@ const FeedsScreen = () => {
   const renderContestItem = ({ item }: { item: IContest }) => {
     const { formattedTime, formattedDate } = formatDateTime(item.match?.startTime || '');
     return (
+      <>
+      {contests.length > 0 ? (
       <TouchableOpacity 
         style={[
           styles.contestItem,
@@ -139,6 +136,13 @@ const FeedsScreen = () => {
           </View>
         </View>
       </TouchableOpacity>
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No active contests found</Text>
+          <Text style={styles.emptySubText}>Check out My Contests or Leaderboard to explore more!</Text>
+        </View>
+      )}
+      </>
     );
   };
 
@@ -163,7 +167,7 @@ const FeedsScreen = () => {
         <View style={styles.contentContainer}>
           {isContestsLoading ? (
             renderContestSkeletons()
-          ) : (
+          ) : contests.length > 0 ? (
             <FlatList
               data={contests}
               horizontal
@@ -173,6 +177,11 @@ const FeedsScreen = () => {
               renderItem={renderContestItem}
               keyExtractor={(item) => item.id}
             />
+          ) : (
+            <View style={styles.emptyContestContainer}>
+              <Text style={styles.emptyText}>No active contests found</Text>
+              <Text style={styles.emptySubText}>Check out My Contests or Leaderboard to explore more!</Text>
+            </View>
           )}
           <ScrollView 
             style={styles.predictionScrollView}
@@ -314,9 +323,31 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  emptyContestContainer: {
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    margin: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
 

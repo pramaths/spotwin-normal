@@ -35,12 +35,12 @@ const PredictionQuestionGrid = ({
   return (
     <>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {questions.map((questionItem) => (
+            {questions.map((questionItem, index) => (
               <View key={questionItem.id} style={styles.questionWrapper}>
                 <PredictionQuestion
                   id={questionItem.id}
                   question={questionItem.question}
-                  difficultyLevel={questionItem.difficultyLevel as IDifficultyLevel}
+                  difficultyLevel={index === 3 ? "join for free" as IDifficultyLevel : questionItem.difficultyLevel as IDifficultyLevel}
                   contest={selectedContest}
                   timeRemaining={selectedContest?.match?.endTime || ''}
                   isUserParticipating={selectedContest ? isUserParticipatingInContest(selectedContest.id) : false}

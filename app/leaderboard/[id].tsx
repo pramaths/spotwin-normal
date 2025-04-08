@@ -15,20 +15,7 @@ interface LeaderboardEntry {
   prize?: string;
 }
 
-const mockLeaderboardData: LeaderboardEntry[] = [
-  { id: '1', rank: 1, username: 'champion123', score: 1250, prize: '0.5 SOL' },
-  { id: '2', rank: 2, username: 'sportsfan', score: 1100, prize: '0.3 SOL' },
-  { id: '3', rank: 3, username: 'gamemaster', score: 950, prize: '0.2 SOL' },
-  { id: '4', rank: 4, username: 'player4', score: 820 },
-  { id: '5', rank: 5, username: 'player5', score: 780 },
-  { id: '6', rank: 6, username: 'player6', score: 750 },
-  { id: '7', rank: 7, username: 'player7', score: 720 },
-  { id: '8', rank: 8, username: 'player8', score: 690 },
-  { id: '9', rank: 9, username: 'player9', score: 650 },
-  { id: '10', rank: 10, username: 'player10', score: 600 },
-];
 
-// Medal icons for top 3 positions
 const MedalIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) {
     return <Trophy size={24} color="#FFD700" />; // Gold
@@ -56,7 +43,7 @@ export default function LeaderboardScreen() {
         }
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
-        setLeaderboard(mockLeaderboardData);
+        setLeaderboard([]);
       }
     };
     fetchLeaderboard();
@@ -132,9 +119,6 @@ export default function LeaderboardScreen() {
           item.rank <= 3 && styles.topThreeUsername
         ]}>
           {item.username}
-        </Text>
-        <Text style={styles.score}>
-          {item.score.toLocaleString()} points
         </Text>
       </View>
 

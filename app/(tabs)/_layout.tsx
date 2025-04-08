@@ -1,13 +1,12 @@
 import { Tabs, Redirect } from 'expo-router';
-import { StyleSheet, Platform, View } from 'react-native';
+import { StyleSheet, Platform, View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 import { useAuthStore } from '../../store/authstore';
-import { User2 } from 'lucide-react-native';
+import { User2, Ticket } from 'lucide-react-native';
 
 import HomeIcon from '../../assets/icons/home.svg';
 import CupIcon from '../../assets/icons/cup.svg';
-import QuestionIcon from '../../assets/icons/question.svg';
 import FeedIcon from '../../assets/icons/feed.svg';
 
 import WhiteHome from '../../assets/icons/whitehome.svg';
@@ -16,7 +15,7 @@ import WhiteFeed from '../../assets/icons/whitefeed.svg';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 40 + (Platform.OS === 'ios' ? insets.bottom : 20);
+  const tabBarHeight = 45 + (Platform.OS === 'ios' ? insets.bottom : 15);
 
   return (
         <View style={{ flex: 1 }}>
@@ -26,7 +25,7 @@ export default function TabLayout() {
               tabBarStyle: {
                 ...styles.tabBar,
                 height: tabBarHeight,
-                paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
+                paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
                 backgroundColor: '#1A1A3A',
                 borderTopWidth: 0,
                 position: 'absolute',
@@ -36,7 +35,15 @@ export default function TabLayout() {
               },
               tabBarActiveTintColor: '#FFF',
               tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
-              tabBarLabelStyle: styles.tabBarLabel,
+              tabBarLabelStyle: {
+                ...styles.tabBarLabel,
+                fontSize: 11,
+                marginTop: 0,
+                marginBottom: 0,
+              },
+              tabBarItemStyle: {
+                paddingVertical: 3,
+              },
             }}
           >
             <Tabs.Screen
@@ -61,10 +68,17 @@ export default function TabLayout() {
               }}
             />
             <Tabs.Screen
+              name="tickets"
+              options={{
+                title: 'Tickets',
+                tabBarIcon: ({ focused }) => <Ticket color={focused ? "#FFF" : "rgba(255, 255, 255, 0.6)"} size={20} />,
+              }}
+            />
+            <Tabs.Screen
               name="profile"
               options={{
                 title: 'Profile',
-                tabBarIcon: ({ focused }) => focused ? <User2 color="#FFF" /> : <User2 color="rgba(255, 255, 255, 0.6)" />,
+                tabBarIcon: ({ focused }) => <User2 color={focused ? "#FFF" : "rgba(255, 255, 255, 0.6)"} size={20} />,
               }}
             />
             <Tabs.Screen
@@ -88,6 +102,18 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontFamily: 'Inter-Regular',
+    marginBottom: 0,
+    marginTop: 0,
+    textAlign: 'center',
+  },
+  visibleLabel: {
+    fontFamily: 'Inter-Regular',
     fontSize: 12,
+    height: 'auto',
+  },
+  hiddenLabel: {
+    height: 0,
+    margin: 0,
+    padding: 0,
   },
 });
