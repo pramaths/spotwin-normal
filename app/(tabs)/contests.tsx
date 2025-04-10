@@ -45,8 +45,6 @@ export default function ContestsScreen() {
 
 
       if (response.success && response.data && userContestsResponse.success) {
-        console.log("Fetched contests:", response.data.map((contest: IContest) => contest.id));
-        console.log("User contests:", userContestsResponse?.data?.map((contest: IContest) => contest.id));
         let availableContests = response.data.filter((contest: IContest) => !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id));
         setContests(availableContests);
         setUserContests(userContestsResponse.data || []);

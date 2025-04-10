@@ -2,7 +2,7 @@
   "expo": {
     "name": "spotwin",
     "slug": "spotwin",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -16,7 +16,7 @@
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.pramaths.spotwin",
-      "buildNumber": "4",
+      "buildNumber": "6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -63,7 +63,7 @@
         "expo-secure-store",
         {
           "configureAndroidBackup": true,
-          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+          "faceIDPermission": "Allow Spotwin to access your Face ID biometric data."
         }
       ],
       "expo-font"
