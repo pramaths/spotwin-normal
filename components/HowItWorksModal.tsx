@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Linking,
 } from 'react-native';
 import { useState, useEffect } from 'react';
 
@@ -17,19 +16,18 @@ interface SlideData {
   description: string;
 }
 
-
 const howItWorksSlides: SlideData[] = [
   {
     title: 'Join the contest!',
     description: 'Tap "Join" to enter the contest for FREE',
   },
   {
-    title: 'Answer ANY 9 Questions',
+    title: 'Answer 9 Questions',
     description: 'Answer 3 questions each from Easy, Medium and Hard sections',
   },
   {
     title: 'Leaderboard',
-    description: 'Lucky winners get FREE IPL Tickets',
+    description: 'Lucky winners get FREE Points, which can be redeemed for tickets',
   },
 ];
 
@@ -66,6 +64,23 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
 
   const currentSlide = howItWorksSlides[currentSlideIndex];
 
+  // Helper function to highlight difficulty words with color
+  const colorizeText = (text: string) => {
+    const words = text.split(' ');
+    return words.map((word, index) => {
+      let color = '';
+      if (word.toLowerCase() === 'easy') color = '#4CAF50'; // Green
+      else if (word.toLowerCase() === 'medium') color = '#FFC107'; // Yellow
+      else if (word.toLowerCase() === 'hard') color = '#F44336'; // Red
+      
+      return (
+        <Text key={index} style={[styles.slideDescriptionText, color ? { color } : null]}>
+          {word}{index < words.length - 1 ? ' ' : ''}
+        </Text>
+      );
+    });
+  };
+
   // We don't need to use Modal here since it's already wrapped in a Modal in HeaderProfile
   return (
     <View style={styles.overlay}>
@@ -78,7 +93,13 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
 
         <View style={styles.slide}>
           <Text style={styles.slideTitle}>{currentSlide.title}</Text>
-          <Text style={styles.slideDescription}>{currentSlide.description}</Text>
+          <View style={styles.slideDescription}>
+            {currentSlide.description.toLowerCase().includes('easy') || 
+             currentSlide.description.toLowerCase().includes('medium') || 
+             currentSlide.description.toLowerCase().includes('hard') 
+             ? colorizeText(currentSlide.description)
+             : <Text style={styles.slideDescriptionText}>{currentSlide.description}</Text>}
+          </View>
         </View>
 
         <View style={styles.indicatorContainer}>
@@ -141,7 +162,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   slide: {
-    width: width * 0.8, // Slightly less than screen width
+    width: width * 0.8,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -157,10 +178,15 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   slideDescription: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  slideDescriptionText: {
     fontSize: 14,
     textAlign: 'center',
     color: '#555',
-    paddingHorizontal: 10,
   },
   indicatorContainer: {
     flexDirection: 'row',

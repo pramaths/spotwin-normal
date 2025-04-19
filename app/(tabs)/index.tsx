@@ -17,7 +17,7 @@ import { ChevronRight } from 'lucide-react-native';
 import HeaderProfile from '../../components/HeaderProfile';
 import { ContestCard } from '../../components/ContestCard';
 import PaymentModal from '../../components/PaymentModal';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatDateTime } from '../../utils/dateUtils';
 import { IContest, IUser } from '../../types';
@@ -28,6 +28,8 @@ import { AUTH_ME, USER_CONTESTS, CONTESTS } from '../../routes/api';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useAuthStore } from '../../store/authstore';
 import { ContestCardSkeleton, SkeletonItem } from '../../components/SkeletonLoading';
+import React from 'react';
+import * as Updates from 'expo-updates';
 
 const sportsCategories = [
   { id: '1', name: 'Cricket', icon: '🏏' },
@@ -49,6 +51,7 @@ export default function HomeScreen() {
   const setUser = useUserStore((state) => state.setUser);
   const {isAuthenticated} = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
+  const dataFetchedRef = useRef(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -62,42 +65,96 @@ export default function HomeScreen() {
     }
   }, [isAuthenticated, isMounted, router]);
 
-  const { notification, expoPushToken, error } = useNotification();
-
-  if (error) {
-    console.log("Error:", error);
-  }
-
   useEffect(() => {
-    fetchUser();
-    fetchContests();
-  }, []);
+    if (isMounted) {
+      fetchUser();
+      fetchContests();
+      checkForUpdates();
+    }
+  }, [isMounted]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isMounted) {
+        fetchUser();
+        
+        if (contests.length === 0 || !dataFetchedRef.current) {
+          setTimeout(() => {
+            fetchContests();
+          }, 100);
+        } else {
+          console.log("Contests already loaded, skipping fetch on focus");
+        }
+      }
+      return () => {
+        if (contests.length === 0) {
+          dataFetchedRef.current = false;
+        }
+      };
+    }, [isMounted, user?.id, contests.length])
+  );
+
+  async function checkForUpdates() {
+    try {
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+      }
+    } catch (error) {
+      console.log('Error checking for updates:', error);
+    }
+  }
   const fetchUser = async () => {
-    const response = await apiClient<IUser>(AUTH_ME, 'GET');
-    if (response.success && response.data) {
-      setUser(response.data);
+    try {
+      const response = await apiClient<IUser>(AUTH_ME, 'GET');
+      if (response.success && response.data) {
+        setUser(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
     }
   };
 
   const fetchContests = async () => {
+    if (dataFetchedRef.current && !refreshing) {
+      console.log("Data already fetched, skipping redundant fetch");
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-      if (user?.id) {
-        const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
-
-        if (response.success && response.data && userContestsResponse.success) {
-          setContests(response.data);
-          setUserContests(userContestsResponse.data || []);
-        }
-      } else {
-        if (response.success && response.data) {
-          setContests(response.data);
-          setUserContests([]);
+      
+      if (response.success && response.data) {
+        const sortedContests = response.data.sort((a, b) => {
+          const dateA = new Date(a.match?.startTime || '');
+          const dateB = new Date(b.match?.startTime || '');
+          return dateA.getTime() - dateB.getTime();
+        });
+        
+        setContests(sortedContests);
+        
+        if (user?.id) {
+          try {
+            const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
+            
+            if (userContestsResponse.success) {
+              if (userContestsResponse.data && userContestsResponse.data.length > 0) {
+                setUserContests(userContestsResponse.data);
+              } else {
+                setUserContests([]);
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching user contests:", error);
+          }
         } else {
-          console.error("Failed to fetch contests:", response.message);
+          setUserContests([]);
         }
+        dataFetchedRef.current = true;
+      } else {
+        console.error("Failed to fetch contests:", response.message);
       }
     } catch (error) {
       console.error("Error fetching contests:", error);
@@ -108,6 +165,8 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    dataFetchedRef.current = false;
+    await fetchUser();
     await fetchContests();
     setRefreshing(false);
   };
@@ -119,16 +178,15 @@ export default function HomeScreen() {
   const filterContestsBySport = (sportId: string) => {
     const sportName = sportsCategories.find(sport => sport.id === sportId)?.name;
     if (!sportName || contests.length === 0) {
-      setFilteredContests([]);
+      if (filteredContests.length > 0) {
+        setFilteredContests([]);
+      }
       return;
     }
 
     const filtered = contests.filter(contest => {
-      console.log("contest.match?.event?.sport?.name", contest.match?.event?.sport?.name);
-      console.log("sportName", sportName);
       return contest.match?.event?.sport?.name.toLowerCase() === sportName.toLowerCase()
     });
-    console.log("filtered", filtered);
 
     setFilteredContests(filtered.length > 0 ? filtered : []);
   };
@@ -218,7 +276,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Prize</Text>
               <Text style={styles.footerValue}>
-                IPL Ticket
+                4000 Points
               </Text>
             </View>
           </View>
@@ -247,7 +305,7 @@ export default function HomeScreen() {
           styles.stackedCard, 
           styles.secondStackedCard, 
           { 
-            backgroundColor: '#9797e8', // Enhanced color for stacked card
+            backgroundColor: '#9797e8',
             ...Platform.select({
               ios: {
                 shadowColor: '#000',
@@ -267,7 +325,7 @@ export default function HomeScreen() {
         <View style={[
           styles.featuredCard, 
           { 
-            backgroundColor: '#e0e0ff', // Enhanced color for main card
+            backgroundColor: '#e0e0ff',
             ...Platform.select({
               ios: {
                 shadowColor: '#000',
@@ -340,12 +398,12 @@ export default function HomeScreen() {
     return (
       <View style={styles.emptyContestContainer}>
         <Text style={styles.emptyContestText}>No contests available</Text>
-        <Text style={styles.emptyContestSubText}>Check out My contests page to see your contests</Text>
+        <Text style={styles.emptyContestSubText}>Try refreshing or check again later</Text>
         <TouchableOpacity 
           style={styles.emptyContestButton}
-          onPress={() => router.push('/(tabs)/contests')}
+          onPress={onRefresh}
         >
-          <Text style={styles.emptyContestButtonText}>My Contests</Text>
+          <Text style={styles.emptyContestButtonText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );
@@ -386,14 +444,6 @@ export default function HomeScreen() {
               decelerationRate="fast"
               pagingEnabled
               snapToInterval={width * 0.9 + width * 0.05 * 2} 
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  colors={['#3498db']}
-                  tintColor="#3498db"
-                />
-              }
             />
           ) : (
             <View style={styles.emptyFeaturedContainer}>
@@ -610,7 +660,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   participatingButton: {
-    backgroundColor: '#10B981', // Darker green for "Already Participating"
+    backgroundColor: '#10B981',
   },
   joinButtonText: {
     color: '#FFF',
@@ -682,10 +732,9 @@ const styles = StyleSheet.create({
   activeCategoryName: {
     color: '#FFF',
   },
-  // All contests
   contestCardContainer: {
     paddingHorizontal: 16,
-    marginBottom: 100, // Increased bottom margin to ensure content doesn't get hidden behind tab bar
+    marginBottom: 100,
     marginTop: 2,
   },
   noContestsText: {

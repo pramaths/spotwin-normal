@@ -13,9 +13,7 @@ export interface ApiResponse<T> {
 
 async function getValueFor(key: string) {
   try {
-    console.log(`Attempting to retrieve ${key} from SecureStore`);
     const result = await SecureStore.getItemAsync(key);
-    console.log(`${key} retrieval result:`, result ? 'Found token' : 'No token found');
     return result;
   } catch (error) {
     console.error(`Error retrieving ${key} from SecureStore:`, error);
@@ -32,9 +30,6 @@ export interface ErrorResponse {
   details?: any;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL as string;
-console.log("API_BASE_URL:", API_BASE_URL);
-
 const apiClient = async <T,>(
   endpoint: string,
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" = "GET",
@@ -49,7 +44,6 @@ const apiClient = async <T,>(
     const token = await getValueFor("token");
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
-      console.log("Authorization header set with token");
     } else {
       console.log("No token available for Authorization header");
     }

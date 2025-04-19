@@ -2,21 +2,21 @@
   "expo": {
     "name": "spotwin",
     "slug": "spotwin",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "icon":{
-        "light":"./assets/images/apple.png",
-        "dark":"./assets/images/apple.png",
-        "tinted":"./assets/images/apple.png"
+      "icon": {
+        "light": "./assets/images/apple.png",
+        "dark": "./assets/images/apple.png",
+        "tinted": "./assets/images/apple.png"
       },
       "supportsTablet": true,
       "bundleIdentifier": "com.pramaths.spotwin",
-      "buildNumber": "6",
+      "buildNumber": "8",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -53,10 +53,13 @@
         {
           "launchMode": "most-recent"
         }
-      ],[
+      ],
+      [
         "expo-notifications",
         {
-          "sounds": ["./assets/sound.wav"]
+          "sounds": [
+            "./assets/sound.wav"
+          ]
         }
       ],
       [
@@ -79,6 +82,13 @@
       "eas": {
         "projectId": "14da54a5-7894-4e8e-9a8d-b8a54de22b9d"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/14da54a5-7894-4e8e-9a8d-b8a54de22b9d"
     }
   }
 }

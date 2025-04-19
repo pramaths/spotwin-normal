@@ -58,7 +58,7 @@ const PredictionQuestion = ({
             case IDifficultyLevel.HARD:
                 return '#F44336'; // Red
             default:
-                return '#E0E0E0';
+                return '#0032ff';
         }
     };
     

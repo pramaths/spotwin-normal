@@ -10,7 +10,6 @@ import {
   Image,
   Easing,
   ActivityIndicator,
-  Share
 } from 'react-native';
 import { ChevronLeft, Check, RefreshCw } from 'lucide-react-native';
 import { IContest } from '../types';
@@ -21,6 +20,8 @@ import { getUserBalance } from '../utils/common';
 import { JOIN_CONTEST } from '../routes/api';
 import apiClient from '../utils/api';
 import { router } from 'expo-router';
+import { useContestsStore } from '@/store/contestsStore';
+import { handleInvite } from '@/utils/common';
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -31,7 +32,6 @@ interface PaymentModalProps {
 }
 
 const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipating = false }: PaymentModalProps) => {
-  const [amount, setAmount] = useState(contest?.entryFee || 0.2);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | React.ReactElement | null>(null);
@@ -42,6 +42,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const { user } = useUserStore();
+  const { userContests, setUserContests } = useContestsStore();
   const [userBalance, setUserBalance] = useState<number | null>(0);
 
   const animateSuccess = () => {
@@ -101,22 +102,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     }
   };
 
-  const handleInvite = async (referralCode: string) => {
-    const playStoreUrl = `https://play.google.com/store/apps/details?id=`;
-    const appStoreUrl = `https://apps.apple.com/in/app/spotwin/id6743806381`;
-    
-    const message = `🏆 Ready to WIN IPL TICKETS? Join me on Spotwin! 🏆
-    \n\nPredict questions, earn points, and redeem for IPL tickets! Use my referral code (${referralCode}) to get bonus points.
-    \n\nJoin contests 🎮 → Earn points 🎯 → Buy tickets 🎟️\n\nDownload now:\n
-    ios: ${appStoreUrl}
-    android: ${playStoreUrl}`;
-    try {
-      await Share.share({ message });
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
   const checkIfParticipating = async () => {
     if (isUserParticipating !== undefined) {
       setIsParticipating(isUserParticipating);
@@ -136,7 +121,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const handlePayment = async () => {
     if (isLoading) return;
 
-    // If user is already participating, just close the modal
     if (isParticipating) {
       onClose();
       return;
@@ -167,7 +151,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       });
       if(response.success) {
         setIsParticipating(true);
-        // Update user balance after successful payment
+        setUserContests([...userContests, contest]);
         fetchUserBalance();
         animateSuccess(); 
         setTimeout(() => {
@@ -181,7 +165,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       }
     } catch (err) {
       console.error("Payment error:", err);
-      setError(err instanceof Error ? err.message : "Failed to process payment");
+      setError(err instanceof Error ? err.message : "Failed to join contest");
     } finally {
       setIsLoading(false);
     }
@@ -190,7 +174,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   useEffect(() => {
     if (isVisible) {
       console.log("Modal opened, fetching initial balance");
-      setAmount(contest?.entryFee || 0.2);
       setShowSuccess(false);
       setError(null);
       fetchUserBalance();
@@ -251,7 +234,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>1st Prize</Text>
-              <Text style={styles.statValue}>IPL Ticket</Text>
+              <Text style={styles.statValue}>4000 Points</Text>
             </View>
           </View>
 
@@ -316,7 +299,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
             <View style={styles.loadingOverlay}>
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#0504dc" />
-                <Text style={styles.loadingText}>Processing payment...</Text>
+                <Text style={styles.loadingText}>Processing...</Text>
               </View>
             </View>
           )}
@@ -359,7 +342,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
                   { opacity: successOpacity }
                 ]}
               >
-                Payment successful!
+                Joined successful!
               </Animated.Text>
             </View>
           )}

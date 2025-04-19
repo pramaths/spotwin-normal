@@ -378,44 +378,6 @@ export default function PredictionScreen() {
                   onRemovePrediction={() => handleRemovePrediction(q.id)}
                 />
               ))}
-              
-              {/* Next button for Easy and Medium difficulties */}
-              {(selectedDifficulty === IDifficultyLevel.EASY || 
-                selectedDifficulty === IDifficultyLevel.MEDIUM) && 
-                getAnsweredCountByDifficulty(selectedDifficulty) >= 3 && (
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => {
-                    const nextIndex = difficultyTabs.indexOf(selectedDifficulty) + 1;
-                    if (nextIndex < difficultyTabs.length) {
-                      setSelectedDifficulty(difficultyTabs[nextIndex]);
-                    }
-                  }}
-                >
-                  <Text style={styles.actionButtonText}>Next</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFF" />
-                </TouchableOpacity>
-              )}
-              
-              {selectedDifficulty === IDifficultyLevel.HARD && 
-                getAnsweredCountByDifficulty(IDifficultyLevel.HARD) >= 3 && (
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.submitButton]}
-                  onPress={() => {
-                    setPredictionMessage({
-                      text: "Successfully Submitted your predictions",
-                      type: IOutcome.YES
-                    });
-                    setTimeout(() => {
-                      setPredictionMessage(null);
-                    }, 3000);
-                    router.push('/');
-                  }}
-                >
-                  <Text style={styles.actionButtonText}>Submit</Text>
-                  <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-                </TouchableOpacity>
-              )}
             </>
           ) : (
             <View style={styles.noQuestionsContainer}>
@@ -427,6 +389,47 @@ export default function PredictionScreen() {
         </ScrollView>
       </SafeAreaView>
 
+      {/* Next button for Easy and Medium difficulties - As absolute position */}
+      {(selectedDifficulty === IDifficultyLevel.EASY || 
+        selectedDifficulty === IDifficultyLevel.MEDIUM) && 
+        getAnsweredCountByDifficulty(selectedDifficulty) >= 3 && (
+        <TouchableOpacity 
+          style={styles.fixedActionButton}
+          onPress={() => {
+            const nextIndex = difficultyTabs.indexOf(selectedDifficulty) + 1;
+            if (nextIndex < difficultyTabs.length) {
+              setSelectedDifficulty(difficultyTabs[nextIndex]);
+            }
+          }}
+        >
+          <Text style={styles.actionButtonText}>Next</Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFF" />
+        </TouchableOpacity>
+      )}
+      
+      {selectedDifficulty === IDifficultyLevel.HARD && 
+        getAnsweredCountByDifficulty(IDifficultyLevel.HARD) >= 3 && (
+        <TouchableOpacity 
+          style={[styles.fixedActionButton, styles.submitButton]}
+          onPress={() => {
+            setPredictionMessage({
+              text: "Successfully Submitted your predictions",
+              type: IOutcome.YES
+            });
+            setTimeout(() => {
+              setPredictionMessage(null);
+              router.push({
+                pathname: "/contest-detail/[id]",
+                params: { id: contestId as string }
+              });
+            }, 2000);
+          }}
+        >
+          <Text style={styles.actionButtonText}>Submit</Text>
+          <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+        </TouchableOpacity>
+      )}
+
       {predictionMessage && (
         <View
           style={[
@@ -434,12 +437,6 @@ export default function PredictionScreen() {
             predictionMessage.type === IOutcome.YES ? styles.yesMessage : styles.noMessage
           ]}
         >
-          <Ionicons 
-            name={predictionMessage.type === IOutcome.YES ? "checkmark-circle" : "alert-circle"} 
-            size={24} 
-            color="#FFF" 
-            style={styles.predictionIcon}
-          />
           <Text style={styles.predictionMessageText}>{predictionMessage.text}</Text>
         </View>
       )}
@@ -636,7 +633,7 @@ const styles = StyleSheet.create({
     marginVertical: 6
   },
   scrollViewContent: {
-    paddingBottom: 60
+    paddingBottom: 120
   },
   teamSmallImage: {
     width: 30,
@@ -651,12 +648,13 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
-  actionButton: {
+  fixedActionButton: {
+    position: 'absolute',
+    bottom: 80, 
+    right: 20,
     backgroundColor: '#3768E3',
     padding: 15,
     borderRadius: 12,
-    marginVertical: 20,
-    marginHorizontal: 20,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -665,6 +663,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    zIndex: 20,
   },
   actionButtonText: {
     color: '#FFF',

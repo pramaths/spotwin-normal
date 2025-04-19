@@ -37,7 +37,7 @@ export default function TabLayout() {
               tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
               tabBarLabelStyle: {
                 ...styles.tabBarLabel,
-                fontSize: 11,
+                fontSize: 10,
                 marginTop: 0,
                 marginBottom: 0,
               },

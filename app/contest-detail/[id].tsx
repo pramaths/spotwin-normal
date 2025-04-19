@@ -8,6 +8,7 @@ import { IContest,IContestStatus } from '@/types';
 import { useUserStore } from '@/store/userStore';
 import { CONTESTS_BY_ID } from '@/routes/api';
 import apiClient from '@/utils/api';
+import { StatusBar } from 'expo-status-bar';
 
 export default function ContestDetailScreen() {
   const { id: contestId } = useLocalSearchParams<{ id: string }>();
@@ -83,6 +84,7 @@ export default function ContestDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="inverted" />
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>

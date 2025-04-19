@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import HeaderProfile from '../../components/HeaderProfile';
 import { UserContestCard } from '../../components/UserContest';
@@ -22,21 +22,36 @@ export default function ContestsScreen() {
   const { user } = useUserStore();
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
 
+  useEffect(() => {
+    fetchContests();
+  }, [user?.id]);
+
   const handleTabPress = (tab: TabOption) => {
     setSelectedTab(tab);
   }
 
-  const getContests = () => {
-    if (!userContests || userContests.length === 0) {
-      return [];
+  const getContests = (): IContest[] => {
+    if (!userContests || userContests.length === 0) return [];
+  
+    let filteredContests: IContest[] = [];
+  
+    if (selectedTab === 'ACTIVE') {
+      filteredContests = userContests.filter(
+        (contest) => contest && (contest.status === 'LIVE' || contest.status === 'OPEN')
+      );
+    } else {
+      filteredContests = userContests
+        .filter((contest) => contest && contest.status === 'COMPLETED')
+        .sort((a, b) => {
+          const timeA = new Date(a.match?.startTime || '').getTime();
+          const timeB = new Date(b.match?.startTime || '').getTime();
+          return timeB - timeA; 
+        });
     }
-    
-    return selectedTab === 'ACTIVE'
-      ? userContests.filter((data: IContest) =>
-        data && (data.status === 'LIVE' || data.status === 'OPEN'))
-      : userContests.filter((contest: IContest) =>
-        contest && contest.status === 'COMPLETED');
-  }
+  
+    return filteredContests;
+  };
+  
 
   const fetchContests = async () => {
     try {

@@ -9,7 +9,7 @@ interface UserContestCardProps {
 }
 
 export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: UserContestCardProps) => {
-  const { event, entryFee, currency, id, match } = contest;
+  const { entryFee, id, match } = contest;
 
   const handlePress = () => {
     router.push({
@@ -20,7 +20,6 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: Use
   };
 
   const handleLeaderboardPress = (e: GestureResponderEvent) => {
-    // Prevent the card press event from firing
     e.stopPropagation();
     router.push({
       pathname: "/leaderboard/[id]",
@@ -78,7 +77,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: Use
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Entry Fee</Text>
-            <Text style={styles.statValue}>{entryFee} {currency}</Text>
+            <Text style={styles.statValue}>{entryFee} Points</Text>
           </View>
 
           <View style={styles.dateTimeContainer}>
@@ -219,13 +218,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#0504dc',
     paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
-    width: '80%',
+    borderRadius: 12,
+    width: '90%',
     alignItems: 'center',
   },
   leaderboardButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
   },
 });

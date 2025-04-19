@@ -134,7 +134,7 @@ const Referral: React.FC<ReferralProps> = ({ onSubmit, errorMessage, isLoading =
     <View style={styles.container}>
       <Text style={styles.title}>Enter Referral Code</Text>
       <Text style={styles.subtitle}>
-        Enter a friend's code to claim your bonus rewards
+        Enter a friend's referral code to claim your bonus rewards
       </Text>
 
       <Animated.View 
@@ -157,7 +157,6 @@ const Referral: React.FC<ReferralProps> = ({ onSubmit, errorMessage, isLoading =
               onChangeText={text => handleInputChange(text, index)}
               onKeyPress={e => handleKeyPress(e, index)}
               maxLength={1}
-              autoCapitalize="characters"
               keyboardType="default"
               autoCorrect={false}
               placeholderTextColor="#444"
@@ -176,7 +175,7 @@ const Referral: React.FC<ReferralProps> = ({ onSubmit, errorMessage, isLoading =
           onPress={handlePaste}
           disabled={isPasting || isLoading}
         >
-          <ClipboardPaste size={18} color="#1d9bf0" />
+          <ClipboardPaste size={18} color="white" />
           <Text style={styles.pasteButtonText}>
             {isPasting ? 'Pasting...' : 'Paste Code'}
           </Text>
@@ -195,7 +194,7 @@ const Referral: React.FC<ReferralProps> = ({ onSubmit, errorMessage, isLoading =
           ) : (
             <>
               <Text style={[styles.submitButtonText, isValid && styles.submitButtonTextActive]}>Submit</Text>
-              <ArrowRight size={18} color={isValid ? "#fff" : "#9EA3AE"} />
+              <ArrowRight size={18} color={isValid ? "#fff" : "#fff"} />
             </>
           )}
         </TouchableOpacity>
@@ -219,7 +218,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: '#a4c8dd',
+    color: '#0032ff',
     marginBottom: 24,
     textAlign: 'center',
     paddingHorizontal: 24,
@@ -239,7 +238,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#0032ff',
     fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
@@ -278,11 +277,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#1d9bf0',
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#0032ff',
   },
   pasteButtonText: {
     marginLeft: 6,
-    color: '#1d9bf0',
+    color: 'white',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -293,14 +292,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#0032ff',
     gap: 8,
   },
   submitButtonActive: {
     backgroundColor: '#1d9bf0',
   },
   submitButtonText: {
-    color: '#9EA3AE',
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },

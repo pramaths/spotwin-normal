@@ -11,7 +11,8 @@
         "env": {
           "PLATFORM": "android"
         }
-      }
+      },
+      "channel": "base"
     },
     "development": {
       "extends": "base",
@@ -22,7 +23,8 @@
       "android": {
         "buildType": "apk",
         "distribution": "internal"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "extends": "base",
@@ -32,7 +34,8 @@
       },
       "env": {
         "APP_ENV": "preview"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "extends": "base",
@@ -41,7 +44,9 @@
       },
       "env": {
         "APP_ENV": "production"
-      }
+      },
+      "channel": "production",
+      "distribution": "store"
     }
   },
   "submit": {

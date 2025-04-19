@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Share, Clipboard, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Clipboard, Linking, TextInput, TouchableWithoutFeedback, ToastAndroid } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Settings, CircleHelp as HelpCircle, LogOut, RefreshCcw, Copy, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { IUser } from '../../types';
 import { CHANGE_USERNAME, AUTH_ME } from '@/routes/api';
 import apiClient from '@/utils/api';
 import * as SecureStore from 'expo-secure-store';
+import { handleInvite } from '@/utils/common';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -16,8 +17,10 @@ const ProfileScreen = () => {
   const [newUsername, setNewUsername] = useState(user?.username || '');
   const [copied, setCopied] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshingPoints, setIsRefreshingPoints] = useState(false);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   const getRandomColor = () => {
     const colors = [
@@ -34,14 +37,12 @@ const ProfileScreen = () => {
 
 
   const fetchUser = async () => {
-    setIsLoading(true);
     try {
       const response = await apiClient(AUTH_ME, 'GET');
       if (response.success && response.data) {
         const newUserData = response.data as IUser;
         if (JSON.stringify(user) !== JSON.stringify(newUserData)) {
           if (user?.username && user.username !== newUserData.username) {
-            console.log('Preserving existing username: ', user.username);
             newUserData.username = user.username;
           }
           setUser(newUserData);
@@ -51,13 +52,12 @@ const ProfileScreen = () => {
       console.error('Error fetching user data:', error);
     } finally {
       setIsLoading(false);
+      setIsRefreshingPoints(false);
     }
   };
 
   useEffect(() => {
-    if (!user || !user.id) {
-      fetchUser();
-    }
+    fetchUser();
   }, []);
 
   const handleLogOut = async () => {
@@ -70,6 +70,7 @@ const ProfileScreen = () => {
       Clipboard.setString(user.referralCode);
       setCopiedItem('referralCode');
       setCopied(true);
+      ToastAndroid.show('Referral code copied', ToastAndroid.SHORT);
       setTimeout(() => {
         setCopied(false);
         setCopiedItem(null);
@@ -90,7 +91,7 @@ const ProfileScreen = () => {
   };
 
   const handleSaveUsername = async () => {
-    if (isSavingUsername) return; // Prevent multiple clicks
+    if (isSavingUsername) return; 
 
     setIsSavingUsername(true);
     try {
@@ -111,25 +112,18 @@ const ProfileScreen = () => {
     }
   };
 
-  const openInstagram = () => {
-    Linking.openURL('https://www.instagram.com/spotwin.in');
+  const handleCloseUsernameEdit = () => {
+    setIsEditingUsername(false);
+    setNewUsername(user?.username || '');
   };
 
-  const handleInvite = async (referralCode: string) => {
-    const playStoreUrl = `https://spotwin.in`;
-    const appStoreUrl = `https://apps.apple.com/in/app/spotwin/id6743806381`;
+  const refreshUserPoints = () => {
+    setIsRefreshingPoints(true);
+    fetchUser();
+  };
 
-    const message = `🏆 Ready to WIN IPL TICKETS? Join me on Spotwin! 🏆
-    \n\nPredict questions, earn points, and redeem for IPL tickets! Use my referral code (${referralCode}) to get bonus points.
-    \n\nJoin contests 🎮 → Earn points 🎯 → Buy tickets 🎟️\n\nDownload now:\n
-    ios: ${appStoreUrl}
-    android: ${playStoreUrl}`;
-
-    try {
-      await Share.share({ message });
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
+  const openInstagram = () => {
+    Linking.openURL('https://www.instagram.com/spotwin.in');
   };
 
   const handleDeleteAccount = () => {
@@ -140,157 +134,235 @@ const ProfileScreen = () => {
     Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.header}>
-          <View style={styles.profileContainer}>
-            {user?.imageUrl ? (
-              <Image
-                source={{ uri: user.imageUrl }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: getRandomColor() }]}>
-                <Text style={styles.profileImagePlaceholderText}>
-                  {getInitial(user?.username || '')}
-                </Text>
-              </View>
-            )}
-            <View style={styles.profileInfo}>
-              {isEditingUsername ? (
-                <View style={styles.editUsernameContainer}>
-                  <TextInput
-                    style={styles.usernameInput}
-                    value={newUsername}
-                    onChangeText={setNewUsername}
-                    autoFocus
-                    placeholder="Enter new username"
-                  />
-                  <TouchableOpacity
-                    style={[styles.saveButton, isSavingUsername && styles.disabledButton]}
-                    onPress={handleSaveUsername}
-                    disabled={isSavingUsername}
-                  >
-                    {isSavingUsername ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <Text style={styles.saveButtonText}>Save</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.usernameContainer}>
-                  <Text style={styles.profileName}>{user?.username}</Text>
-                  <TouchableOpacity
-                    onPress={() => setIsEditingUsername(true)}
-                    style={styles.editButton}
-                  >
-                    <Settings size={16} color="#666" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+  useEffect(() => {
+    if (isEditingUsername) {
+      inputRef.current?.focus();
+    }
+  }, [isEditingUsername]);
+
+  const SkeletonText = ({ width, height = 14, style }: { width: number | string, height?: number, style?: any }) => (
+    <View style={[styles.skeleton, { width: width as number, height }, style]} />
+  );
+
+  const ProfileSkeleton = () => (
+    <>
+      <View style={styles.header}>
+        <View style={styles.profileContainer}>
+          <View style={[styles.skeleton, styles.profileImageSkeleton]} />
+          <View style={styles.profileInfo}>
+            <SkeletonText width={150} height={24} />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.infoCard}>
+        <View style={styles.infoItem}>
+          <SkeletonText width={100} />
+          <View style={{ marginTop: 8 }}>
+            <SkeletonText width={180} height={18} />
           </View>
         </View>
 
-        <View style={styles.infoCard}>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Phone Number</Text>
-            <TouchableOpacity onPress={handleCopyPhoneNumber} style={styles.infoValueContainer}>
-              <Text style={styles.infoValue}>{user?.phoneNumber}</Text>
-              <Copy size={16} color="#0504dc" style={styles.copyIcon} />
-            </TouchableOpacity>
-            {copied && copiedItem === 'phoneNumber' && <Text style={styles.copiedText}>Phone number copied!</Text>}
+        <View style={styles.infoItem}>
+          <SkeletonText width={60} />
+          <View style={{ marginTop: 8 }}>
+            <SkeletonText width={100} height={24} />
           </View>
+        </View>
 
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Points</Text>
-            <View style={styles.pointsContainer}>
-              <Text style={styles.pointsValue}>{user?.points || 0}</Text>
+        <View style={styles.infoItem}>
+          <SkeletonText width={100} />
+          <View style={{ marginTop: 8 }}>
+            <SkeletonText width={180} height={18} />
+          </View>
+        </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <SkeletonText width={40} height={20} />
+            <SkeletonText width={60} height={14} style={{ marginTop: 8 }} />
+          </View>
+          <View style={styles.statItem}>
+            <SkeletonText width={40} height={20} />
+            <SkeletonText width={40} height={14} style={{ marginTop: 8 }} />
+          </View>
+          <View style={styles.statItem}>
+            <SkeletonText width={40} height={20} />
+            <SkeletonText width={60} height={14} style={{ marginTop: 8 }} />
+          </View>
+        </View>
+      </View>
+    </>
+  );
+
+  return (
+    <TouchableWithoutFeedback onPress={isEditingUsername ? handleCloseUsernameEdit : undefined}>
+      <View style={{ flex: 1 }}>
+        <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+            {isLoading ? (
+              <ProfileSkeleton />
+            ) : (
+              <>
+                <View style={styles.header}>
+                  <View style={styles.profileContainer}>
+                    {user?.imageUrl ? (
+                      <Image
+                        source={{ uri: user.imageUrl }}
+                        style={styles.profileImage}
+                      />
+                    ) : (
+                      <View style={[styles.profileImagePlaceholder, { backgroundColor: getRandomColor() }]}>
+                        <Text style={styles.profileImagePlaceholderText}>
+                          {getInitial(user?.username || '')}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.profileInfo}>
+                      {isEditingUsername ? (
+                        <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                          <View style={styles.editUsernameContainer}>
+                            <TextInput
+                              ref={inputRef}
+                              style={styles.usernameInput}
+                              value={newUsername}
+                              onChangeText={setNewUsername}
+                              placeholder="Enter new username"
+                            />
+                            <TouchableOpacity
+                              style={[styles.saveButton, isSavingUsername && styles.disabledButton]}
+                              onPress={handleSaveUsername}
+                              disabled={isSavingUsername}
+                            >
+                              {isSavingUsername ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                              ) : (
+                                <Text style={styles.saveButtonText}>Save</Text>
+                              )}
+                            </TouchableOpacity>
+                          </View>
+                        </TouchableWithoutFeedback>
+                      ) : (
+                        <View style={styles.usernameContainer}>
+                          <Text style={styles.profileName}>{user?.username}</Text>
+                          <TouchableOpacity
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              setIsEditingUsername(true);
+                            }}
+                            style={styles.editButton}
+                          >
+                            <Settings size={16} color="#666" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.infoCard}>
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoLabel}>Phone Number</Text>
+                    <TouchableOpacity onPress={handleCopyPhoneNumber} style={styles.infoValueContainer}>
+                      <Text style={styles.infoValue}>{user?.phoneNumber}</Text>
+                      <Copy size={16} color="#0504dc" style={styles.copyIcon} />
+                    </TouchableOpacity>
+                    {copied && copiedItem === 'phoneNumber' && <Text style={styles.copiedText}>Phone number copied!</Text>}
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoLabel}>Points</Text>
+                    <View style={styles.pointsContainer}>
+                      {isRefreshingPoints ? (
+                        <View style={styles.pointsValueContainer}>
+                          <SkeletonText width={80} height={24} />
+                        </View>
+                      ) : (
+                        <Text style={styles.pointsValue}>{user?.points || 0}</Text>
+                      )}
+                      <TouchableOpacity
+                        style={styles.refreshButton}
+                        onPress={refreshUserPoints}
+                        disabled={isRefreshingPoints}
+                      >
+                        {isRefreshingPoints ? (
+                          <ActivityIndicator size="small" color="#0504dc" />
+                        ) : (
+                          <RefreshCcw size={18} color="#0504dc" />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoLabel}>Referral Code</Text>
+                    <TouchableOpacity onPress={handleCopyReferralCode} style={styles.infoValueContainer}>
+                      <Text style={styles.infoValue}>{user?.referralCode}</Text>
+                      <Copy size={16} color="#0504dc" style={styles.copyIcon} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.statsContainer}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{user?.totalContests || 0}</Text>
+                      <Text style={styles.statLabel}>Contests</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{user?.totalContestsWon || 0}</Text>
+                      <Text style={styles.statLabel}>Wins</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{user?.referrals?.length || 0}</Text>
+                      <Text style={styles.statLabel}>Referrals</Text>
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
+
+            <View style={styles.menuSection}>
               <TouchableOpacity
-                style={styles.refreshButton}
-                onPress={() => {
-                  setIsLoading(true);
-                  fetchUser();
-                }}
-                disabled={isLoading}
+                style={styles.menuItem}
+                onPress={openInstagram}
               >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#0504dc" />
-                ) : (
-                  <RefreshCcw size={18} color="#0504dc" />
-                )}
+                <View style={styles.menuIconContainer}>
+                  <HelpCircle size={24} color="#000" />
+                </View>
+                <Text style={styles.menuText}>Help & support</Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Referral Code</Text>
-            <TouchableOpacity onPress={handleCopyReferralCode} style={styles.infoValueContainer}>
-              <Text style={styles.infoValue}>{user?.referralCode}</Text>
-              <Copy size={16} color="#0504dc" style={styles.copyIcon} />
+            <View style={styles.menuSection}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => handleInvite(user?.referralCode || '')}
+              >
+                <View style={styles.menuIconContainer}>
+                  <HelpCircle size={24} color="#000" />
+                </View>
+                <Text style={styles.menuText}>Invite friends</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogOut}
+            >
+              <LogOut size={20} color="#FF3B30" />
+              <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
-            {copied && copiedItem === 'referralCode' && <Text style={styles.copiedText}>Referral code copied!</Text>}
-          </View>
 
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.totalContests || 0}</Text>
-              <Text style={styles.statLabel}>Contests</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.totalContestsWon || 0}</Text>
-              <Text style={styles.statLabel}>Wins</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.referrals?.length || 0}</Text>
-              <Text style={styles.statLabel}>Referrals</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.menuSection}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={openInstagram}
-          >
-            <View style={styles.menuIconContainer}>
-              <HelpCircle size={24} color="#000" />
-            </View>
-            <Text style={styles.menuText}>Help & support</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.menuSection}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => handleInvite(user?.referralCode || '')}
-          >
-            <View style={styles.menuIconContainer}>
-              <HelpCircle size={24} color="#000" />
-            </View>
-            <Text style={styles.menuText}>Invite friends</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogOut}
-        >
-          <LogOut size={20} color="#FF3B30" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteAccountButton}
-          onPress={handleDeleteAccount}
-        >
-          <Trash2 size={20} color="#FF3B30" />
-          <Text style={styles.deleteAccountText}>Delete Account</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={handleDeleteAccount}
+            >
+              <Trash2 size={20} color="#FF3B30" />
+              <Text style={styles.deleteAccountText}>Delete Account</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -590,6 +662,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  pointsValueContainer: {
+    height: 24,
+    justifyContent: 'center',
+  },
   pointsValue: {
     fontFamily: 'Inter-Bold',
     fontSize: 24,
@@ -697,5 +773,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FF3B30',
     marginLeft: 8,
+  },
+  // Skeleton styles
+  skeleton: {
+    backgroundColor: '#E1E9EE',
+    borderRadius: 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  profileImageSkeleton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
 });
