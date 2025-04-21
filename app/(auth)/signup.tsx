@@ -189,7 +189,6 @@ export default function SignupScreen() {
   };
 
   const handleOtpChange = (text: string, index: number) => {
-    // Clear any existing error message when user starts typing
     if (otpError) {
       setOtpError(null);
     }
@@ -200,19 +199,22 @@ export default function SignupScreen() {
       const pastedOtp = text.split('').slice(0, 6);
       const newOtp = [...otp];
 
-      // Fill as many digits as we have from the paste
       for (let i = 0; i < pastedOtp.length && index + i < 6; i++) {
         newOtp[index + i] = pastedOtp[i];
       }
 
       setOtp(newOtp);
 
-      // Focus on the appropriate input after paste
       const nextIndex = Math.min(index + pastedOtp.length, 5);
       if (nextIndex < 6) {
         otpInputRefs.current[nextIndex]?.focus();
       } else {
         otpInputRefs.current[5]?.blur();
+        if (newOtp.every(digit => digit !== '')) {
+          otpSubmitTimeoutRef.current = setTimeout(() => {
+            handleVerifyOtp();
+          }, 300);
+        }
       }
     } else {
       const newOtp = [...otp];
@@ -221,6 +223,16 @@ export default function SignupScreen() {
       
       if (text && index < 5) {
         otpInputRefs.current[index + 1]?.focus();
+      } else if (text && index === 5) {
+        // Auto-submit when the last digit is entered
+        otpInputRefs.current[5]?.blur();
+        
+        // Check if all digits are filled
+        if (newOtp.every(digit => digit !== '')) {
+          otpSubmitTimeoutRef.current = setTimeout(() => {
+            handleVerifyOtp();
+          }, 300);
+        }
       }
     }
   };

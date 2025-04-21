@@ -22,7 +22,7 @@ const howItWorksSlides: SlideData[] = [
     description: 'Tap "Join" to enter the contest for FREE',
   },
   {
-    title: 'Answer 9 Questions',
+    title: 'Answer ANY 9 Questions',
     description: 'Answer 3 questions each from Easy, Medium and Hard sections',
   },
   {
@@ -37,32 +37,13 @@ interface HowItWorksModalProps {
 }
 
 export default function HowItWorksModal({ visible, onClose }: HowItWorksModalProps) {
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const isLastSlide = currentSlideIndex === howItWorksSlides.length - 1;
   const setIsNewUser = useAuthStore((state) => state.setIsNewUser);
   const isNewUser = useAuthStore((state) => state.isNewUser);
 
-  // Reset slide index when modal is opened
-  useEffect(() => {
-    if (visible) {
-      setCurrentSlideIndex(0);
-    }
-  }, [visible]);
-
-  const handleNextSlide = () => {
-    if (currentSlideIndex < howItWorksSlides.length - 1) {
-      setCurrentSlideIndex(currentSlideIndex + 1);
-    }
-  };
-
   const handleClose = () => {
-    // Reset slide index and close modal
-    setCurrentSlideIndex(0);
     setIsNewUser(false);
     onClose();
   };
-
-  const currentSlide = howItWorksSlides[currentSlideIndex];
 
   // Helper function to highlight difficulty words with color
   const colorizeText = (text: string) => {
@@ -91,40 +72,24 @@ export default function HowItWorksModal({ visible, onClose }: HowItWorksModalPro
 
         <Text style={styles.headerTitle}>How it works</Text>
 
-        <View style={styles.slide}>
-          <Text style={styles.slideTitle}>{currentSlide.title}</Text>
-          <View style={styles.slideDescription}>
-            {currentSlide.description.toLowerCase().includes('easy') || 
-             currentSlide.description.toLowerCase().includes('medium') || 
-             currentSlide.description.toLowerCase().includes('hard') 
-             ? colorizeText(currentSlide.description)
-             : <Text style={styles.slideDescriptionText}>{currentSlide.description}</Text>}
+        {howItWorksSlides.map((slide, index) => (
+          <View key={index} style={styles.slide}>
+            <Text style={styles.slideTitle}>{slide.title}</Text>
+            <View style={styles.slideDescription}>
+              {slide.description.toLowerCase().includes('easy') || 
+               slide.description.toLowerCase().includes('medium') || 
+               slide.description.toLowerCase().includes('hard') 
+               ? colorizeText(slide.description)
+               : <Text style={styles.slideDescriptionText}>{slide.description}</Text>}
+            </View>
           </View>
-        </View>
+        ))}
 
-        <View style={styles.indicatorContainer}>
-          {howItWorksSlides.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.indicator,
-                index === currentSlideIndex && styles.activeIndicator,
-              ]}
-            />
-          ))}
-        </View>
-
-        {isLastSlide ? (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
-              <Text style={styles.doneButtonText}>Got it!</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNextSlide}>
-            <Text style={styles.nextButtonText}>Next</Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
+            <Text style={styles.doneButtonText}>Got it!</Text>
           </TouchableOpacity>
-        )}
+        </View>
       </View>
     </View>
   );
@@ -166,6 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    paddingVertical: 8,
   },
   svgImage: {
     marginBottom: 16,
@@ -206,7 +172,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '80%',
     alignItems: 'center',
-    gap: 12,
+    marginTop: 8,
   },
   doneButton: {
     backgroundColor: '#007AFF',
