@@ -25,7 +25,6 @@ import { useContestsStore } from '../../store/contestsStore';
 import apiClient from '../../utils/api';
 import { useUserStore } from '../../store/userStore';
 import { AUTH_ME, USER_CONTESTS, CONTESTS } from '../../routes/api';
-import { useNotification } from '@/contexts/NotificationContext';
 import { useAuthStore } from '../../store/authstore';
 import { ContestCardSkeleton, SkeletonItem } from '../../components/SkeletonLoading';
 import React from 'react';

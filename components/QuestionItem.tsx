@@ -55,11 +55,6 @@ export default function QuestionItem({
               userVote === outcome ? styles.selectedOption : userVote !== null ? styles.unselectedOption : null,
             ]}
           >
-            <Ionicons
-              name={outcome === IOutcome.YES ? 'checkmark' : 'close'}
-              size={20}
-              color="#fff"
-            />
             <Text style={styles.optionText}>{outcome}</Text>
           </TouchableOpacity>
         ))}

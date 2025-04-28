@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Easing, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Easing, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Image, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,10 +11,10 @@ import * as SecureStore from 'expo-secure-store';
 import { useUserStore } from '@/store/userStore';
 import { useNotification } from '@/contexts/NotificationContext';
 import * as Haptics from 'expo-haptics';
+import { ToastAndroid } from 'react-native';
 
 async function save(key: string, value: string) {
   try {
-    console.log(`Attempting to save ${key} to SecureStore`);
     await SecureStore.setItemAsync(key, value);
     const savedValue = await SecureStore.getItemAsync(key);
     if (savedValue === value) {
@@ -139,7 +139,7 @@ export default function SignupScreen() {
     };
   }, []);
 
-  const handlePhoneLogin = async () => {
+  const handlePhoneLogin = async (resend?: boolean) => {
     if (sendingOtp) return;
     if (!phoneNumber || phoneNumber.length < 10) {
       setAuthState({
@@ -150,7 +150,9 @@ export default function SignupScreen() {
     }
 
     setSendingOtp(true);
-    setAuthState({ status: 'loading', error: null });
+    if (!resend) {
+      setAuthState({ status: 'loading', error: null });
+    }
 
     try {
       const formattedPhoneNumber = `+91${phoneNumber}`;
@@ -165,6 +167,12 @@ export default function SignupScreen() {
           status: 'idle',
           error: null
         });
+        if (Platform.OS === 'ios') {
+          Alert.alert('OTP sent', 'Please check your phone for the OTP');
+        }else{
+        ToastAndroid.show('OTP sent, Please check your phone for the OTP', ToastAndroid.BOTTOM);
+        }
+
 
         setTimeout(() => {
           setShowOtp(true);
@@ -192,48 +200,16 @@ export default function SignupScreen() {
     if (otpError) {
       setOtpError(null);
     }
-    
-    // Handle multi-digit paste by processing each character
-    if (text.length > 1) {
-      // This handles the case when a user pastes a multi-digit code
-      const pastedOtp = text.split('').slice(0, 6);
-      const newOtp = [...otp];
 
-      for (let i = 0; i < pastedOtp.length && index + i < 6; i++) {
-        newOtp[index + i] = pastedOtp[i];
-      }
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
 
-      setOtp(newOtp);
-
-      const nextIndex = Math.min(index + pastedOtp.length, 5);
-      if (nextIndex < 6) {
-        otpInputRefs.current[nextIndex]?.focus();
-      } else {
-        otpInputRefs.current[5]?.blur();
-        if (newOtp.every(digit => digit !== '')) {
-          otpSubmitTimeoutRef.current = setTimeout(() => {
-            handleVerifyOtp();
-          }, 300);
-        }
-      }
-    } else {
-      const newOtp = [...otp];
-      newOtp[index] = text;
-      setOtp(newOtp);
-      
-      if (text && index < 5) {
-        otpInputRefs.current[index + 1]?.focus();
-      } else if (text && index === 5) {
-        // Auto-submit when the last digit is entered
-        otpInputRefs.current[5]?.blur();
-        
-        // Check if all digits are filled
-        if (newOtp.every(digit => digit !== '')) {
-          otpSubmitTimeoutRef.current = setTimeout(() => {
-            handleVerifyOtp();
-          }, 300);
-        }
-      }
+    // Move focus logic here
+    if (text && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    } else if (text && index === 5) {
+      otpInputRefs.current[5]?.blur();
     }
   };
 
@@ -243,25 +219,23 @@ export default function SignupScreen() {
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (otpString?: string) => {
+    const code = otpString ?? otp.join('');
     if (otpSubmitTimeoutRef.current) {
       clearTimeout(otpSubmitTimeoutRef.current);
       otpSubmitTimeoutRef.current = null;
     }
-    
-    const otpString = otp.join('');
-  
-    if (otpString.length !== 6) {
+
+    if (code.length !== 6) {
       setOtpError('Please enter the complete 6-digit OTP');
-      
-      // Clear error message after 3 seconds
+
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
       }
       errorTimeoutRef.current = setTimeout(() => {
         setOtpError(null);
       }, 3000);
-      
+
       return;
     }
 
@@ -272,7 +246,7 @@ export default function SignupScreen() {
       const formattedPhoneNumber = `+91${phoneNumber}`;
       const response = await apiClient<VerifyOtpResponse>(VERIFY_OTP, 'POST', {
         requestId: requesId,
-        otp: otpString,
+        otp: code,
         phoneNumber: formattedPhoneNumber
       });
 
@@ -282,21 +256,27 @@ export default function SignupScreen() {
         setIsNewUser(responseData.isNewUser);
         setAuthenticated(true);
         setUser(responseData.user);
-        if (!responseData.user.expoPushToken || responseData.user.expoPushToken === '' && expoPushToken || responseData.user.expoPushToken !== expoPushToken) {
-          const res = await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.user.id), 'POST', {
+        if (
+          (!responseData.user.expoPushToken || responseData.user.expoPushToken === '') && expoPushToken ||
+          responseData.user.expoPushToken !== expoPushToken
+        ) {
+          await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.user.id), 'POST', {
             expoPushToken: expoPushToken
           });
         }
 
-        // Directly navigate to tabs without showing referral screen
-        router.replace('/(tabs)');
+        if (responseData.isNewUser) {
+          setShowReferralScreen(true);
+        } else {
+          router.replace('/(tabs)');
+        }
       } else {
         setOtpError(response.message || 'Invalid OTP. Please try again.');
         setAuthState({
           status: 'error',
           error: { message: response.message || 'Invalid OTP. Please try again.' }
         });
-        
+
         // Clear error message after 3 seconds
         if (errorTimeoutRef.current) {
           clearTimeout(errorTimeoutRef.current);
@@ -311,7 +291,7 @@ export default function SignupScreen() {
         status: 'error',
         error: { message: 'Network error. Please check your connection.' }
       });
-      
+
       // Clear error message after 3 seconds
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
@@ -346,6 +326,7 @@ export default function SignupScreen() {
 
         if (response.success) {
           setAuthState({ status: 'idle', error: null });
+          setShowReferralScreen(false);
           router.replace('/(tabs)');
         } else {
           setAuthState({
@@ -387,6 +368,12 @@ export default function SignupScreen() {
     }
   };
 
+  useEffect(() => {
+    if (otp.every(digit => digit !== '')) {
+      handleVerifyOtp();
+    }
+  }, [otp]);
+
   // Clean up timeouts when component unmounts
   useEffect(() => {
     return () => {
@@ -400,27 +387,28 @@ export default function SignupScreen() {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={Platform.select({ ios: 10, android: 0 })}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-
-        <SafeAreaView style={styles.container}>
-          <View style={styles.backgroundContainer}></View>
-
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, backgroundColor: '#fff' }}
+        keyboardVerticalOffset={Platform.select({ ios: 10, android: 0 })}
+      >
+        <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}>
           <ScrollView
-            contentContainerStyle={styles.scrollContainer}
+            style={{ flex: 1, backgroundColor: '#fff' }}
+            contentContainerStyle={[styles.scrollContainer, { backgroundColor: '#fff' }]}
             bounces={false}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
-            <View style={styles.contentWrapper}>
-              <View style={{ flex: 1, width: '100%' }}>
+            <View style={[styles.contentWrapper, { backgroundColor: '#fff' }]}>
+              <View style={{ flex: 1, width: '100%', backgroundColor: '#fff' }}>
                 <View style={[
                   styles.logoContainer,
                   keyboardVisible && styles.logoContainerKeyboardShown,
-                  showOtp && styles.logoContainerOtpShown
+                  showOtp && styles.logoContainerOtpShown,
+                  { backgroundColor: '#fff' }
                 ]}>
                   <Image
                     source={require('../../assets/logo.png')}
@@ -433,25 +421,37 @@ export default function SignupScreen() {
                   />
                 </View>
 
-                <View style={styles.contentContainer}>
+                <View style={[styles.contentContainer, { backgroundColor: '#fff' }]}>
                   <Text style={[
                     styles.title,
                     keyboardVisible && styles.titleKeyboardShown,
-                    showOtp && styles.titleOtpShown
+                    showOtp && styles.titleOtpShown,
+                    { backgroundColor: '#fff' }
                   ]}>
                     Play Fantasy Cricket for free and win IPL Tickets
                   </Text>
 
                   {authState.status === 'error' && (
-                    <View style={styles.errorContainer}>
+                    <View style={[styles.errorContainer, { backgroundColor: '#fff' }]}>
                       <Text style={styles.errorText}>
                         {authState.error?.message || 'Authentication error'}
                       </Text>
                     </View>
                   )}
 
-                  {!showOtp ? (
-                    <View style={styles.authContainer}>
+                  {showReferralScreen ? (
+                    <View style={styles.referralWrapper}>
+                      <Referral
+                        onSubmit={handleSubmitReferralCode}
+                        errorMessage={authState.status === 'error' ? authState.error?.message : undefined}
+                        isLoading={authState.status === 'loading'}
+                      />
+                      <TouchableOpacity style={styles.skipButton} onPress={handleSkipReferral}>
+                        <Text style={styles.skipButtonText}>Skip</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : !showOtp ? (
+                    <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
                       <View style={styles.phoneInputContainer}>
                         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                           <View style={styles.prefixContainer}>
@@ -512,7 +512,7 @@ export default function SignupScreen() {
                       </Animated.View>
                     </View>
                   ) : (
-                    <View style={styles.authContainer}>
+                    <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
                       <Text style={styles.otpTitleNoBorder}>Enter Verification Code</Text>
                       <Text style={styles.otpSubtitleNoBorder}>
                         We've sent a 6-digit code to +91 {phoneNumber}
@@ -530,6 +530,7 @@ export default function SignupScreen() {
                             onChangeText={(text) => handleOtpChange(text, index)}
                             onKeyPress={(e) => handleKeyPress(e, index)}
                             keyboardType="number-pad"
+                            autoComplete='sms-otp'
                             maxLength={1}
                           />
                         ))}
@@ -595,7 +596,6 @@ export default function SignupScreen() {
                       <TouchableOpacity
                         style={styles.resendContainer}
                         onPress={() => {
-                          // Add haptic feedback
                           if (Platform.OS === 'ios' && 'impactAsync' in Haptics) {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           }
@@ -604,7 +604,7 @@ export default function SignupScreen() {
                             Keyboard.dismiss();
                             setTimeout(handlePhoneLogin, 20);
                           } else {
-                            handlePhoneLogin();
+                            handlePhoneLogin(true);
                           }
                         }}
                         disabled={authState.status === 'loading'}
@@ -620,14 +620,15 @@ export default function SignupScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
@@ -637,27 +638,27 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingBottom: 20,
-  },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#fff',
-    overflow: 'hidden',
   },
   contentWrapper: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 40,
+    backgroundColor: '#fff',
   },
   logoContainer: {
     marginVertical: 20,
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   logoContainerKeyboardShown: {
     marginVertical: 10,
+    backgroundColor: '#fff',
   },
   logoContainerOtpShown: {
     marginVertical: 10,
+    backgroundColor: '#fff',
   },
   logo: {
     width: 140,
@@ -672,6 +673,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     marginTop: 10,
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 32,
@@ -683,20 +685,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   titleKeyboardShown: {
     fontSize: 24,
     marginBottom: 30,
+    backgroundColor: '#fff',
   },
   titleOtpShown: {
     fontSize: 22,
     marginBottom: 20,
+    backgroundColor: '#fff',
   },
   authContainer: {
     width: '100%',
     alignItems: 'center',
     marginBottom: 10,
     marginTop: 10,
+    backgroundColor: '#fff',
   },
   phoneInputContainer: {
     flexDirection: 'row',

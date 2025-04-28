@@ -96,7 +96,7 @@ export interface IUserPrediction {
   questionId: string;
   isCorrect: boolean | null;
   question: IQuestion;
-  outcome?: IOutcome;
+  prediction?: IOutcome;
 }
 
 export interface ITicket {

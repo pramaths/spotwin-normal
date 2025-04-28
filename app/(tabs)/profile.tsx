@@ -83,6 +83,7 @@ const ProfileScreen = () => {
       Clipboard.setString(user.phoneNumber);
       setCopiedItem('phoneNumber');
       setCopied(true);
+      ToastAndroid.show('Phone number copied', ToastAndroid.SHORT);
       setTimeout(() => {
         setCopied(false);
         setCopiedItem(null);
@@ -91,7 +92,7 @@ const ProfileScreen = () => {
   };
 
   const handleSaveUsername = async () => {
-    if (isSavingUsername) return; 
+    if (isSavingUsername) return;
 
     setIsSavingUsername(true);
     try {
@@ -129,7 +130,7 @@ const ProfileScreen = () => {
   const handleDeleteAccount = () => {
     const subject = encodeURIComponent('Delete my account');
     const email = 'rahul@sizzil.app';
-    const body = encodeURIComponent(`Hello,\n\nI would like to request deletion of my account.\n\nPhone Number: ${user?.phoneNumber || 'N/A'}\nUsername: ${user?.username || 'N/A'}\n\nThank you.`);
+    const body = encodeURIComponent(`Hello,\n\nPlease delete my account.\n\nReason: [Please fill in your reason for account deletion]\n\nPhone Number: ${user?.phoneNumber || 'N/A'}\nUsername: ${user?.username || 'N/A'}\n\nThank you.`);
 
     Linking.openURL(`mailto:${email}?subject=${subject}&body=${body}`);
   };
@@ -196,10 +197,13 @@ const ProfileScreen = () => {
   );
 
   return (
-    <TouchableWithoutFeedback onPress={isEditingUsername ? handleCloseUsernameEdit : undefined}>
       <View style={{ flex: 1 }}>
         <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+          <ScrollView 
+            style={styles.scrollView} 
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag">
             {isLoading ? (
               <ProfileSkeleton />
             ) : (
@@ -228,6 +232,7 @@ const ProfileScreen = () => {
                               value={newUsername}
                               onChangeText={setNewUsername}
                               placeholder="Enter new username"
+                              onBlur={handleCloseUsernameEdit}
                             />
                             <TouchableOpacity
                               style={[styles.saveButton, isSavingUsername && styles.disabledButton]}
@@ -362,7 +367,6 @@ const ProfileScreen = () => {
           </ScrollView>
         </SafeAreaView>
       </View>
-    </TouchableWithoutFeedback>
   );
 }
 

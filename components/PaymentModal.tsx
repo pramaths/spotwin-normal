@@ -151,7 +151,6 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       });
       if(response.success) {
         setIsParticipating(true);
-        setUserContests([...userContests, contest]);
         fetchUserBalance();
         animateSuccess(); 
         setTimeout(() => {

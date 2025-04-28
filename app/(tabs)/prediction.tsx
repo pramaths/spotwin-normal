@@ -120,7 +120,7 @@ export default function PredictionScreen() {
       setPredictions(data);
 
       const votesMap = data.reduce((acc: Record<string, IOutcome | null>, pred: IUserPrediction) => {
-        acc[pred.question.id] = pred.outcome as unknown as IOutcome | null;
+        acc[pred.question.id] = pred.prediction as unknown as IOutcome | null;
         return acc;
       }, {});
       setUserVotesMap(votesMap);
@@ -193,7 +193,7 @@ export default function PredictionScreen() {
           id: existingIndex > -1 ? prev[existingIndex].id : question.id, // Keep the same ID if updating
           userId: user?.id || '',
           contestId: contestId as string,
-          outcome: prediction,
+          prediction: prediction,
           questionId: question.id,
           isCorrect: null,
           question
@@ -259,7 +259,7 @@ export default function PredictionScreen() {
           if (p.id === predictionId) {
             return {
               ...p,
-              outcome: prediction
+              prediction: prediction
             };
           }
           return p;
@@ -278,7 +278,10 @@ export default function PredictionScreen() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push({
+      pathname: "/contest-detail/[id]",
+      params: { id: contestId as string }
+    });
   };
 
   const currentQuestions = questionsByDifficulty[selectedDifficulty] || [];
@@ -389,7 +392,6 @@ export default function PredictionScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Next button for Easy and Medium difficulties - As absolute position */}
       {(selectedDifficulty === IDifficultyLevel.EASY || 
         selectedDifficulty === IDifficultyLevel.MEDIUM) && 
         getAnsweredCountByDifficulty(selectedDifficulty) >= 3 && (
