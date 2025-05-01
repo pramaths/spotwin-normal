@@ -17,7 +17,7 @@ import { formatFullDate } from '../utils/dateUtils';
 import { getUserParticipationStatus } from '../services/userContestsApi';
 import { useUserStore } from '@/store/userStore';
 import { getUserBalance } from '../utils/common';
-import { JOIN_CONTEST } from '../routes/api';
+import { JOIN_CONTEST, USER_BALANCE } from '../routes/api';
 import apiClient from '../utils/api';
 import { router } from 'expo-router';
 import { useContestsStore } from '@/store/contestsStore';
@@ -41,7 +41,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const successOpacity = useRef(new Animated.Value(0)).current;
   const checkmarkStroke = useRef(new Animated.Value(0)).current;
   const checkmarkScale = useRef(new Animated.Value(0)).current;
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
   const { userContests, setUserContests } = useContestsStore();
   const [userBalance, setUserBalance] = useState<number | null>(0);
 
@@ -95,6 +95,12 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       setIsRefreshing(true);
       const balance = await getUserBalance(user?.id || '');
       setUserBalance(balance !== undefined ? balance : null);
+      if (user) {
+        setUser({
+          ...user,
+          points: balance || user.points
+        });
+      }
     } catch (err) {
       console.error("Failed to fetch balance:", err);
     } finally {
@@ -152,6 +158,12 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       if(response.success) {
         setIsParticipating(true);
         fetchUserBalance();
+        if (user) {
+          setUser({
+            ...user,
+            points: user.points - contest.entryFee
+          });
+        }
         animateSuccess(); 
         setTimeout(() => {
           router.push({

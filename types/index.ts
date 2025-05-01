@@ -11,9 +11,10 @@ export enum IDifficultyLevel {
 
 export enum IContestStatus {
   OPEN = "OPEN",
-  LIVE = "LIVE",
   COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED"
+  CANCELLED = "CANCELLED",
+  CLOSED = 'CLOSED',
+  RESOLVED = 'RESOLVED',
 }
 
 export interface IUser {
