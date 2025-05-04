@@ -37,11 +37,11 @@ export default function ContestsScreen() {
   
     if (selectedTab === 'ACTIVE') {
       filteredContests = userContests.filter(
-        (contest) => contest && (contest.status === 'COMPLETED' || contest.status === 'OPEN')
+        (contest) => contest && (contest.status === 'OPEN')
       );
     } else {
       filteredContests = userContests
-        .filter((contest) => contest && contest.status === 'RESOLVED')
+        .filter((contest) => contest && contest.status === 'RESOLVED' || contest.status === 'COMPLETED')
         .sort((a, b) => {
           const timeA = new Date(a.match?.startTime || '').getTime();
           const timeB = new Date(b.match?.startTime || '').getTime();
