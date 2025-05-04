@@ -12,6 +12,8 @@ import { useUserStore } from '@/store/userStore';
 import { useNotification } from '@/contexts/NotificationContext';
 import * as Haptics from 'expo-haptics';
 import { ToastAndroid } from 'react-native';
+import { CountryPicker } from "react-native-country-codes-picker";
+import { MaterialIcons } from '@expo/vector-icons';
 
 async function save(key: string, value: string) {
   try {
@@ -48,7 +50,6 @@ export default function SignupScreen() {
   const otpInputRefs = useRef<Array<TextInput | null>>([]);
   const { expoPushToken } = useNotification();
   const sendOtpButtonRef = useRef(null);
-
   const [authState, setAuthState] = useState<{
     status: 'idle' | 'loading' | 'error' | 'skipped';
     error: null | { message: string };
@@ -64,6 +65,9 @@ export default function SignupScreen() {
   const [otpError, setOtpError] = useState<string | null>(null);
   const otpSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countryCode, setCountryCode] = useState('+91');
 
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -155,7 +159,7 @@ export default function SignupScreen() {
     }
 
     try {
-      const formattedPhoneNumber = `+91${phoneNumber}`;
+      const formattedPhoneNumber = `${countryCode}${phoneNumber}`;
       const response = await apiClient<{ requestId: string }>(LOGIN, 'POST', { phoneNumber: formattedPhoneNumber });
 
       if (response.success && response.data) {
@@ -243,7 +247,7 @@ export default function SignupScreen() {
     setOtpError(null);
 
     try {
-      const formattedPhoneNumber = `+91${phoneNumber}`;
+      const formattedPhoneNumber = `${countryCode}${phoneNumber}`;
       const response = await apiClient<VerifyOtpResponse>(VERIFY_OTP, 'POST', {
         requestId: requesId,
         otp: code,
@@ -453,11 +457,13 @@ export default function SignupScreen() {
                   ) : !showOtp ? (
                     <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
                       <View style={styles.phoneInputContainer}>
-                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                          <View style={styles.prefixContainer}>
-                            <Text style={styles.phonePrefix}>+91</Text>
-                          </View>
-                        </TouchableWithoutFeedback>
+                        <TouchableOpacity
+                          style={styles.countryCodeButton}
+                          onPress={() => setShowCountryPicker(true)}
+                        >
+                          <Text style={styles.countryCodeText}>{countryCode}</Text>
+                          <MaterialIcons name="keyboard-arrow-down" size={20} color="#000" />
+                        </TouchableOpacity>
                         <TextInput
                           style={styles.phoneInput}
                           placeholder="Enter phone number"
@@ -468,6 +474,50 @@ export default function SignupScreen() {
                           onChangeText={setPhoneNumber}
                         />
                       </View>
+
+                      <CountryPicker
+                        lang='en'
+                        show={showCountryPicker}
+                        pickerButtonOnPress={(item) => {
+                          setCountryCode(item.dial_code);
+                          setShowCountryPicker(false);
+                        }}
+                        onBackdropPress={() => setShowCountryPicker(false)}
+                        enableModalAvoiding={false}
+                        inputPlaceholder="Search country..."
+                        style={{
+                          modal: {
+                            height: 400,
+                            backgroundColor: '#1e1e1e',
+                            paddingTop: 10
+                          },
+                          countryButtonStyles: {
+                            backgroundColor: '#2a2a2a',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingVertical: 10,
+                            paddingHorizontal: 15
+                          },
+                          textInput: {
+                            color: 'white',
+                            backgroundColor: '#2a2a2a',
+                            width: '100%',
+                            zIndex: 1,
+                            paddingVertical: 12,
+                            paddingHorizontal: 15
+                          },
+                          countryName: {
+                            color: 'white'
+                          },
+                          dialCode: {
+                            color: 'white'
+                          },
+                          flag: {
+                            marginRight: 10,
+                            zIndex: 2
+                          }
+                        }}
+                      />
 
                       {otpSent && !showOtp && (
                         <View style={styles.successContainer}>
@@ -515,25 +565,27 @@ export default function SignupScreen() {
                     <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
                       <Text style={styles.otpTitleNoBorder}>Enter Verification Code</Text>
                       <Text style={styles.otpSubtitleNoBorder}>
-                        We've sent a 6-digit code to +91 {phoneNumber}
+                        We've sent a 6-digit code to {countryCode} {phoneNumber}
                       </Text>
 
                       <View style={styles.otpContainer}>
-                        {otp.map((digit, index) => (
-                          <TextInput
-                            key={index}
-                            ref={(ref) => {
-                              otpInputRefs.current[index] = ref;
-                            }}
-                            style={styles.otpInput}
-                            value={digit}
-                            onChangeText={(text) => handleOtpChange(text, index)}
-                            onKeyPress={(e) => handleKeyPress(e, index)}
-                            keyboardType="number-pad"
-                            autoComplete='sms-otp'
-                            maxLength={1}
-                          />
-                        ))}
+                        {otp.map((digit, index) => {
+                          return (
+                            <TextInput
+                              key={index.toString()}
+                              ref={(ref: TextInput | null) => {
+                                otpInputRefs.current[index] = ref;
+                              }}
+                              style={styles.otpInput}
+                              value={digit}
+                              onChangeText={(text) => handleOtpChange(text, index)}
+                              onKeyPress={(e) => handleKeyPress(e, index)}
+                              keyboardType="number-pad"
+                              autoComplete='sms-otp'
+                              maxLength={1}
+                            />
+                          );
+                        })}
                       </View>
 
                       {otpError && (
@@ -707,13 +759,13 @@ const styles = StyleSheet.create({
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '80%',
+    width: '100%',
     height: 54,
     backgroundColor: '#fff',
     borderRadius: 10,
     marginBottom: 30,
   },
-  prefixContainer: {
+  countryCodeButton: {
     height: '100%',
     justifyContent: 'center',
     marginRight: 10,
@@ -722,13 +774,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    minWidth: 50,
+    minWidth: 65,
+    maxWidth: '20%',
     alignItems: 'center',
+    flexDirection: 'row',
   },
-  phonePrefix: {
+  countryCodeText: {
     color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
+    marginRight: 2,
+    flexShrink: 0,
   },
   phoneInput: {
     flex: 1,
@@ -803,7 +859,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonWrapper: {
-    width: '80%',
+    width: '90%',
     borderRadius: 30,
     marginBottom: 16,
     shadowColor: '#000',
@@ -816,7 +872,7 @@ const styles = StyleSheet.create({
   loginButton: {
     backgroundColor: '#fff',
     paddingVertical: 14,
-    borderRadius: 28,
+    borderRadius: 18,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
