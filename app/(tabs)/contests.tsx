@@ -41,7 +41,7 @@ export default function ContestsScreen() {
       );
     } else {
       filteredContests = userContests
-        .filter((contest) => contest && contest.status === 'RESOLVED' || contest.status === 'COMPLETED')
+        .filter((contest) => contest && contest.status === 'COMPLETED')
         .sort((a, b) => {
           const timeA = new Date(a.match?.startTime || '').getTime();
           const timeB = new Date(b.match?.startTime || '').getTime();
