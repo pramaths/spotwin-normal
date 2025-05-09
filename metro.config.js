@@ -7,7 +7,12 @@ const config = getDefaultConfig(__dirname);
 config.transformer.babelTransformerPath = require.resolve('react-native-svg-transformer');
 config.resolver.assetExts = config.resolver.assetExts.filter(ext => ext !== 'svg');
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'svg', 'mjs', 'cjs'];
-
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionNames = [
+  "react-native",
+  "browser",
+  "require",
+];
 // Add TypeScript extensions explicitly
 if (!config.resolver.sourceExts.includes('ts')) {
   config.resolver.sourceExts.push('ts');

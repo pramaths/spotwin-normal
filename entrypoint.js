@@ -1,5 +1,7 @@
 import 'fast-text-encoding';
 import { Buffer } from 'buffer';
+import "@thirdweb-dev/react-native-adapter";
+
 global.Buffer = Buffer;
 
 Buffer.prototype.subarray = function subarray(
