@@ -1,6 +1,7 @@
 import 'fast-text-encoding';
 import { Buffer } from 'buffer';
-import "@thirdweb-dev/react-native-adapter";
+import 'react-native-get-random-values';
+import '@ethersproject/shims';
 
 global.Buffer = Buffer;
 

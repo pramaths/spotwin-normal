@@ -5,6 +5,7 @@
     "jsx": "react-native",
     "resolveJsonModule": true,
     "esModuleInterop": true,
+    "moduleResolution": "Bundler",
     "paths": {
       "@/*": [
         "./*"
