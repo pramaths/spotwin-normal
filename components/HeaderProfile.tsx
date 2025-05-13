@@ -12,12 +12,12 @@ import {
   Linking
 } from 'react-native';
 import { IUser } from '../types';
-import EmptyWalletIcon from '../assets/icons/empty-wallet.svg';
 import HowItWorksModal from './HowItWorksModal';
 import { CircleHelp, X, Copy } from 'lucide-react-native'
 import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
 import { useRouter } from 'expo-router';
+import UsdcIcon from '../assets/icons/usdc.svg';
 interface HeaderProfileProps {
   user?: IUser;
   onProfilePress?: () => void;
@@ -80,11 +80,11 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             onPress={handleWalletPress}
             activeOpacity={0.7}
           >
-            {user?.points && user?.points > 0 && (
-              <Text style={styles.balanceText}>{user?.points || 0}</Text>
+            {user?.spotBalance && user?.spotBalance >= 0 && (
+              <Text style={styles.balanceText}>{user?.spotBalance || 0}</Text>
             )}
             <View style={styles.walletIconWrapper}>
-              <EmptyWalletIcon />
+              <UsdcIcon />
             </View>
           </TouchableOpacity>
           <TouchableOpacity

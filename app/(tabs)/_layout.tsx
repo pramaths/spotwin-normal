@@ -61,17 +61,10 @@ export default function TabLayout() {
               }}
             />
             <Tabs.Screen
-              name="feeds"
+              name="stake"
               options={{
-                title: 'Feeds',
+                title: 'Stake',
                 tabBarIcon: ({ focused }) => focused ? <WhiteFeed /> : <FeedIcon />,
-              }}
-            />
-            <Tabs.Screen
-              name="tickets"
-              options={{
-                title: 'Tickets',
-                tabBarIcon: ({ focused }) => <Ticket color={focused ? "#FFF" : "rgba(255, 255, 255, 0.6)"} size={20} />,
               }}
             />
             <Tabs.Screen
