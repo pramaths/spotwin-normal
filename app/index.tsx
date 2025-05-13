@@ -1,47 +1,33 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@/store/authstore';
 import { useUserStore } from '@/store/userStore';
 import apiClient from '@/utils/api';
 import { AUTH_ME, UPDATE_EXPO_PUSH_TOKEN } from '@/routes/api';
 import { IUser } from '@/types';
 import { useNotification } from '@/contexts/NotificationContext';
-
+import { usePrivy } from '@privy-io/expo';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const setUser = useUserStore((state) => state.setUser);
   const { notification, expoPushToken, error } = useNotification();
-  
-  if(error){
+  const { isReady, user } = usePrivy();
+
+  if (error) {
     console.log("error:", error);
   }
 
   useEffect(() => {
     async function checkAuthentication() {
       try {
-        let token = null;
-        try {
-          token = await SecureStore.getItemAsync('token');
-          console.log("token from SecureStore:", token);
-        } catch (tokenError) {
-          console.error('Error retrieving token from SecureStore:', tokenError);
-        }
-        if (!token) {
-          console.log('No token found, setting authenticated to false');
-          setAuthenticated(false);
-          setIsLoading(false);
-          return;
-        }
-
         const response = await apiClient<IUser>(AUTH_ME, 'GET');
-        
+
         if (response.success && response.data) {
-          if(!response.data.expoPushToken || expoPushToken && response.data.expoPushToken !== expoPushToken){
-            await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'POST', { 
+          if (!response.data.expoPushToken || (expoPushToken && response.data.expoPushToken !== expoPushToken)) {
+            await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.id), 'POST', {
               expoPushToken: expoPushToken
             });
           }
@@ -50,7 +36,6 @@ export default function Index() {
         } else {
           console.log('Authentication failed, clearing token');
           setAuthenticated(false);
-          await SecureStore.deleteItemAsync('token');
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -60,8 +45,16 @@ export default function Index() {
       }
     }
 
-    checkAuthentication();
-  }, [setAuthenticated, setUser, expoPushToken]);
+    if (isReady) {
+      if (user) {
+        checkAuthentication();
+      } else {
+        setAuthenticated(false);
+        setUser(null);
+        setIsLoading(false);
+      }
+    }
+  }, [setAuthenticated, setUser, expoPushToken, isReady, user]);
 
   if (isLoading) {
     return (

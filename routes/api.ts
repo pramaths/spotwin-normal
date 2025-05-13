@@ -1,8 +1,7 @@
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL as string;
 
 //auth
-export const LOGIN = `${backendUrl}/auth/otp`;
-export const VERIFY_OTP = `${backendUrl}/auth/verify-otp`;
+export const LOGIN = `${backendUrl}/auth/login`;
 export const LOGOUT = `${backendUrl}/auth/logout`;
 export const AUTH_ME = `${backendUrl}/auth/me`;
 

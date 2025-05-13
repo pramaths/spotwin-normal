@@ -4,36 +4,14 @@ import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useRef, useState } from 'react';
 import apiClient from '@/utils/api';
-import { LOGIN, VERIFY_OTP, REFERRAL_CODE, UPDATE_EXPO_PUSH_TOKEN } from '@/routes/api';
+import { LOGIN, REFERRAL_CODE, UPDATE_EXPO_PUSH_TOKEN, AUTH_ME } from '@/routes/api';
 import { IUser } from '@/types';
 import Referral from '@/components/Referral';
-import * as SecureStore from 'expo-secure-store';
 import { useUserStore } from '@/store/userStore';
 import { useNotification } from '@/contexts/NotificationContext';
-import * as Haptics from 'expo-haptics';
 import { ToastAndroid } from 'react-native';
-import { CountryPicker } from "react-native-country-codes-picker";
-import { MaterialIcons } from '@expo/vector-icons';
-
-async function save(key: string, value: string) {
-  try {
-    await SecureStore.setItemAsync(key, value);
-    const savedValue = await SecureStore.getItemAsync(key);
-    if (savedValue === value) {
-      console.log(`Successfully saved and verified ${key} in SecureStore`);
-    } else {
-      console.error(`Failed to verify ${key} in SecureStore`);
-    }
-  } catch (error) {
-    console.error(`Error saving ${key} to SecureStore:`, error);
-  }
-}
-
-interface VerifyOtpResponse {
-  token: string;
-  user: IUser;
-  isNewUser: boolean;
-}
+import { useLoginWithOAuth, hasError, usePrivy } from '@privy-io/expo';
+import GoogleIcon from '@/assets/icons/google.svg';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -41,15 +19,9 @@ export default function SignupScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [isPressing, setIsPressing] = useState(false);
-  const [requesId, setRequesId] = useState<string>('');
   const { setAuthenticated, setIsNewUser } = useAuthStore();
   const { setUser, user } = useUserStore();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const otpInputRefs = useRef<Array<TextInput | null>>([]);
   const { expoPushToken } = useNotification();
-  const sendOtpButtonRef = useRef(null);
   const [authState, setAuthState] = useState<{
     status: 'idle' | 'loading' | 'error' | 'skipped';
     error: null | { message: string };
@@ -57,17 +29,29 @@ export default function SignupScreen() {
     status: 'idle',
     error: null
   });
+  const { login, state } = useLoginWithOAuth({
+    onSuccess: async () => {
+      const response = await apiClient<IUser>(LOGIN, 'POST');
+      if (response.success && response.data) {
+        setUser(response.data);
+        setAuthenticated(true);
+        router.replace('/(tabs)');
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
+    },
+    onError: (error) => {
+      console.error('Login failed:', error);
+      setAuthState({
+        status: 'error',
+        error: { message: 'Login failed. Please try again.' }
+      });
+    }
+  });
 
   const [showReferralScreen, setShowReferralScreen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const otpSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
-  const [countryCode, setCountryCode] = useState('+91');
 
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -143,165 +127,25 @@ export default function SignupScreen() {
     };
   }, []);
 
-  const handlePhoneLogin = async (resend?: boolean) => {
-    if (sendingOtp) return;
-    if (!phoneNumber || phoneNumber.length < 10) {
-      setAuthState({
-        status: 'error',
-        error: { message: 'Please enter a valid phone number' }
-      });
-      return;
-    }
-
-    setSendingOtp(true);
-    if (!resend) {
-      setAuthState({ status: 'loading', error: null });
-    }
-
-    try {
-      const formattedPhoneNumber = `${countryCode}${phoneNumber}`;
-      const response = await apiClient<{ requestId: string }>(LOGIN, 'POST', { phoneNumber: formattedPhoneNumber });
-
-      if (response.success && response.data) {
-        setOtpSent(true);
-        setRequesId(response.data.requestId);
-        setSendingOtp(false);
-
-        setAuthState({
-          status: 'idle',
-          error: null
-        });
-        if (Platform.OS === 'ios') {
-          Alert.alert('OTP sent', 'Please check your phone for the OTP');
-        }else{
-        ToastAndroid.show('OTP sent, Please check your phone for the OTP', ToastAndroid.BOTTOM);
-        }
-
-
-        setTimeout(() => {
-          setShowOtp(true);
-          setTimeout(() => {
-            otpInputRefs.current[0]?.focus();
-          }, 100);
-        }, 300);
-      } else {
-        setSendingOtp(false);
-        setAuthState({
-          status: 'error',
-          error: { message: response.message || 'Failed to send OTP. Please try again.' }
-        });
-      }
-    } catch (error) {
-      setSendingOtp(false);
-      setAuthState({
-        status: 'error',
-        error: { message: 'Network error. Please check your connection.' }
-      });
-    }
-  };
-
-  const handleOtpChange = (text: string, index: number) => {
-    if (otpError) {
-      setOtpError(null);
-    }
-
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-
-    // Move focus logic here
-    if (text && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    } else if (text && index === 5) {
-      otpInputRefs.current[5]?.blur();
-    }
-  };
-
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerifyOtp = async (otpString?: string) => {
-    const code = otpString ?? otp.join('');
-    if (otpSubmitTimeoutRef.current) {
-      clearTimeout(otpSubmitTimeoutRef.current);
-      otpSubmitTimeoutRef.current = null;
-    }
-
-    if (code.length !== 6) {
-      setOtpError('Please enter the complete 6-digit OTP');
-
-      if (errorTimeoutRef.current) {
-        clearTimeout(errorTimeoutRef.current);
-      }
-      errorTimeoutRef.current = setTimeout(() => {
-        setOtpError(null);
-      }, 3000);
-
-      return;
-    }
-
+  const handleGoogleLogin = async () => {
     setAuthState({ status: 'loading', error: null });
-    setOtpError(null);
-
     try {
-      const formattedPhoneNumber = `${countryCode}${phoneNumber}`;
-      const response = await apiClient<VerifyOtpResponse>(VERIFY_OTP, 'POST', {
-        requestId: requesId,
-        otp: code,
-        phoneNumber: formattedPhoneNumber
-      });
-
-      if (response.success && response.data) {
-        await save('token', response.data.token);
-        const responseData = response.data as VerifyOtpResponse;
-        setIsNewUser(responseData.isNewUser);
-        setAuthenticated(true);
-        setUser(responseData.user);
-        if (
-          (!responseData.user.expoPushToken || responseData.user.expoPushToken === '') && expoPushToken ||
-          responseData.user.expoPushToken !== expoPushToken
-        ) {
-          await apiClient(UPDATE_EXPO_PUSH_TOKEN(response.data.user.id), 'POST', {
-            expoPushToken: expoPushToken
-          });
-        }
-
-        if (responseData.isNewUser) {
-          setShowReferralScreen(true);
-        } else {
-          router.replace('/(tabs)');
-        }
-      } else {
-        setOtpError(response.message || 'Invalid OTP. Please try again.');
-        setAuthState({
-          status: 'error',
-          error: { message: response.message || 'Invalid OTP. Please try again.' }
-        });
-
-        // Clear error message after 3 seconds
-        if (errorTimeoutRef.current) {
-          clearTimeout(errorTimeoutRef.current);
-        }
-        errorTimeoutRef.current = setTimeout(() => {
-          setOtpError(null);
-        }, 3000);
-      }
+      await login({ provider: 'google' });
     } catch (error) {
-      setOtpError('Network error. Please check your connection.');
       setAuthState({
         status: 'error',
-        error: { message: 'Network error. Please check your connection.' }
+        error: { message: 'Google login failed. Please try again.' }
       });
-
+      
       // Clear error message after 3 seconds
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
       }
       errorTimeoutRef.current = setTimeout(() => {
-        setOtpError(null);
+        setAuthState({
+          status: 'idle',
+          error: null
+        });
       }, 3000);
     }
   };
@@ -309,17 +153,6 @@ export default function SignupScreen() {
   const handleSubmitReferralCode = async (code: string) => {
     if (code.length === 0) {
       setAuthState({ status: 'skipped', error: null });
-      try {
-        const user = useUserStore.getState().user;
-        const response = await apiClient(REFERRAL_CODE(user?.id || ''), 'PATCH', {
-          referralCode: code
-        });
-      } catch (error) {
-        setAuthState({
-          status: 'error',
-          error: { message: 'Network error. Please check your connection.' }
-        });
-      }
     } else {
       setAuthState({ status: 'loading', error: null });
       try {
@@ -353,42 +186,23 @@ export default function SignupScreen() {
     router.replace('/(tabs)');
   };
 
-  const handleSendOTPPress = () => {
-    if (Platform.OS === 'ios' && 'impactAsync' in Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    if (sendingOtp) return;
-    setIsPressing(true);
-    setTimeout(() => setIsPressing(false), 150);
-
-    if (keyboardVisible) {
-      Keyboard.dismiss();
-      setTimeout(() => {
-        handlePhoneLogin();
-      }, 20);
-    } else {
-      handlePhoneLogin();
-    }
-  };
-
-  useEffect(() => {
-    if (otp.every(digit => digit !== '')) {
-      handleVerifyOtp();
-    }
-  }, [otp]);
-
   // Clean up timeouts when component unmounts
   useEffect(() => {
     return () => {
-      if (otpSubmitTimeoutRef.current) {
-        clearTimeout(otpSubmitTimeoutRef.current);
-      }
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
       }
     };
   }, []);
+
+  // Monitor state changes from OAuth login
+  useEffect(() => {
+    if (state.status === 'done') {
+      // Handle successful login
+      setAuthenticated(true);
+      router.replace('/(tabs)');
+    }
+  }, [state]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -411,15 +225,13 @@ export default function SignupScreen() {
                 <View style={[
                   styles.logoContainer,
                   keyboardVisible && styles.logoContainerKeyboardShown,
-                  showOtp && styles.logoContainerOtpShown,
                   { backgroundColor: '#fff' }
                 ]}>
                   <Image
                     source={require('../../assets/logo.png')}
                     style={[
                       styles.logo,
-                      keyboardVisible && styles.logoSmall,
-                      showOtp && styles.logoSmall
+                      keyboardVisible && styles.logoSmall
                     ]}
                     resizeMode="contain"
                   />
@@ -429,17 +241,14 @@ export default function SignupScreen() {
                   <Text style={[
                     styles.title,
                     keyboardVisible && styles.titleKeyboardShown,
-                    showOtp && styles.titleOtpShown,
                     { backgroundColor: '#fff' }
                   ]}>
                     Play Fantasy Cricket for free and win IPL Tickets
                   </Text>
 
                   {authState.status === 'error' && (
-                    <View style={[styles.errorContainer, { backgroundColor: '#fff' }]}>
-                      <Text style={styles.errorText}>
-                        {authState.error?.message || 'Authentication error'}
-                      </Text>
+                    <View style={styles.errorContainer}>
+                      <Text style={styles.errorText}>{authState.error?.message}</Text>
                     </View>
                   )}
 
@@ -454,170 +263,24 @@ export default function SignupScreen() {
                         <Text style={styles.skipButtonText}>Skip</Text>
                       </TouchableOpacity>
                     </View>
-                  ) : !showOtp ? (
-                    <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
-                      <View style={styles.phoneInputContainer}>
-                        <TouchableOpacity
-                          style={styles.countryCodeButton}
-                          onPress={() => setShowCountryPicker(true)}
-                        >
-                          <Text style={styles.countryCodeText}>{countryCode}</Text>
-                          <MaterialIcons name="keyboard-arrow-down" size={20} color="#000" />
-                        </TouchableOpacity>
-                        <TextInput
-                          style={styles.phoneInput}
-                          placeholder="Enter phone number"
-                          placeholderTextColor="#aaa"
-                          keyboardType="phone-pad"
-                          maxLength={10}
-                          value={phoneNumber}
-                          onChangeText={setPhoneNumber}
-                        />
-                      </View>
-
-                      <CountryPicker
-                        lang='en'
-                        show={showCountryPicker}
-                        pickerButtonOnPress={(item) => {
-                          setCountryCode(item.dial_code);
-                          setShowCountryPicker(false);
-                        }}
-                        onBackdropPress={() => setShowCountryPicker(false)}
-                        enableModalAvoiding={false}
-                        inputPlaceholder="Search country..."
-                        style={{
-                          modal: {
-                            height: 400,
-                            backgroundColor: '#1e1e1e',
-                            paddingTop: 10
-                          },
-                          countryButtonStyles: {
-                            backgroundColor: '#2a2a2a',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingVertical: 10,
-                            paddingHorizontal: 15
-                          },
-                          textInput: {
-                            color: 'white',
-                            backgroundColor: '#2a2a2a',
-                            width: '100%',
-                            zIndex: 1,
-                            paddingVertical: 12,
-                            paddingHorizontal: 15
-                          },
-                          countryName: {
-                            color: 'white'
-                          },
-                          dialCode: {
-                            color: 'white'
-                          },
-                          flag: {
-                            marginRight: 10,
-                            zIndex: 2
-                          }
-                        }}
-                      />
-
-                      {otpSent && !showOtp && (
-                        <View style={styles.successContainer}>
-                          <Text style={styles.successText}>OTP sent successfully!</Text>
-                        </View>
-                      )}
-
-                      <Animated.View style={{
-                        transform: [{ scale: pulseAnim }],
-                        width: '100%',
-                      }}>
-                        <TouchableOpacity
-                          ref={sendOtpButtonRef}
-                          style={styles.buttonWrapper}
-                          onPress={handleSendOTPPress}
-                          disabled={sendingOtp}
-                          activeOpacity={0.5}
-                          onPressIn={() => setIsPressing(true)}
-                          onPressOut={() => setIsPressing(false)}
-                          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                          pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
-                        >
-                          <View style={[
-                            styles.loginButton,
-                            isPressing && styles.loginButtonPressed
-                          ]}>
-                            <View style={styles.buttonContent}>
-                              {sendingOtp ? (
-                                <>
-                                  <ActivityIndicator size="small" color="#000" />
-                                  <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Sending OTP...</Text>
-                                </>
-                              ) : (
-                                <>
-                                  <Text style={styles.loginButtonText}>Continue</Text>
-                                  <View style={styles.glow} />
-                                </>
-                              )}
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      </Animated.View>
-                    </View>
                   ) : (
                     <View style={[styles.authContainer, { backgroundColor: '#fff' }]}>
-                      <Text style={styles.otpTitleNoBorder}>Enter Verification Code</Text>
-                      <Text style={styles.otpSubtitleNoBorder}>
-                        We've sent a 6-digit code to {countryCode} {phoneNumber}
-                      </Text>
-
-                      <View style={styles.otpContainer}>
-                        {otp.map((digit, index) => {
-                          return (
-                            <TextInput
-                              key={index.toString()}
-                              ref={(ref: TextInput | null) => {
-                                otpInputRefs.current[index] = ref;
-                              }}
-                              style={styles.otpInput}
-                              value={digit}
-                              onChangeText={(text) => handleOtpChange(text, index)}
-                              onKeyPress={(e) => handleKeyPress(e, index)}
-                              keyboardType="number-pad"
-                              autoComplete='sms-otp'
-                              maxLength={1}
-                            />
-                          );
-                        })}
-                      </View>
-
-                      {otpError && (
-                        <View style={styles.otpErrorContainer}>
-                          <Text style={styles.otpErrorText}>{otpError}</Text>
+                      {authState.status === 'error' && authState.error && (
+                        <View style={styles.errorContainer}>
+                          <Text style={styles.errorText}>{authState.error.message}</Text>
                         </View>
                       )}
-
+                      
                       <Animated.View style={{
                         transform: [{ scale: pulseAnim }],
                         width: '100%',
+                        marginTop: 20,
+                        marginBottom: 20
                       }}>
                         <TouchableOpacity
                           style={styles.buttonWrapper}
-                          onPress={() => {
-                            // Add haptic feedback
-                            if (Platform.OS === 'ios' && 'impactAsync' in Haptics) {
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            }
-
-                            // Visual feedback
-                            setIsPressing(true);
-                            setTimeout(() => setIsPressing(false), 150);
-
-                            if (keyboardVisible) {
-                              Keyboard.dismiss();
-                              setTimeout(handleVerifyOtp, 20);
-                            } else {
-                              handleVerifyOtp();
-                            }
-                          }}
-                          disabled={authState.status === 'loading'}
+                          onPress={handleGoogleLogin}
+                          disabled={state.status === 'loading'}
                           activeOpacity={0.7}
                           onPressIn={() => setIsPressing(true)}
                           onPressOut={() => setIsPressing(false)}
@@ -629,42 +292,22 @@ export default function SignupScreen() {
                             isPressing && styles.loginButtonPressed
                           ]}>
                             <View style={styles.buttonContent}>
-                              {authState.status === 'loading' ? (
+                              {state.status === 'loading' ? (
                                 <>
                                   <ActivityIndicator size="small" color="#000" />
                                   <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
                                 </>
                               ) : (
-                                <>
-                                  <Text style={styles.loginButtonText}>Login</Text>
+                                <View style={styles.buttonContent}>
+                                  <GoogleIcon />
+                                  <Text style={styles.loginButtonText}>Login with Google</Text>
                                   <View style={styles.glow} />
-                                </>
+                                </View>
                               )}
                             </View>
                           </View>
                         </TouchableOpacity>
                       </Animated.View>
-
-                      <TouchableOpacity
-                        style={styles.resendContainer}
-                        onPress={() => {
-                          if (Platform.OS === 'ios' && 'impactAsync' in Haptics) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          }
-
-                          if (keyboardVisible) {
-                            Keyboard.dismiss();
-                            setTimeout(handlePhoneLogin, 20);
-                          } else {
-                            handlePhoneLogin(true);
-                          }
-                        }}
-                        disabled={authState.status === 'loading'}
-                        activeOpacity={0.6}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                      >
-                        <Text style={styles.resendText}>Resend OTP</Text>
-                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -884,12 +527,15 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
     borderWidth: 2,
     borderColor: '#444',
+    alignItems: 'center',
+    
   },
   loginButtonText: {
     color: '#000',
     fontWeight: '700',
     fontSize: 18,
     letterSpacing: 0.5,
+    marginLeft: 8,
   },
   buttonContent: {
     flexDirection: 'row',

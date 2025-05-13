@@ -1,4 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
+import { createPrivyClient } from '@privy-io/expo';
+
+const privy = createPrivyClient({
+  appId: process.env.EXPO_PUBLIC_PRIVY_APP_ID as string,
+  clientId: process.env.EXPO_PUBLIC_PRIVY_APP_CLIENT_ID as string,
+});
 
 interface RequestBody {
   [key: string]: any;
@@ -9,16 +15,6 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   status: number;
-}
-
-async function getValueFor(key: string) {
-  try {
-    const result = await SecureStore.getItemAsync(key);
-    return result;
-  } catch (error) {
-    console.error(`Error retrieving ${key} from SecureStore:`, error);
-    return null;
-  }
 }
 
 export interface ErrorResponse {
@@ -38,10 +34,12 @@ const apiClient = async <T,>(
 
   console.log("endpoint:", endpoint);
   const headers: Record<string, string> = {};
-  
+  const token = await privy.getAccessToken().then((token) => token).catch((error) => {
+    console.error("Error getting access token:", error);
+    return null;
+  });
   if (!(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
-    const token = await getValueFor("token");
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     } else {

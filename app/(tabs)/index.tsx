@@ -29,10 +29,11 @@ import { useAuthStore } from '../../store/authstore';
 import { ContestCardSkeleton, SkeletonItem } from '../../components/SkeletonLoading';
 import React from 'react';
 import * as Updates from 'expo-updates';
+import { usePrivy } from "@privy-io/expo";
 
 const sportsCategories = [
-  { id: '1', name: 'Cricket', icon: '🏏' },
-  { id: '2', name: 'Football', icon: '⚽' },
+  { id: '1', name: 'Football', icon: '⚽' },
+  { id: '2', name: 'Cricket', icon: '🏏' },
   { id: '3', name: 'Basketball', icon: '🏀' },
 ];
 
@@ -51,6 +52,7 @@ export default function HomeScreen() {
   const {isAuthenticated} = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const dataFetchedRef = useRef(false);
+  const { isReady, user: privyUser } = usePrivy();
 
   useEffect(() => {
     setIsMounted(true);
@@ -65,12 +67,12 @@ export default function HomeScreen() {
   }, [isAuthenticated, isMounted, router]);
 
   useEffect(() => {
-    if (isMounted) {
+    if (isMounted && isReady) {
       fetchUser();
       fetchContests();
       checkForUpdates();
     }
-  }, [isMounted]);
+  }, [isMounted, isReady]);
 
   useFocusEffect(
     React.useCallback(() => {

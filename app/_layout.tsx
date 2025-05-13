@@ -7,7 +7,6 @@ import * as Notifications from 'expo-notifications'
 import {PrivyProvider} from '@privy-io/expo';
 import {Inter_400Regular, Inter_500Medium, Inter_600SemiBold} from '@expo-google-fonts/inter';
 import {useFonts} from 'expo-font';
-import {PrivyElements} from '@privy-io/expo/ui';
 
 
 Notifications.setNotificationHandler({
@@ -58,7 +57,6 @@ export default function RootLayout() {
     <NotificationProvider>
     <SafeAreaProvider>
         <Slot />
-        <PrivyElements />
       <StatusBar style="light" backgroundColor="transparent" translucent />
     </SafeAreaProvider>
     </NotificationProvider>

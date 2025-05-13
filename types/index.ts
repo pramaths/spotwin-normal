@@ -21,14 +21,16 @@ export interface IUser {
   id: string
   username: string
   imageUrl: string
-  phoneNumber: string
+  email: string
+  walletAddress: string
   referralCode: string
-  points: number
   totalContests: number
   totalContestsWon: number
   referrals?: IUser[]
   isReferralCodeUsed?: boolean
   expoPushToken?: string
+  usdcBalance?: number
+  spotBalance?: number
 }
 export interface ITeam {
   id: string
