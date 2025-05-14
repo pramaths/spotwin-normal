@@ -131,7 +131,7 @@ const StakeScreen = () => {
   const insets = useSafeAreaInsets();
 
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
-  const spotBalance = user?.spotBalance || 1234.56; // Default value if user data is not available
+  const spotBalance = user?.spotBalance || 150000; // Default value if user data is not available
   const currentStake = 0; // This would come from an API in a real implementation
 
   const handleStakeAmountChange = (text: string) => {
@@ -355,7 +355,7 @@ const StakeScreen = () => {
                 {isStaking ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.stakeButtonText}>Stake Now</Text>
+                  <Text style={styles.stakeButtonText}>Stake for Alpha</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -388,7 +388,7 @@ const StakeScreen = () => {
                 <Image source={require('@/assets/icons/stake.png')} style={styles.stakeInfoImage} />
               </View>
               <View style={styles.bulletPoint}>
-                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 10K SPOT for 1 month to unlock premium questions</Text>
+                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 100k $SPOTWIN to unlock premium questions + AI AGENT</Text>
               </View>
             </View>
           </>

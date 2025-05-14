@@ -76,6 +76,9 @@ export interface IContest {
   id: string
   name: string
   entryFee: number
+  publicKey: string
+  contestId: string
+  poolMint: string
   currency: string
   description: string
   status: IContestStatus | string

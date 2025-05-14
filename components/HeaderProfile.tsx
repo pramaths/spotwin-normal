@@ -18,6 +18,10 @@ import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
 import { useRouter } from 'expo-router';
 import UsdcIcon from '../assets/icons/usdc.svg';
+import { Connection, PublicKey } from "@solana/web3.js";
+import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
+import {useEmbeddedSolanaWallet} from '@privy-io/expo';
+
 interface HeaderProfileProps {
   user?: IUser;
   onProfilePress?: () => void;
@@ -30,9 +34,42 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const [depositModalVisible, setDepositModalVisible] = useState(false);
   const { user, setUser } = useUserStore();
   const { isNewUser, setIsNewUser } = useAuthStore();
+  
   const router = useRouter();
 
-  // Open how it works modal when isNewUser is true
+
+  const wallet = useEmbeddedSolanaWallet();
+
+  const getTokenBalance = async (
+    connection: Connection,
+    userPubkey: PublicKey,
+    tokenMint: PublicKey
+  ): Promise<bigint> => {
+    const ata = await getAssociatedTokenAddress(tokenMint, userPubkey);
+  
+    try {
+      const accountInfo = await getAccount(connection, ata);
+      setUser({
+        ...user,
+        spotBalance: Number(accountInfo.amount) / 1e6,
+        usdcBalance: Number(accountInfo.amount) / 1e6
+      }as IUser);
+      return accountInfo.amount;
+    } catch (err: any) {
+      if (err.message.includes("Failed to find account")) {
+        return 0n;
+      }
+      throw err;
+    }
+  }
+  const connection = new Connection("https://api.devnet.solana.com");
+
+  useEffect(() => {
+    if(wallet.wallets){
+      getTokenBalance(connection, new PublicKey(wallet.wallets[0].publicKey ), new PublicKey("AtQpm37YSCaKUxTirDeGEr51kvfSwmtuYYptnRyqkNNT"));
+    }
+  }, [wallet.wallets]);
+
   useEffect(() => {
     if (isNewUser) {
       setHowItWorksModalVisible(true);
@@ -81,7 +118,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             activeOpacity={0.7}
           >
             {user?.spotBalance && user?.spotBalance >= 0 && (
-              <Text style={styles.balanceText}>{user?.spotBalance || 0}</Text>
+              <Text style={styles.balanceText}>{Number(user?.spotBalance).toFixed(0)}</Text>
             )}
             <View style={styles.walletIconWrapper}>
               <UsdcIcon />

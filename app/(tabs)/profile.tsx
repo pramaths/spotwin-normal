@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Clipboard, Linking, TextInput, TouchableWithoutFeedback, ToastAndroid } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, ActivityIndicator, Clipboard, Linking, TextInput, TouchableWithoutFeedback, ToastAndroid, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Settings, CircleHelp as HelpCircle, LogOut, Copy, Trash2 } from 'lucide-react-native';
+import { Settings, CircleHelp as HelpCircle, LogOut, Copy, Trash2, ArrowDownLeft, ArrowUpRight, XCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react';
 import { useUserStore } from '../../store/userStore';
@@ -10,7 +10,8 @@ import apiClient from '@/utils/api';
 import * as SecureStore from 'expo-secure-store';
 import { handleInvite } from '@/utils/common';
 import UsdcIcon from '@/assets/icons/usdc.svg';
-import SpotIcon from '@/assets/icons/spot.svg';
+import QRCode from 'react-native-qrcode-svg';
+
 
 // Helper function to format wallet address (show first 6 and last 6 characters)
 const formatWalletAddress = (address: string) => {
@@ -19,6 +20,7 @@ const formatWalletAddress = (address: string) => {
   return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
 };
 
+const logoUrl = require('@/assets/logo.png');
 const ProfileScreen = () => {
   const router = useRouter();
   const { user, setUser } = useUserStore();
@@ -27,6 +29,11 @@ const ProfileScreen = () => {
   const [copied, setCopied] = useState(false);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDepositModalVisible, setDepositModalVisible] = useState(false)
+  const [isWithdrawModalVisible, setWithdrawModalVisible] = useState(false);
+  const [withdrawalAddress, setWithdrawalAddress] = useState('');
+  const [withdrawToken, setWithdrawToken] = useState<'USDC'|'SPOT'>('USDC');
+  const [isTransferring, setIsTransferring] = useState(false);
 
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -143,6 +150,28 @@ const ProfileScreen = () => {
     Linking.openURL('https://www.instagram.com/spotwin.in');
   };
 
+  const handleWithdraw = async () => {
+    if (isTransferring) return;
+    setIsTransferring(true);
+    try {
+      // TODO: integrate withdrawal API
+      ToastAndroid.show('Withdrawal initiated', ToastAndroid.SHORT);
+      setWithdrawModalVisible(false);
+      setWithdrawalAddress(''); setWithdrawToken('USDC');
+    } catch(err) {
+      console.error(err);
+      ToastAndroid.show('Withdrawal failed', ToastAndroid.SHORT);
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
+  const handlePasteAddress = async () => {
+    const text = await Clipboard.getString();
+    setWithdrawalAddress(text);
+  };
+
+
   const handleDeleteAccount = () => {
     const subject = encodeURIComponent('Delete my account');
     const email = 'rahul@sizzil.app';
@@ -233,6 +262,73 @@ Thank you.`);
 
   return (
     <View style={{ flex: 1 }}>
+      <Modal visible={isDepositModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setDepositModalVisible(false)}>
+              <XCircle size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Deposit</Text>
+            <View style={styles.qrContainer}>
+              <QRCode
+                value={user?.walletAddress || ''}
+                logo={logoUrl}
+                size={200}
+                logoSize={50}
+                logoBackgroundColor="transparent"
+              />
+            </View>
+            <Text style={styles.modalSubtitle}>Scan this QR code to deposit USDC or SPOT</Text>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isWithdrawModalVisible} transparent animationType='slide'>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalCloseButton} onPress={()=>setWithdrawModalVisible(false)}>
+              <XCircle size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Withdraw</Text>
+            <Text style={styles.modalSubtitle}>Enter address & select token</Text>
+            <View style={styles.addressBox}>
+              <TextInput
+                style={styles.addressInput}
+                placeholder='Wallet Address'
+                value={withdrawalAddress}
+                onChangeText={setWithdrawalAddress}
+              />
+              <TouchableOpacity onPress={handlePasteAddress} style={styles.copyButton}>
+                <Copy size={20} color='#0504dc' />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.tokenSelectionContainer}>
+              <TouchableOpacity
+                style={[styles.tokenOption, withdrawToken==='USDC' && styles.tokenOptionSelected]}
+                onPress={()=>setWithdrawToken('USDC')}
+              >
+                <UsdcIcon width={24} height={24}/>
+                <Text style={styles.tokenOptionText}>USDC</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tokenOption, withdrawToken==='SPOT' && styles.tokenOptionSelected]}
+                onPress={()=>setWithdrawToken('SPOT')}
+              >
+                <UsdcIcon width={24} height={24}/>
+                <Text style={styles.tokenOptionText}>SPOT</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.fundButton}
+              onPress={handleWithdraw}
+              disabled={isTransferring}
+            >
+              {isTransferring ? <ActivityIndicator color='#FFF'/> : <Text style={styles.fundButtonText}>Transfer {withdrawToken}</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
         <ScrollView
           style={styles.scrollView}
@@ -324,6 +420,7 @@ Thank you.`);
                     {/* <UsdcIcon /> */}
                     <Text style={styles.tokenBalanceText}>
                       {user?.usdcBalance ? user.usdcBalance.toLocaleString() : '0.00'} USDC
+
                     </Text>
                   </View>
                   <View style={styles.tokenBalanceBox}>
@@ -332,6 +429,18 @@ Thank you.`);
                       {user?.spotBalance ? user.spotBalance.toLocaleString() : '0.00'} SPOT
                     </Text>
                   </View>
+                </View>
+
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={() => setDepositModalVisible(true)}>
+                    <Text style={styles.actionButtonText}>Deposit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336' }]} onPress={()=>setWithdrawModalVisible(true)  }>
+                    <Text style={styles.actionButtonText}>Withdraw</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#2196F3' }]} onPress={() => router.push('/(tabs)/stake')}>
+                    <Text style={styles.actionButtonText}>Stake</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.infoItem}>
@@ -649,6 +758,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
   },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   chainInfoBox: {
     borderWidth: 1,
     borderColor: '#FF3B30',
@@ -826,5 +960,32 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
+  },
+  addressInput: {
+    flex:1,
+    backgroundColor:'#F5F7FA',
+    padding:12,
+    borderRadius:8,
+    fontFamily:'Inter-Regular',
+  },
+  tokenSelectionContainer: {
+    flexDirection:'row',
+    justifyContent:'space-around',
+    marginVertical:16,
+  },
+  tokenOption: {
+    flexDirection:'row',
+    alignItems:'center',
+    padding:12,
+    borderRadius:8,
+    backgroundColor:'#F0F2F5',
+  },
+  tokenOptionSelected: {
+    backgroundColor:'#DDEEFF',
+  },
+  tokenOptionText: {
+    marginLeft:8,
+    fontFamily:'Inter-Medium',
+    fontSize:16,
   },
 });

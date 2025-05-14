@@ -30,6 +30,7 @@ import { ContestCardSkeleton, SkeletonItem } from '../../components/SkeletonLoad
 import React from 'react';
 import * as Updates from 'expo-updates';
 import { usePrivy } from "@privy-io/expo";
+import UsdcIcon from '../../assets/icons/usdc.svg';
 
 const sportsCategories = [
   { id: '1', name: 'Football', icon: '⚽' },
@@ -49,7 +50,7 @@ export default function HomeScreen() {
   const featuredListRef = useRef<FlatList>(null);
   const { user } = useUserStore();
   const setUser = useUserStore((state) => state.setUser);
-  const {isAuthenticated} = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const dataFetchedRef = useRef(false);
   const { isReady, user: privyUser } = usePrivy();
@@ -59,7 +60,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if(isMounted && !isAuthenticated) {
+    if (isMounted && !isAuthenticated) {
       setTimeout(() => {
         router.replace('/(auth)/signup');
       }, 0);
@@ -78,7 +79,7 @@ export default function HomeScreen() {
     React.useCallback(() => {
       if (isMounted) {
         fetchUser();
-        
+
         if (contests.length === 0 || !dataFetchedRef.current) {
           setTimeout(() => {
             fetchContests();
@@ -122,24 +123,24 @@ export default function HomeScreen() {
       console.log("Data already fetched, skipping redundant fetch");
       return;
     }
-    
+
     setLoading(true);
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-      
+
       if (response.success && response.data) {
         const sortedContests = response.data.sort((a, b) => {
           const dateA = new Date(a.match?.startTime || '');
           const dateB = new Date(b.match?.startTime || '');
           return dateA.getTime() - dateB.getTime();
         });
-        
+
         setContests(sortedContests);
-        
+
         if (user?.id) {
           try {
             const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
-            
+
             if (userContestsResponse.success) {
               if (userContestsResponse.data && userContestsResponse.data.length > 0) {
                 setUserContests(userContestsResponse.data);
@@ -205,7 +206,7 @@ export default function HomeScreen() {
     if (!item || !item.match) {
       return renderFeaturedSkeleton();
     }
-    
+
     const { formattedTime } = formatDateTime(item.match?.startTime || '');
     const userContests = useContestsStore.getState().userContests;
     const isParticipating = userContests.some(contest => contest.id === item.id);
@@ -270,14 +271,17 @@ export default function HomeScreen() {
           <View style={styles.cardFooter}>
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
-              <Text style={styles.footerValue}>
-                {Number(item.entryFee).toFixed(0)} Points
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.footerValue}>{Number(item.entryFee).toFixed(0)}</Text>
+                <View style={{ marginLeft: 4 }}>
+                  <UsdcIcon width={16} height={16} color="#FFF" />
+                </View>
+              </View>
             </View>
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Prize</Text>
               <Text style={styles.footerValue}>
-                4000 Points
+                TBD
               </Text>
             </View>
           </View>
@@ -303,9 +307,9 @@ export default function HomeScreen() {
     return (
       <View style={styles.featuredCardWrapper}>
         <View style={[
-          styles.stackedCard, 
-          styles.secondStackedCard, 
-          { 
+          styles.stackedCard,
+          styles.secondStackedCard,
+          {
             backgroundColor: '#9797e8',
             ...Platform.select({
               ios: {
@@ -324,8 +328,8 @@ export default function HomeScreen() {
           }
         ]} />
         <View style={[
-          styles.featuredCard, 
-          { 
+          styles.featuredCard,
+          {
             backgroundColor: '#e0e0ff',
             ...Platform.select({
               ios: {
@@ -347,26 +351,26 @@ export default function HomeScreen() {
             <SkeletonItem width={'60%'} height={18} style={{ marginBottom: 5 }} />
             <SkeletonItem width={30} height={30} borderRadius={15} />
           </View>
-          
+
           <View style={styles.teamsContainer}>
             <View style={styles.teamContainer}>
               <SkeletonItem width={36} height={36} borderRadius={18} style={{ marginBottom: 6 }} />
               <SkeletonItem width={'80%'} height={14} />
             </View>
-            
+
             <View style={styles.vsContainer}>
               <SkeletonItem width={24} height={16} style={{ marginBottom: 4 }} />
               <View style={styles.timeContainer}>
                 <SkeletonItem width={45} height={16} />
               </View>
             </View>
-            
+
             <View style={styles.teamContainer}>
               <SkeletonItem width={36} height={36} borderRadius={18} style={{ marginBottom: 6 }} />
               <SkeletonItem width={'80%'} height={14} />
             </View>
           </View>
-          
+
           <View style={styles.cardFooter}>
             <View style={styles.footerItem}>
               <SkeletonItem width={70} height={12} style={{ marginBottom: 4 }} />
@@ -377,7 +381,7 @@ export default function HomeScreen() {
               <SkeletonItem width={70} height={14} />
             </View>
           </View>
-          
+
           <View style={{ marginTop: 8 }}>
             <SkeletonItem width={'100%'} height={36} borderRadius={12} />
           </View>
@@ -400,7 +404,7 @@ export default function HomeScreen() {
       <View style={styles.emptyContestContainer}>
         <Text style={styles.emptyContestText}>No contests available</Text>
         <Text style={styles.emptyContestSubText}>Try refreshing or check again later</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.emptyContestButton}
           onPress={onRefresh}
         >
@@ -444,7 +448,7 @@ export default function HomeScreen() {
               snapToAlignment="center"
               decelerationRate="fast"
               pagingEnabled
-              snapToInterval={width * 0.9 + width * 0.05 * 2} 
+              snapToInterval={width * 0.9 + width * 0.05 * 2}
             />
           ) : (
             <View style={styles.emptyFeaturedContainer}>
@@ -793,4 +797,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

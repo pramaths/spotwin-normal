@@ -4,6 +4,7 @@ import { formatDateTime } from '../utils/dateUtils';
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { getUserParticipationStatus } from '../services/userContestsApi';
+import UsdcIcon from '../assets/icons/usdc.svg';
 
 interface ContestCardProps {
   contest: IContest;
@@ -15,6 +16,7 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
   const { entryFee, name, currency, match } = contest;
   const [isParticipating, setIsParticipating] = useState(false);
   const { user } = useUserStore();
+  console.log("contest", contest);
   
   useEffect(() => {
     const checkParticipation = async () => {
@@ -85,7 +87,14 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Entry Fee</Text>
-          <Text style={styles.statValue}>{entryFee} {currency}</Text>
+          {currency === 'USDC' ? (
+            <View style = {{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.statValue}>{Number(entryFee).toFixed(0)}</Text>
+            <UsdcIcon width={24} height={24}/>
+            </View>
+          ) : (
+            <Text style={styles.statValue}>{Number(entryFee).toFixed(0)} {currency}</Text>
+          )}
         </View>
         
         <View style={styles.dateTimeContainer}>
@@ -230,6 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#000',
+    marginRight: 4,
   },
   timeText: {
     fontSize: 16,
