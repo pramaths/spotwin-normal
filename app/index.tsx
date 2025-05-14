@@ -8,6 +8,7 @@ import { AUTH_ME, UPDATE_EXPO_PUSH_TOKEN } from '@/routes/api';
 import { IUser } from '@/types';
 import { useNotification } from '@/contexts/NotificationContext';
 import { usePrivy } from '@privy-io/expo';
+import { fetchUserBalance } from '@/utils/fetchbalance';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +33,14 @@ export default function Index() {
             });
           }
           setUser(response.data);
+          if(response.data.walletAddress) {
+            const {spotBalance, usdcBalance} = await fetchUserBalance(response.data.walletAddress);
+            setUser({
+              ...response.data,
+              spotBalance,
+              usdcBalance
+            } as IUser);
+          }
           setAuthenticated(true);
         } else {
           console.log('Authentication failed, clearing token');

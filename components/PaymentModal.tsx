@@ -16,12 +16,23 @@ import { IContest } from '../types';
 import { formatFullDate } from '../utils/dateUtils';
 import { getUserParticipationStatus } from '../services/userContestsApi';
 import { useUserStore } from '@/store/userStore';
-import { getUserBalance } from '../utils/common';
-import { JOIN_CONTEST, USER_BALANCE } from '../routes/api';
+import { JOIN_CONTEST } from '../routes/api';
 import apiClient from '../utils/api';
 import { router } from 'expo-router';
 import { useContestsStore } from '@/store/contestsStore';
 import { handleInvite } from '@/utils/common';
+import { adaptPrivyWalletToAnchor } from '@/utils/walletAdpater';
+import { fetchUserBalance } from "../utils/fetchbalance"
+import {useEmbeddedSolanaWallet} from '@privy-io/expo';
+import {
+  TransactionMessage,
+  PublicKey,
+  VersionedTransaction,
+  Connection
+} from '@solana/web3.js';
+import { SpotwinClient } from '@/solana/sdk';
+import { BN } from '@coral-xyz/anchor';
+
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -43,8 +54,10 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const { user, setUser } = useUserStore();
   const { userContests, setUserContests } = useContestsStore();
-  const [userBalance, setUserBalance] = useState<number | null>(0);
 
+  const wallet  = useEmbeddedSolanaWallet();
+  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0]);
+  const spotwinClient = new SpotwinClient(adaptWallet, new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string));
   const animateSuccess = () => {
     setShowSuccess(true);
 
@@ -90,23 +103,41 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     }, 1800);
   };
 
-  const fetchUserBalance = async () => {
-    try {
-      setIsRefreshing(true);
-      const balance = await getUserBalance(user?.id || '');
-      setUserBalance(balance !== undefined ? balance : null);
-      if (user) {
-        setUser({
-          ...user,
-          points: balance || user.points
-        });
-      }
-    } catch (err) {
-      console.error("Failed to fetch balance:", err);
-    } finally {
-      setIsRefreshing(false);
+  const prepareSponsoredTransaction = async (instructions: any, feePayerAddress: string) => {
+    const embeddedWallet = wallet?.wallets?.[0];
+    if(!embeddedWallet){
+      throw new Error("No wallet found");
     }
-  };
+
+    const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string, "confirmed")
+    const { blockhash } = await connection.getLatestBlockhash();
+
+    const jointx = await spotwinClient.joinContest(new BN(contest.id), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
+    const message = new TransactionMessage({
+      payerKey: new PublicKey(feePayerAddress),
+      recentBlockhash: blockhash,
+      instructions: jointx.instructions,
+    }).compileToV0Message();
+
+    const transaction = new VersionedTransaction(message);
+    const serializedMessage = Buffer.from(transaction.message.serialize()).toString('base64');
+    const provider = await embeddedWallet.getProvider();
+    const { signature: serializedUserSignature } = await provider.request({
+      method: 'signMessage',
+      params: {
+        message: serializedMessage
+      }
+    });
+
+    const userSignature = Buffer.from(serializedUserSignature, 'base64');
+    transaction.addSignature(new PublicKey(embeddedWallet.address), userSignature);
+
+    // Serialize the transaction to send to backend
+    const serializedTransaction = Buffer.from(transaction.serialize()).toString('base64');
+
+    return serializedTransaction;
+  }
+
 
   const checkIfParticipating = async () => {
     if (isUserParticipating !== undefined) {
@@ -135,13 +166,13 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     try {
       setIsLoading(true);
       setError(null);
-      const balance = await getUserBalance(user?.id || '');
-      if (balance === null || balance === undefined) {
+      const {spotBalance, usdcBalance} = await fetchUserBalance(user?.walletAddress || '');
+      if (spotBalance === null || spotBalance === undefined) {
         throw new Error("Failed to fetch wallet balance");
       }
 
       const requiredAmount = contest?.entryFee;
-      if (balance < requiredAmount) {
+      if (contest.currency === 'spot' ? spotBalance < requiredAmount : usdcBalance < requiredAmount) {
         setIsLoading(false);
         setError(
           <Text style={styles.errorText}>
@@ -150,18 +181,20 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
         );
         return;
       }
-
+      const ix = await spotwinClient.joinContest(new BN(contest.id), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
+      const serializedTransaction = await prepareSponsoredTransaction(ix.instructions, user?.walletAddress || '');
       const response = await apiClient<any>(JOIN_CONTEST, "POST", { 
-        userId: user?.id,
         contestId: contest.id,
+        instructions: serializedTransaction,
       });
       if(response.success) {
         setIsParticipating(true);
-        fetchUserBalance();
-        if (user) {
-          setUser({
-            ...user,
-            points: user.points - contest.entryFee
+        if(wallet && wallet.wallets && wallet.wallets[0]  && user) {
+        let {spotBalance, usdcBalance} = await fetchUserBalance(wallet.wallets[0].publicKey!);
+        setUser({
+          ...user,
+            usdcBalance: usdcBalance,
+            spotBalance: spotBalance
           });
         }
         animateSuccess(); 
@@ -183,14 +216,23 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   };
 
   useEffect(() => {
-    if (isVisible) {
-      console.log("Modal opened, fetching initial balance");
-      setShowSuccess(false);
-      setError(null);
-      fetchUserBalance();
-      checkIfParticipating();
-    }
-  }, [isVisible, contest, isUserParticipating]);
+    const fetchInitialBalance = async () => {
+      if (isVisible) {
+        console.log("Modal opened, fetching initial balance");
+        setShowSuccess(false);
+        setError(null);
+        if(user && user.walletAddress) {
+          let {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+          setUser({
+            ...user,
+              usdcBalance: usdcBalance,
+              spotBalance: spotBalance
+            });
+        }
+      }
+    };
+    fetchInitialBalance();
+  }, [isVisible]);
 
   useEffect(() => {
     setIsParticipating(isUserParticipating);
@@ -198,7 +240,18 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
 
   if (!contest) return null;
 
-  const canParticipate = (userBalance !== null && userBalance >= contest.entryFee);
+  const canParticipate = (contest.currency === 'SPOT' ? user?.spotBalance && user?.spotBalance >= contest.entryFee : user?.usdcBalance && user?.usdcBalance >= contest.entryFee);
+
+  const refreshBalacne = async () => {
+    if(user && user.walletAddress) {
+      let {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+      setUser({
+        ...user,
+          usdcBalance: usdcBalance,
+          spotBalance: spotBalance
+        });
+    }
+  }
 
   return (
     <Modal
@@ -240,22 +293,30 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Joining Points</Text>
-              <Text style={styles.statValue}>{contest.entryFee} points</Text>
+              <Text style={styles.statLabel}>Joining Fee</Text>
+              {contest.currency === 'spot' ? (
+                <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} SPOT</Text>
+              ) : (
+                <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} USDC</Text>
+              )}
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>1st Prize</Text>
-              <Text style={styles.statValue}>4000 Points</Text>
+              <Text style={styles.statValue}>TBD</Text>
             </View>
           </View>
 
           <View style={styles.balanceContainer}>
             <View style={styles.balanceWrapper}>
               <Text style={styles.balanceText}>Your current balance: 
-                <Text style={styles.balanceAmount}> {userBalance?.toFixed(2) || '0.00'} points</Text>
+                {contest.currency === 'SPOT' ? (
+                  <Text style={styles.balanceAmount}> {user?.spotBalance?.toFixed(0) || '0'} SPOT</Text>
+                ) : (
+                  <Text style={styles.balanceAmount}> {user?.usdcBalance?.toFixed(0) || '0'} USDC</Text>
+                )}
               </Text>
               <TouchableOpacity 
-                onPress={fetchUserBalance} 
+                onPress={refreshBalacne} 
                 style={styles.refreshButton}
                 disabled={isRefreshing}
               >
@@ -271,7 +332,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
           {
             !canParticipate && !isParticipating && (
               <TouchableOpacity style={styles.inviteButton} onPress={() => handleInvite(user?.referralCode || '')}>
-                <Text style={styles.payButtonText}>Invite friends to earn more points</Text>
+                <Text style={styles.payButtonText}>Invite friends</Text>
               </TouchableOpacity>
             )
           }

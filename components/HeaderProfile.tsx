@@ -18,9 +18,8 @@ import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authstore';
 import { useRouter } from 'expo-router';
 import UsdcIcon from '../assets/icons/usdc.svg';
-import { Connection, PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
 import {useEmbeddedSolanaWallet} from '@privy-io/expo';
+import { fetchUserBalance } from '../utils/fetchbalance';
 
 interface HeaderProfileProps {
   user?: IUser;
@@ -34,41 +33,23 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
   const [depositModalVisible, setDepositModalVisible] = useState(false);
   const { user, setUser } = useUserStore();
   const { isNewUser, setIsNewUser } = useAuthStore();
-  
   const router = useRouter();
-
-
   const wallet = useEmbeddedSolanaWallet();
 
-  const getTokenBalance = async (
-    connection: Connection,
-    userPubkey: PublicKey,
-    tokenMint: PublicKey
-  ): Promise<bigint> => {
-    const ata = await getAssociatedTokenAddress(tokenMint, userPubkey);
-  
-    try {
-      const accountInfo = await getAccount(connection, ata);
+  const fetchInitialBalance = async () => {
+    if (wallet.wallets) {
+      const { spotBalance, usdcBalance } = await fetchUserBalance(wallet.wallets[0].publicKey);
       setUser({
         ...user,
-        spotBalance: Number(accountInfo.amount) / 1e6,
-        usdcBalance: Number(accountInfo.amount) / 1e6
-      }as IUser);
-      return accountInfo.amount;
-    } catch (err: any) {
-      if (err.message.includes("Failed to find account")) {
-        return 0n;
-      }
-      throw err;
+        spotBalance,
+        usdcBalance
+      } as IUser);
     }
-  }
-  const connection = new Connection("https://api.devnet.solana.com");
+  };
 
   useEffect(() => {
-    if(wallet.wallets){
-      getTokenBalance(connection, new PublicKey(wallet.wallets[0].publicKey ), new PublicKey("AtQpm37YSCaKUxTirDeGEr51kvfSwmtuYYptnRyqkNNT"));
-    }
-  }, [wallet.wallets]);
+    fetchInitialBalance();
+  }, []);
 
   useEffect(() => {
     if (isNewUser) {
@@ -117,12 +98,14 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
             onPress={handleWalletPress}
             activeOpacity={0.7}
           >
-            {user?.spotBalance && user?.spotBalance >= 0 && (
-              <Text style={styles.balanceText}>{Number(user?.spotBalance).toFixed(0)}</Text>
+           {user?.usdcBalance && user?.usdcBalance >= 0 && (
+              <>
+                <Text style={styles.balanceText}>
+                  {Number(user?.usdcBalance).toFixed(0)}
+                </Text>
+                <UsdcIcon width={20} height={20} />
+              </>
             )}
-            <View style={styles.walletIconWrapper}>
-              <UsdcIcon />
-            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
@@ -151,7 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: 'transparent',
     
   },
@@ -191,15 +174,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 2,
     height: 40,
-    gap: 4,
   },
   walletIconWrapper: {
-    justifyContent: 'center',
     alignItems: 'center',
+    
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 35,
+    height: 35,
     borderRadius: 20,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
@@ -226,7 +208,7 @@ const styles = StyleSheet.create({
     color: '#0504dc',
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginRight: 4,
   },
   modalContent: {
     backgroundColor: 'white',

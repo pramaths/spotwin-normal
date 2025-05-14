@@ -2,6 +2,7 @@ import { AnchorProvider, BN, Program, Wallet, utils } from "@coral-xyz/anchor";
 import { Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import idl from './spotwin.json';
+import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 type SpotwinIdl = any;
 
@@ -78,12 +79,14 @@ export class SpotwinClient {
     }
   }
 
-  async joinContest(contestId: BN, playerTokenAccount: PublicKey, poolMint: PublicKey): Promise<string> {
+  async joinContest(contestId: BN, poolMint: PublicKey): Promise<any> {
     try {
       const contestPda = this.pdaContest(contestId);
       const vaultPda = this.pdaVault(contestId, poolMint);
       const vaultAuthorityPda = this.pdaVaultAuthority(contestId);
       const participantPda = this.pdaParticipant(contestId, this.wallet.publicKey);
+
+      const playerTokenAccount = await getAssociatedTokenAddress(poolMint, this.wallet.publicKey);
 
       return await this.program.methods
         .joinContest(contestId)
@@ -99,7 +102,7 @@ export class SpotwinClient {
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
-        .rpc();
+        .instruction();
     } catch (error) {
       console.error("Error in SpotwinClient.joinContest:", error);
       throw error;

@@ -459,8 +459,8 @@ const styles = StyleSheet.create({
   balanceCard: {
     borderRadius: 16,
     padding: 20,
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 14,
   },
   balanceLabel: {
     fontSize: 24,

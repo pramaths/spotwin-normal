@@ -15,9 +15,7 @@ interface ContestCardProps {
 export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCardProps) => {
   const { entryFee, name, currency, match } = contest;
   const [isParticipating, setIsParticipating] = useState(false);
-  const { user } = useUserStore();
-  console.log("contest", contest);
-  
+  const { user } = useUserStore();  
   useEffect(() => {
     const checkParticipation = async () => {
       if (!user?.id) return;
@@ -109,7 +107,7 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
         disabled={isParticipating}
       >
         <Text style={styles.joinButtonText}>
-          {isParticipating ? 'Already Participating' : 'Join for FREE'}
+          {isParticipating ? 'Already Participating' : `Join for ${Number(entryFee).toFixed(0)} ${currency}`}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>

@@ -31,6 +31,7 @@ import React from 'react';
 import * as Updates from 'expo-updates';
 import { usePrivy } from "@privy-io/expo";
 import UsdcIcon from '../../assets/icons/usdc.svg';
+import { fetchUserBalance } from '../../utils/fetchbalance';
 
 const sportsCategories = [
   { id: '1', name: 'Football', icon: '⚽' },
@@ -112,6 +113,14 @@ export default function HomeScreen() {
       const response = await apiClient<IUser>(AUTH_ME, 'GET');
       if (response.success && response.data) {
         setUser(response.data);
+        if(user?.walletAddress) {
+          const {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+          setUser({
+            ...user,
+            spotBalance,
+            usdcBalance
+          } as IUser);
+        }
       }
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -171,6 +180,14 @@ export default function HomeScreen() {
     await fetchUser();
     await fetchContests();
     setRefreshing(false);
+    if(user?.walletAddress) {
+      const {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+      setUser({
+        ...user,
+        spotBalance,
+        usdcBalance
+      } as IUser);
+    }
   };
 
   useEffect(() => {
@@ -295,7 +312,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.joinButtonText}>
-              {isParticipating ? 'Already Participating' : 'Join for FREE'}
+              {isParticipating ? 'Already Participating' : `Join for ${Number(item.entryFee).toFixed(0)} USDC`}
             </Text>
           </TouchableOpacity>
         </LinearGradient>

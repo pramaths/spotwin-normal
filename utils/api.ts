@@ -32,7 +32,6 @@ const apiClient = async <T,>(
   body: RequestBody | FormData | null = null,
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
-  console.log("endpoint:", endpoint);
   const headers: Record<string, string> = {};
   const token = await privy.getAccessToken().then((token) => token).catch((error) => {
     console.error("Error getting access token:", error);
@@ -56,8 +55,7 @@ const apiClient = async <T,>(
   try {
     console.log("Sending request with options:", JSON.stringify({
       method: options.method,
-      headers: options.headers,
-      hasBody: !!options.body
+      endpoint
     }));
     const response = await fetch(endpoint, options);
     console.log("Received response status:", response.status);
