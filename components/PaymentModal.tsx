@@ -33,6 +33,12 @@ import {
 import { SpotwinClient } from '@/solana/sdk';
 import { BN } from '@coral-xyz/anchor';
 
+if (typeof global.structuredClone !== 'function') {
+  global.structuredClone = function (obj) {
+    return JSON.parse(JSON.stringify(obj));
+  };
+}
+
 
 interface PaymentModalProps {
   isVisible: boolean;
@@ -56,7 +62,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const { userContests, setUserContests } = useContestsStore();
 
   const wallet  = useEmbeddedSolanaWallet();
-  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0]);
+  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0], false);
   const spotwinClient = new SpotwinClient(adaptWallet, new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string));
   const animateSuccess = () => {
     setShowSuccess(true);
@@ -112,11 +118,11 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string, "confirmed")
     const { blockhash } = await connection.getLatestBlockhash();
 
-    const jointx = await spotwinClient.joinContest(new BN(contest.id), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
+    const jointx = await spotwinClient.joinContest(new BN(contest.contestId), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
     const message = new TransactionMessage({
       payerKey: new PublicKey(feePayerAddress),
       recentBlockhash: blockhash,
-      instructions: jointx.instructions,
+      instructions: [jointx],
     }).compileToV0Message();
 
     const transaction = new VersionedTransaction(message);
@@ -181,7 +187,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
         );
         return;
       }
-      const ix = await spotwinClient.joinContest(new BN(contest.id), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
+      const ix = await spotwinClient.joinContest(new BN(contest.contestId), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
       const serializedTransaction = await prepareSponsoredTransaction(ix.instructions, user?.walletAddress || '');
       const response = await apiClient<any>(JOIN_CONTEST, "POST", { 
         contestId: contest.id,
