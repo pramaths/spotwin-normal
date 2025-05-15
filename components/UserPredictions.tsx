@@ -144,13 +144,13 @@ const UserPredictions = ({ contestId, userId, status }: UserPredictionsProps) =>
                 <View style={styles.bottomSection}>
                   <View style={[
                     styles.outcomeContainer,
-                    (item.outcome === IOutcome.YES) ? styles.yesContainer : styles.noContainer
+                    (item.prediction === IOutcome.YES) ? styles.yesContainer : styles.noContainer
                   ]}>
                     <Text style={[
                       styles.outcomeText,
-                      (item.outcome === IOutcome.YES) ? styles.yesText : styles.noText
+                      (item.prediction === IOutcome.YES) ? styles.yesText : styles.noText
                     ]}>
-                      {item.outcome === IOutcome.YES ? 'YES' : 'NO'}
+                      {item.prediction === IOutcome.YES ? 'YES' : 'NO'}
                     </Text>
                   </View>
                   {status === IContestStatus.OPEN && (

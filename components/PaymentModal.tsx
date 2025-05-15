@@ -424,7 +424,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
                   { opacity: successOpacity }
                 ]}
               >
-                Joined successful!
+                Joined successfully!
               </Animated.Text>
             </View>
           )}

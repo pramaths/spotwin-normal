@@ -289,7 +289,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.footerValue}>{Number(item.entryFee).toFixed(0)}</Text>
+                <Text style={styles.footerValue}>{Number(item.entryFee)/20}</Text>
                 <View style={{ marginLeft: 4 }}>
                   <UsdcIcon width={16} height={16} color="#FFF" />
                 </View>
@@ -312,7 +312,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.joinButtonText}>
-              {isParticipating ? 'Already Participating' : `Join for ${Number(item.entryFee).toFixed(0)} USDC`}
+              {isParticipating ? 'Already Participating' : `Join for ${(Number(item.entryFee)/20).toFixed(0)} USDC`}
             </Text>
           </TouchableOpacity>
         </LinearGradient>

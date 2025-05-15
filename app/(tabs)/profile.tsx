@@ -278,7 +278,7 @@ Thank you.`);
                 logoBackgroundColor="transparent"
               />
             </View>
-            <Text style={styles.modalSubtitle}>Scan this QR code to deposit USDC or SPOT</Text>
+            <Text style={styles.modalSubtitle}>Scan this QR code to deposit USDC</Text>
           </View>
         </View>
       </Modal>
@@ -417,16 +417,10 @@ Thank you.`);
 
                 <View style={styles.tokenBalanceContainer}>
                   <View style={styles.tokenBalanceBox}>
-                    {/* <UsdcIcon /> */}
+                    <UsdcIcon width={24} height={24}/>
                     <Text style={styles.tokenBalanceText}>
                       {user?.usdcBalance ? user.usdcBalance.toLocaleString() : '0.00'} USDC
 
-                    </Text>
-                  </View>
-                  <View style={styles.tokenBalanceBox}>
-                    {/* <UsdcIcon /> */}
-                    <Text style={styles.tokenBalanceText}>
-                      {user?.spotBalance ? user.spotBalance.toLocaleString() : '0.00'} SPOT
                     </Text>
                   </View>
                 </View>
@@ -855,6 +849,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    marginLeft: 8,
   },
   statsContainer: {
     flexDirection: 'row',

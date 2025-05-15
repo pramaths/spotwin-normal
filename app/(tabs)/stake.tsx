@@ -5,7 +5,7 @@ import HeaderProfile from '@/components/HeaderProfile';
 import { useUserStore } from '@/store/userStore';
 import { Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
+import UsdcIcon from '@/assets/icons/usdc.svg';
 // Notification component that appears above tab bar
 interface StakeNotificationProps {
   message: string;
@@ -297,7 +297,7 @@ const StakeScreen = () => {
                     <Text style={styles.balanceAmount}>{spotBalance.toLocaleString()}</Text>
                     {spotBalance > 0 && 
                     <View style={styles.tokenIconContainer}>
-                      <Image source={require('@/assets/logo.png')} style={styles.tokenIcon} />
+                      <UsdcIcon width={28} height={28} />
                     </View>}
                   </View>
                 </View>
@@ -388,7 +388,7 @@ const StakeScreen = () => {
                 <Image source={require('@/assets/icons/stake.png')} style={styles.stakeInfoImage} />
               </View>
               <View style={styles.bulletPoint}>
-                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 100k $SPOTWIN to unlock premium questions + AI AGENT</Text>
+                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 200 USDC to unlock premium questions + AI AGENT</Text>
               </View>
             </View>
           </>

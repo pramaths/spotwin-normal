@@ -69,10 +69,10 @@ export default function PredictionScreen() {
   // Hardcoded stake amounts for each difficulty level
   const getStakeAmount = (difficulty: IDifficultyLevel) => {
     switch (difficulty) {
-      case IDifficultyLevel.EASY: return 50;
-      case IDifficultyLevel.MEDIUM: return 100;
+      case IDifficultyLevel.EASY: return 200;
+      case IDifficultyLevel.MEDIUM: return 200;
       case IDifficultyLevel.HARD: return 200;
-      default: return 100;
+      default: return 200;
     }
   };
   

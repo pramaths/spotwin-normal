@@ -87,11 +87,11 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
           <Text style={styles.statLabel}>Entry Fee</Text>
           {currency === 'USDC' ? (
             <View style = {{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.statValue}>{Number(entryFee).toFixed(0)}</Text>
-            <UsdcIcon width={24} height={24}/>
+            <Text style={styles.statValue}>{(Number(entryFee)/20).toFixed(0)}</Text>
+            <UsdcIcon width={20} height={20}/>
             </View>
           ) : (
-            <Text style={styles.statValue}>{Number(entryFee).toFixed(0)} {currency}</Text>
+            <Text style={styles.statValue}>{(Number(entryFee)/20).toFixed(0)} {currency}</Text>
           )}
         </View>
         
@@ -107,7 +107,7 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
         disabled={isParticipating}
       >
         <Text style={styles.joinButtonText}>
-          {isParticipating ? 'Already Participating' : `Join for ${Number(entryFee).toFixed(0)} ${currency}`}
+          {isParticipating ? 'Already Participating' : `Join for ${(Number(entryFee)/20).toFixed(0)} ${currency}`}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
   statItem: {
     alignItems: 'flex-start',
     width: '50%',
+    paddingHorizontal: 8,
   },
   dateTimeContainer: {
     alignItems: 'flex-end',
@@ -235,9 +236,10 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
     color: '#000',
     marginRight: 4,
+    fontFamily: 'Inter-Bold',
   },
   timeText: {
     fontSize: 16,
