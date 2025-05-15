@@ -24,7 +24,7 @@ export const GET_ALL_TICKETS = `${backendUrl}/tickets`;
 export const BUY_TICKET = `${backendUrl}/users/buy-ticket`;
 
 //UserContests
-export const USER_CONTESTS =(userId: string)=> `${backendUrl}/user-contests/user/${userId}`;
+export const USER_CONTESTS = `${backendUrl}/user-contests/user`;
 export const USER_PARTICIPATION =(userId: string)=> `${backendUrl}/user-contests/user/${userId}/participation`;
 export const JOIN_CONTEST = `${backendUrl}/user-contests/join`;
 
@@ -36,7 +36,7 @@ export const UPDATE_PREDICTION = (predictionId: string) => `${backendUrl}/predic
 export const GET_BY_A_PREDICTION = (predictionId: string) => `${backendUrl}/predictions/${predictionId}`;
 export const GET_PREDICTION_BY_USER_AND_CONTEST =( contestId: string, userId: string) => `${backendUrl}/predictions/${contestId}/user/${userId}`;
 export const GET_ALL_QUESTIONS_BY_CONTEST = (contestId: string) => `${backendUrl}/featured/contest/${contestId}`;
-
+export const SUBMIT_PREDICTIONS = `${backendUrl}/predictions/submit/onchain`;
 
 //leaderboard
 export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboards/contest/${contestId}`;

@@ -56,8 +56,7 @@ export default function ContestsScreen() {
   const fetchContests = async () => {
     try {
       const response = await apiClient<IContest[]>(CONTESTS, 'GET');
-      const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user?.id || ''), 'GET');
-
+      const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS, 'GET');
 
       if (response.success && response.data && userContestsResponse.success) {
         let availableContests = response.data.filter((contest: IContest) => !userContestsResponse.data?.some((userContest: IContest) => userContest.id === contest.id));

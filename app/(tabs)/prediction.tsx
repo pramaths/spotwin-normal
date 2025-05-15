@@ -20,7 +20,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useUserStore } from '@/store/userStore';
 import { IDifficultyLevel, IOutcome, IUserPrediction, IQuestion, IContest } from '@/types';
 import QuestionItem from '@/components/QuestionItem';
-import { QUESTIONS_BY_CONTEST, CONTESTS_BY_ID } from '@/routes/api';
+import { QUESTIONS_BY_CONTEST, CONTESTS_BY_ID, SUBMIT_PREDICTIONS } from '@/routes/api';
 import apiClient from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -56,6 +56,10 @@ export default function PredictionScreen() {
     return predictions.filter((p: IUserPrediction) => p.question.difficultyLevel === difficulty).length;
   };
 
+  const totalAnsweredQuestions = () => {
+    return predictions.length;
+  }
+
   // Function to determine if max predictions reached for a difficulty level
   const isMaxPredictionsReached = (difficulty: IDifficultyLevel) => {
     const count = getAnsweredCountByDifficulty(difficulty);
@@ -74,32 +78,8 @@ export default function PredictionScreen() {
   
   // Function to handle unlocking a special question
   const handleUnlockQuestion = (questionId: string, difficulty: IDifficultyLevel) => {
-    // In a real implementation, this would call a function to stake tokens
-    // For now, we'll just simulate with an alert and add to unlocked questions
-    Alert.alert(
-      "Unlock Special Question",
-      `Stake ${getStakeAmount(difficulty)} USDC to unlock this question?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Stake & Unlock",
-          onPress: () => {
-            // Simulate successful staking
-            setUnlockedQuestions(prev => [...prev, questionId]);
-            setPredictionMessage({
-              text: `Question unlocked successfully!`,
-              type: IOutcome.YES
-            });
-            setTimeout(() => {
-              setPredictionMessage(null);
-            }, 2000);
-          }
-        }
-      ]
-    );
+    // Redirect to the stake tab
+    router.push('/stake');
   };
 
   useEffect(() => {
@@ -326,7 +306,39 @@ export default function PredictionScreen() {
     });
   };
 
-  const currentQuestions = questionsByDifficulty[selectedDifficulty] || [];
+  // Sort questions to ensure special question is always in the middle (3rd position)
+  const sortQuestionsWithSpecialInMiddle = (questions: IQuestion[]) => {
+    if (questions.length <= 1) return questions;
+    
+    // Find special questions and regular questions
+    const specialQuestions = questions.filter(q => q.specialQuestion);
+    const regularQuestions = questions.filter(q => !q.specialQuestion);
+    
+    // If there are no special questions, return the original array
+    if (specialQuestions.length === 0) return questions;
+    
+    // If there are multiple special questions, we'll place the first one in the middle
+    const specialQuestion = specialQuestions[0];
+    
+    // Calculate the middle position (for 5 questions, it would be index 2, which is the 3rd position)
+    const middlePosition = Math.floor(questions.length / 2);
+    
+    // Create a new array with regular questions
+    const result = [...regularQuestions];
+    
+    // Insert the special question at the middle position
+    result.splice(middlePosition, 0, specialQuestion);
+    
+    // If we have more special questions than we accounted for, append them at the end
+    if (specialQuestions.length > 1) {
+      result.push(...specialQuestions.slice(1));
+    }
+    
+    // If we have too many questions (due to adding extras), trim to original length
+    return result.slice(0, questions.length);
+  };
+
+  const currentQuestions = sortQuestionsWithSpecialInMiddle(questionsByDifficulty[selectedDifficulty] || []);
   const answeredCount = getAnsweredCountByDifficulty(selectedDifficulty);
 
   if (loading && questions.length === 0) {
@@ -415,31 +427,22 @@ export default function PredictionScreen() {
           {currentQuestions.length > 0 ? (
             <>
               {currentQuestions.map((q: IQuestion) => (
-                <View key={q.id} style={{ position: 'relative' }}>
-                  <QuestionItem
-                    question={q}
-                    onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
-                    userVote={userVotesMap[q.id] || null}
-                    onRemovePrediction={() => handleRemovePrediction(q.id)}
-                  />
-                  
-                  {/* Overlay for special questions that need to be unlocked */}
-                  {q.specialQuestion && !unlockedQuestions.includes(q.id) && (
-                    <View style={styles.lockedOverlay}>
-                      <View style={styles.lockContainer}>
-                        <Ionicons name="lock-closed" size={32} color="#FFF" />
-                        <Text style={styles.lockText}>Stake to Unlock</Text>
-                        <Text style={styles.stakeAmount}>{getStakeAmount(q.difficultyLevel)} USDC</Text>
-                        <TouchableOpacity 
-                          style={styles.unlockButton}
-                          onPress={() => handleUnlockQuestion(q.id, q.difficultyLevel)}
-                        >
-                          <Text style={styles.unlockButtonText}>Unlock</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  )}
-                </View>
+                <QuestionItem
+                  key={q.id}
+                  question={{
+                    ...q,
+                    // Replace question text with redacted format for locked special questions
+                    question: (q.specialQuestion && !unlockedQuestions.includes(q.id)) 
+                      ? q.question.replace(/[a-zA-Z0-9]/g, '█') 
+                      : q.question
+                  }}
+                  onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
+                  userVote={userVotesMap[q.id] || null}
+                  onRemovePrediction={() => handleRemovePrediction(q.id)}
+                  isLocked={q.specialQuestion && !unlockedQuestions.includes(q.id)}
+                  onUnlock={() => handleUnlockQuestion(q.id, q.difficultyLevel)}
+                  stakeAmount={q.specialQuestion ? `${getStakeAmount(q.difficultyLevel)} USDC` : undefined}
+                />
               ))}
             </>
           ) : (
@@ -470,13 +473,17 @@ export default function PredictionScreen() {
       )}
       
       {selectedDifficulty === IDifficultyLevel.HARD && 
-        getAnsweredCountByDifficulty(IDifficultyLevel.HARD) >= 3 && (
+        getAnsweredCountByDifficulty(IDifficultyLevel.HARD) >= 3 && 
+        totalAnsweredQuestions() === 9 && (
         <TouchableOpacity 
           style={[styles.fixedActionButton, styles.submitButton]}
-          onPress={() => {
+          onPress={async () => {
             setPredictionMessage({
               text: "Successfully Submitted your predictions",
               type: IOutcome.YES
+            });
+            await apiClient(SUBMIT_PREDICTIONS, 'POST', {
+              contestId: contestId as string,
             });
             setTimeout(() => {
               setPredictionMessage(null);
@@ -736,22 +743,7 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: 'rgba(76, 175, 80, 0.95)',
   },
-  lockedOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lockContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
+  
   lockText: {
     color: '#FFF',
     fontSize: 16,

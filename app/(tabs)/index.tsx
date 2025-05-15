@@ -148,7 +148,7 @@ export default function HomeScreen() {
 
         if (user?.id) {
           try {
-            const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS(user.id), 'GET');
+            const userContestsResponse = await apiClient<IContest[]>(USER_CONTESTS, 'GET');
 
             if (userContestsResponse.success) {
               if (userContestsResponse.data && userContestsResponse.data.length > 0) {

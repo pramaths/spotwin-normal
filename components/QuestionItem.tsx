@@ -9,6 +9,9 @@ interface Props {
   userVote: IOutcome | null;
   onPrediction: (prediction: IOutcome) => void;
   onRemovePrediction: () => void;
+  isLocked?: boolean;
+  onUnlock?: () => void;
+  stakeAmount?: string;
 }
 
 const difficultyColors = {
@@ -22,6 +25,9 @@ export default function QuestionItem({
   userVote,
   onPrediction,
   onRemovePrediction,
+  isLocked = false,
+  onUnlock,
+  stakeAmount,
 }: Props) {
   const difficultyColor = difficultyColors[question.difficultyLevel];
 
@@ -34,7 +40,12 @@ export default function QuestionItem({
   };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={[styles.card, isLocked && styles.lockedCard]}
+      onPress={isLocked ? onUnlock : undefined}
+      activeOpacity={isLocked ? 0.7 : 1}
+      disabled={!isLocked}
+    >
       <LinearGradient
         colors={[difficultyColor, `${difficultyColor}BB`]}
         style={styles.badge}
@@ -44,22 +55,32 @@ export default function QuestionItem({
 
       <Text style={styles.questionText}>{question.question}</Text>
 
-      <View style={styles.buttonContainer}>
-        {[IOutcome.YES, IOutcome.NO].map((outcome) => (
-          <TouchableOpacity
-            key={outcome}
-            onPress={() => handlePrediction(outcome)}
-            style={[
-              styles.option,
-              outcome === IOutcome.YES ? styles.yesOption : styles.noOption,
-              userVote === outcome ? styles.selectedOption : userVote !== null ? styles.unselectedOption : null,
-            ]}
-          >
-            <Text style={styles.optionText}>{outcome}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
+      {isLocked ? (
+        <View style={styles.specialQuestionFooter}>
+          <View style={styles.lockInfoContainer}>
+            <Ionicons name="lock-closed" size={20} color="#FFD700" />
+            <Text style={styles.stakeToUnlockText}>Stake to Unlock</Text>
+          </View>
+          {stakeAmount && <Text style={styles.stakeAmount}>{stakeAmount}</Text>}
+        </View>
+      ) : (
+        <View style={styles.buttonContainer}>
+          {[IOutcome.YES, IOutcome.NO].map((outcome) => (
+            <TouchableOpacity
+              key={outcome}
+              onPress={() => handlePrediction(outcome)}
+              style={[
+                styles.option,
+                outcome === IOutcome.YES ? styles.yesOption : styles.noOption,
+                userVote === outcome ? styles.selectedOption : userVote !== null ? styles.unselectedOption : null,
+              ]}
+            >
+              <Text style={styles.optionText}>{outcome}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -75,6 +96,13 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginVertical: 6,
     marginHorizontal: 12,
+    position: 'relative',
+  },
+  lockedCard: {
+    backgroundColor: '#F8F8F8',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderStyle: 'dashed',
   },
   badge: {
     alignSelf: 'flex-start',
@@ -129,5 +157,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 6,
+  },
+  specialQuestionFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  lockInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stakeToUnlockText: {
+    color: '#333',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
+  stakeAmount: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
 });

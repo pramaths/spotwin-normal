@@ -46,12 +46,11 @@ export const submitPrediction = async (
 export const fetchUserPredictions = async (contestId: string, userId?: string): Promise<IUserPrediction[]> => {
   try {
     const response = await apiClient<IUserPrediction[]>(GET_PREDICTION_BY_USER_AND_CONTEST(contestId, userId || ''), 'GET');
-    console.log('response', response);
     if (response.success && response.data) {
       return response.data.map((prediction: IUserPrediction) => ({
         ...prediction,
         question: prediction.question || '',
-        outcome: prediction.outcome === 'YES' ? IOutcome.YES : IOutcome.NO
+        outcome: prediction.prediction === 'YES' ? IOutcome.YES : IOutcome.NO
       }));
     }
     return [];

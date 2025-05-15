@@ -53,13 +53,13 @@ const apiClient = async <T,>(
   };
 
   try {
+    
+    const response = await fetch(endpoint, options);
     console.log("Sending request with options:", JSON.stringify({
       method: options.method,
-      endpoint
+      endpoint,
+      responseStatus: response.status
     }));
-    const response = await fetch(endpoint, options);
-    console.log("Received response status:", response.status);
-    
     if (method === 'DELETE' && response.status >= 200 && response.status < 300) {
       return {
         success: true,
