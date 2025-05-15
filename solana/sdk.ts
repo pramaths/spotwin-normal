@@ -23,6 +23,7 @@ export class SpotwinClient {
   }
 
   pdaContest(contestId: BN): PublicKey {
+    console.log("contestId",contestId)
     return PublicKey.findProgramAddressSync(
       [Buffer.from("contest"), contestId.toArrayLike(Buffer, "le", 8)],
       this.program.programId
@@ -88,10 +89,17 @@ export class SpotwinClient {
 
       const playerTokenAccount = await getAssociatedTokenAddress(poolMint, this.wallet.publicKey);
 
+      console.log("contestPda",contestPda.toBase58())
+      console.log("vaultPda",vaultPda.toBase58())
+      console.log("vaultAuthorityPda",vaultAuthorityPda.toBase58())
+      console.log("participantPda",participantPda.toBase58())
+      console.log("playerTokenAccount",playerTokenAccount.toBase58())
+      console.log("poolMint",poolMint.toBase58())
       return await this.program.methods
         .joinContest(contestId)
         .accountsStrict({
           player: this.wallet.publicKey,
+          feePayer: process.env.EXPO_PUBLIC_FEE_PAYER!,
           contest: contestPda,
           participant: participantPda,
           vault: vaultPda,

@@ -10,7 +10,8 @@ import {
   Dimensions,
   Text,
   ActivityIndicator,
-  Image
+  Image,
+  Alert
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -34,6 +35,7 @@ export default function PredictionScreen() {
   const [predictions, setPredictions] = useState<IUserPrediction[]>([]);
   const [userVotesMap, setUserVotesMap] = useState<Record<string, IOutcome | null>>({});
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
+  const [unlockedQuestions, setUnlockedQuestions] = useState<string[]>([]);
 
   const [questionsByDifficulty, setQuestionsByDifficulty] = useState<Record<IDifficultyLevel, IQuestion[]>>({
     [IDifficultyLevel.EASY]: [],
@@ -58,6 +60,46 @@ export default function PredictionScreen() {
   const isMaxPredictionsReached = (difficulty: IDifficultyLevel) => {
     const count = getAnsweredCountByDifficulty(difficulty);
     return count >= 3;
+  };
+  
+  // Hardcoded stake amounts for each difficulty level
+  const getStakeAmount = (difficulty: IDifficultyLevel) => {
+    switch (difficulty) {
+      case IDifficultyLevel.EASY: return 50;
+      case IDifficultyLevel.MEDIUM: return 100;
+      case IDifficultyLevel.HARD: return 200;
+      default: return 100;
+    }
+  };
+  
+  // Function to handle unlocking a special question
+  const handleUnlockQuestion = (questionId: string, difficulty: IDifficultyLevel) => {
+    // In a real implementation, this would call a function to stake tokens
+    // For now, we'll just simulate with an alert and add to unlocked questions
+    Alert.alert(
+      "Unlock Special Question",
+      `Stake ${getStakeAmount(difficulty)} USDC to unlock this question?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Stake & Unlock",
+          onPress: () => {
+            // Simulate successful staking
+            setUnlockedQuestions(prev => [...prev, questionId]);
+            setPredictionMessage({
+              text: `Question unlocked successfully!`,
+              type: IOutcome.YES
+            });
+            setTimeout(() => {
+              setPredictionMessage(null);
+            }, 2000);
+          }
+        }
+      ]
+    );
   };
 
   useEffect(() => {
@@ -373,13 +415,31 @@ export default function PredictionScreen() {
           {currentQuestions.length > 0 ? (
             <>
               {currentQuestions.map((q: IQuestion) => (
-                <QuestionItem
-                  key={q.id}
-                  question={q}
-                  onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
-                  userVote={userVotesMap[q.id] || null}
-                  onRemovePrediction={() => handleRemovePrediction(q.id)}
-                />
+                <View key={q.id} style={{ position: 'relative' }}>
+                  <QuestionItem
+                    question={q}
+                    onPrediction={(prediction: IOutcome) => handlePrediction(q, prediction)}
+                    userVote={userVotesMap[q.id] || null}
+                    onRemovePrediction={() => handleRemovePrediction(q.id)}
+                  />
+                  
+                  {/* Overlay for special questions that need to be unlocked */}
+                  {q.specialQuestion && !unlockedQuestions.includes(q.id) && (
+                    <View style={styles.lockedOverlay}>
+                      <View style={styles.lockContainer}>
+                        <Ionicons name="lock-closed" size={32} color="#FFF" />
+                        <Text style={styles.lockText}>Stake to Unlock</Text>
+                        <Text style={styles.stakeAmount}>{getStakeAmount(q.difficultyLevel)} USDC</Text>
+                        <TouchableOpacity 
+                          style={styles.unlockButton}
+                          onPress={() => handleUnlockQuestion(q.id, q.difficultyLevel)}
+                        >
+                          <Text style={styles.unlockButtonText}>Unlock</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
               ))}
             </>
           ) : (
@@ -675,5 +735,44 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: 'rgba(76, 175, 80, 0.95)',
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  lockText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  stakeAmount: {
+    color: '#FFD700',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  unlockButton: {
+    backgroundColor: '#3768E3',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  unlockButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
   },
 });

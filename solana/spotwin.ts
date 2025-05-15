@@ -254,6 +254,11 @@ export type Spotwin = {
           "signer": true
         },
         {
+          "name": "feePayer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "contest",
           "writable": true
         },
@@ -619,6 +624,11 @@ export type Spotwin = {
           "signer": true
         },
         {
+          "name": "feePayer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "stakeAcct",
           "writable": true,
           "pda": {
@@ -844,13 +854,22 @@ export type Spotwin = {
       ],
       "accounts": [
         {
-          "name": "player",
+          "name": "creator",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "contest"
+          ]
         },
         {
           "name": "contest",
           "writable": true
+        },
+        {
+          "name": "player",
+          "docs": [
+            "Safe because we never read or write any lamports or data here."
+          ]
         },
         {
           "name": "participant",

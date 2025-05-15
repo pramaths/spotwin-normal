@@ -63,7 +63,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
 
   const wallet  = useEmbeddedSolanaWallet();
   const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0], false);
-  const spotwinClient = new SpotwinClient(adaptWallet, new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string));
+  const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL!);
+  const spotwinClient = new SpotwinClient(adaptWallet, connection);
   const animateSuccess = () => {
     setShowSuccess(true);
 
@@ -114,15 +115,17 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     if(!embeddedWallet){
       throw new Error("No wallet found");
     }
+    if(!feePayerAddress){
+      throw new Error("No fee payer address found");
+    }
 
     const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string, "confirmed")
     const { blockhash } = await connection.getLatestBlockhash();
 
-    const jointx = await spotwinClient.joinContest(new BN(contest.contestId), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
     const message = new TransactionMessage({
       payerKey: new PublicKey(feePayerAddress),
       recentBlockhash: blockhash,
-      instructions: [jointx],
+      instructions: instructions,
     }).compileToV0Message();
 
     const transaction = new VersionedTransaction(message);
@@ -188,7 +191,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
         return;
       }
       const ix = await spotwinClient.joinContest(new BN(contest.contestId), new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!));
-      const serializedTransaction = await prepareSponsoredTransaction(ix.instructions, user?.walletAddress || '');
+      const feePayerAddress = process.env.EXPO_PUBLIC_FEE_PAYER!;
+      const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
       const response = await apiClient<any>(JOIN_CONTEST, "POST", { 
         contestId: contest.id,
         instructions: serializedTransaction,
@@ -300,7 +304,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Joining Fee</Text>
-              {contest.currency === 'spot' ? (
+              {contest.currency === 'SPOT' ? (
                 <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} SPOT</Text>
               ) : (
                 <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} USDC</Text>

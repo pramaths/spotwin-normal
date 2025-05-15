@@ -248,6 +248,11 @@
           "signer": true
         },
         {
+          "name": "fee_payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "contest",
           "writable": true
         },
@@ -613,6 +618,11 @@
           "signer": true
         },
         {
+          "name": "fee_payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "stake_acct",
           "writable": true,
           "pda": {
@@ -838,13 +848,22 @@
       ],
       "accounts": [
         {
-          "name": "player",
+          "name": "creator",
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "contest"
+          ]
         },
         {
           "name": "contest",
           "writable": true
+        },
+        {
+          "name": "player",
+          "docs": [
+            "Safe because we never read or write any lamports or data here."
+          ]
         },
         {
           "name": "participant",

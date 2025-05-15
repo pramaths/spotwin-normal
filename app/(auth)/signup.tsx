@@ -40,13 +40,6 @@ export default function SignupScreen() {
         throw new Error(response.message || 'Login failed');
       }
     },
-    onError: (error) => {
-      console.error('Login failed:', error);
-      setAuthState({
-        status: 'error',
-        error: { message: 'Login failed. Please try again.' }
-      });
-    }
   });
 
   const [showReferralScreen, setShowReferralScreen] = useState(false);
@@ -243,7 +236,7 @@ export default function SignupScreen() {
                     keyboardVisible && styles.titleKeyboardShown,
                     { backgroundColor: '#fff' }
                   ]}>
-                    Play Fantasy Cricket for free and win IPL Tickets
+                    Play fantasy trivia and win rewards!
                   </Text>
 
                   {authState.status === 'error' && (

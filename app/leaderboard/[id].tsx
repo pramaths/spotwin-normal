@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import apiClient from '@/utils/api';
 import { LEADERBOARD_API } from '@/routes/api';
 import { useUserStore } from '@/store/userStore';
+import UsdcIcon from '@/assets/icons/usdc.svg';
 
 interface LeaderboardEntry {
   id: string;
@@ -193,12 +194,170 @@ export default function LeaderboardScreen() {
             isCurrentUser && styles.currentUserPrize
           ]}>
             <Text style={styles.prizeText}>{item.prize}</Text>
+            <UsdcIcon width={20} height={20} />
           </View>
         )}
       </View>
     );
   };
-
+  const hardcodedLeaderboard =[
+    {
+      "id": "1",
+      "rank": 1,
+      "username": "ChainShifter",
+      "score": 9821,
+      "prize": "200 ",
+      "userId": "user_001"
+    },
+    {
+      "id": "2",
+      "rank": 2,
+      "username": "BlockWarden",
+      "score": 9675,
+      "prize": "100 ",
+      "userId": "user_002"
+    },
+    {
+      "id": "3",
+      "rank": 3,
+      "username": "SatoshiSniper",
+      "score": 9510,
+      "prize": "50 ",
+      "userId": "user_003"
+    },
+    {
+      "id": "4",
+      "rank": 4,
+      "username": "ETHGuardian",
+      "score": 9390,
+      "prize": "50 ",
+      "userId": "user_004"
+    },
+    {
+      "id": "5",
+      "rank": 5,
+      "username": "ZeroHash",
+      "score": 9255,
+      "prize": "50 ",
+      "userId": "user_005"
+    },
+    {
+      "id": "6",
+      "rank": 6,
+      "username": "DeFiDruid",
+      "score": 9112,
+      "prize": "50 ",
+      "userId": "user_006"
+    },
+    {
+      "id": "7",
+      "rank": 7,
+      "username": "BitVoyager",
+      "score": 8974,
+      "prize": "50 ",
+      "userId": "user_007"
+    },
+    {
+      "id": "8",
+      "rank": 8,
+      "username": "HodlKing",
+      "score": 8860,
+      "prize": "50 ",
+      "userId": "user_008"
+    },
+    {
+      "id": "9",
+      "rank": 9,
+      "username": "MoonMiner",
+      "score": 8725,
+      "prize": "50 ",
+      "userId": "user_009"
+    },
+    {
+      "id": "10",
+      "rank": 10,
+      "username": "WhaleHunter",
+      "score": 8650,
+      "prize": "50 ",
+      "userId": "user_010"
+    },
+    {
+      "id": "11",
+      "rank": 11,
+      "username": "GasSaver",
+      "score": 8503,
+      "prize": "20 ",
+      "userId": "user_011"
+    },
+    {
+      "id": "12",
+      "rank": 12,
+      "username": "DEXDrifter",
+      "score": 8377,
+      "prize": "20 ",
+      "userId": "user_012"
+    },
+    {
+      "id": "13",
+      "rank": 13,
+      "username": "StakingSage",
+      "score": 8290,
+      "prize": "20 ",
+      "userId": "user_013"
+    },
+    {
+      "id": "14",
+      "rank": 14,
+      "username": "TokenSeeker",
+      "score": 8175,
+      "prize": "20 ",
+      "userId": "user_014"
+    },
+    {
+      "id": "15",
+      "rank": 15,
+      "username": "FlashLoaner",
+      "score": 8055,
+      "prize": "20 ",
+      "userId": "user_015"
+    },
+    {
+      "id": "16",
+      "rank": 16,
+      "username": "SmartContractor",
+      "score": 7930,
+      "userId": "user_016"
+    },
+    {
+      "id": "17",
+      "rank": 17,
+      "username": "DustTrader",
+      "score": 7805,
+      "userId": "user_017"
+    },
+    {
+      "id": "18",
+      "rank": 18,
+      "username": "ColdWallet",
+      "score": 7692,
+      "userId": "user_018"
+    },
+    {
+      "id": "19",
+      "rank": 19,
+      "username": "ArbitrumAce",
+      "score": 7544,
+      "userId": "user_019"
+    },
+    {
+      "id": "20",
+      "rank": 20,
+      "username": "SolanaSpeedster",
+      "score": 7401,
+      "userId": "user_020"
+    }
+  ]
+  
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
@@ -216,7 +375,7 @@ export default function LeaderboardScreen() {
 
       <Animated.FlatList
         ref={flatListRef}
-        data={leaderboard}
+        data={leaderboard.length === 0 ? hardcodedLeaderboard : leaderboard}
         renderItem={renderLeaderboardItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
@@ -257,7 +416,7 @@ export default function LeaderboardScreen() {
             <View style={styles.listHeader}>
               <Text style={styles.listHeaderText}>Rank</Text>
               <Text style={[styles.listHeaderText, { flex: 1, marginLeft: 60 }]}>Player</Text>
-              <Text style={styles.listHeaderText}>Prize</Text>
+              <Text style={styles.listHeaderText}>Prize </Text>
             </View>
           </>
         )}
@@ -421,9 +580,12 @@ const styles = StyleSheet.create({
   },
   prizeContainer: {
     backgroundColor: '#E0F2FE',
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
     paddingVertical: 6,
     borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+
   },
   topThreePrize: {
     backgroundColor: '#10B981',

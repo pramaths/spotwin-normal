@@ -16,6 +16,7 @@ export default function Index() {
   const setUser = useUserStore((state) => state.setUser);
   const { notification, expoPushToken, error } = useNotification();
   const { isReady, user } = usePrivy();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   if (error) {
     console.log("error:", error);
@@ -33,19 +34,16 @@ export default function Index() {
             });
           }
           setUser(response.data);
-          if(response.data.walletAddress) {
-            const {spotBalance, usdcBalance} = await fetchUserBalance(response.data.walletAddress);
-            setUser({
-              ...response.data,
-              spotBalance,
-              usdcBalance
-            } as IUser);
-          }
+          // if(response.data.walletAddress) {
+          //   const {spotBalance, usdcBalance} = await fetchUserBalance(response.data.walletAddress);
+          //   setUser({
+          //     ...response.data,
+          //     spotBalance,
+          //     usdcBalance
+          //   } as IUser);
+          // }
           setAuthenticated(true);
-        } else {
-          console.log('Authentication failed, clearing token');
-          setAuthenticated(false);
-        }
+        } 
       } catch (error) {
         console.error('Error checking authentication:', error);
         setAuthenticated(false);
@@ -73,7 +71,7 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={useAuthStore.getState().isAuthenticated ? "/(tabs)" : "/(auth)/signup"} />;
+  return <Redirect href={isAuthenticated ? "/(tabs)" : "/(auth)/signup"} />;
 }
 
 const styles = StyleSheet.create({

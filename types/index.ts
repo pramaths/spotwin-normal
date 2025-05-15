@@ -93,6 +93,8 @@ export interface IQuestion {
   outcome: IOutcome;
   difficultyLevel: IDifficultyLevel;
   contestId: string;
+  contestOrder: number;
+  specialQuestion: boolean;
 }
 
 export interface IUserPrediction {
