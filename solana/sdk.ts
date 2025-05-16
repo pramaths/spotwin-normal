@@ -3,13 +3,12 @@ import { Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solan
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import idl from './spotwin.json';
 import { getAssociatedTokenAddress } from "@solana/spl-token";
-
-type SpotwinIdl = any;
+import { Spotwin } from "./spotwin";
 
 export class SpotwinClient {
   public readonly connection: Connection;
   public readonly wallet: Wallet;
-  public readonly program: Program<SpotwinIdl>;
+  public readonly program: Program<Spotwin>;
   public readonly provider: AnchorProvider;
 
   constructor(
