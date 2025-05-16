@@ -150,11 +150,8 @@ const StakeScreen = () => {
 
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
   
-  // Token decimal constants
-  const USDC_DECIMALS = 6; // USDC has 6 decimal places
-  const CUSTOM_TOKEN_DECIMALS = 6; // Adjust based on your token's decimals
+  const USDC_DECIMALS = 6; 
   
-  // Convert raw balances to human-readable format
   const formatTokenBalance = (rawBalance: number | string, decimals: number): number => {
     if (typeof rawBalance === 'string') {
       rawBalance = parseFloat(rawBalance);
@@ -162,9 +159,8 @@ const StakeScreen = () => {
     return rawBalance / Math.pow(10, decimals);
   };
   
-  // Format the balances with the correct decimal places
   const usdcBalance = formatTokenBalance(user?.usdcBalance || 0, USDC_DECIMALS);
-  const currentStake = formatTokenBalance(user?.totalStaked || 0, CUSTOM_TOKEN_DECIMALS);
+  const currentStake = formatTokenBalance(user?.totalStaked || 0, USDC_DECIMALS);
 
   const prepareSponsoredTransaction = async (instructions: any, feePayerAddress: string) => {
     const embeddedWallet = wallet?.wallets?.[0];
@@ -204,10 +200,8 @@ const StakeScreen = () => {
   }
 
   const handleStakeAmountChange = (text: string) => {
-    // Remove any non-numeric characters
     const numericValue = text.replace(/[^0-9.]/g, '');
 
-    // Ensure it's a valid number and not exceeding the balance
     if (numericValue === '' || isNaN(Number(numericValue))) {
       setStakeAmount('0');
       setSliderValue(0);
@@ -241,7 +235,7 @@ const StakeScreen = () => {
     setIsStaking(true);
     const feePayerAddress = process.env.EXPO_PUBLIC_FEE_PAYER!;
 
-    const ix = await spotwinClient.stakeTokens(new BN(stakeAmount), new PublicKey(feePayerAddress));
+    const ix = await spotwinClient.stakeTokens(new BN((Number(stakeAmount)*100000)), new PublicKey(feePayerAddress));
     const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
     const response = await apiClient(STAKE, 'POST', {
       instructions: serializedTransaction,

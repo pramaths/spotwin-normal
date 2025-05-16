@@ -12,7 +12,7 @@ export async function fetchUserBalance(userPubkey: string): Promise< number> {
  
   try {
     const usdc_accountInfo = await getAccount(connection, usdc_ata);
-    return Number(usdc_accountInfo.amount) / 10 ** 6;
+    return Number(usdc_accountInfo.amount);
   } catch (err: any) {
     if (err.message.includes("Failed to find account")) {
       return 0;

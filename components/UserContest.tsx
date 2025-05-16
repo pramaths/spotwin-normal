@@ -78,7 +78,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: Use
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Entry Fee</Text>
-            <Text style={styles.statValue}>{entryFee} {currency}</Text>
+            <Text style={styles.statValue}>{entryFee/100000} {currency}</Text>
           </View>
 
           <View style={styles.dateTimeContainer}>

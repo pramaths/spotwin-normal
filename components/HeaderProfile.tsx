@@ -100,7 +100,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
            {user?.usdcBalance && user?.usdcBalance >= 0 && (
               <>
                 <Text style={styles.balanceText}>
-                  {Number(user?.usdcBalance).toFixed(0)}
+                  {Number(user?.usdcBalance)/100000}
                 </Text>
                 <UsdcIcon width={20} height={20} />
               </>
