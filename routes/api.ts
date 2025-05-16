@@ -44,3 +44,6 @@ export const LEADERBOARD_API = (contestId: string) => `${backendUrl}/leaderboard
 //referral
 export const REFERRAL_CODE = (userId: string) => `${backendUrl}/users/${userId}/referral-code-used`;
 
+
+//stake
+export const STAKE = `${backendUrl}/users/stake`;

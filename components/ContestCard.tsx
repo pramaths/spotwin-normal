@@ -87,11 +87,11 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
           <Text style={styles.statLabel}>Entry Fee</Text>
           {currency === 'USDC' ? (
             <View style = {{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.statValue}>{(Number(entryFee)/20).toFixed(0)}</Text>
+            <Text style={styles.statValue}>{(Number(entryFee)/Math.pow(10, 6)).toFixed(0)}</Text>
             <UsdcIcon width={20} height={20}/>
             </View>
           ) : (
-            <Text style={styles.statValue}>{(Number(entryFee)/20).toFixed(0)} {currency}</Text>
+            <Text style={styles.statValue}>{(Number(entryFee)/Math.pow(10, 6)).toFixed(0)} {currency}</Text>
           )}
         </View>
         
@@ -107,7 +107,7 @@ export const ContestCard = ({ contest, onPress, userContests = [] }: ContestCard
         disabled={isParticipating}
       >
         <Text style={styles.joinButtonText}>
-          {isParticipating ? 'Already Participating' : `Join for ${(Number(entryFee)/20).toFixed(0)} ${currency}`}
+          {isParticipating ? 'Already Participating' : `Join for ${(Number(entryFee)/Math.pow(10, 6)).toFixed(0)} ${currency}`}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>

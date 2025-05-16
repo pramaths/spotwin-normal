@@ -35,10 +35,9 @@ export default function Index() {
           }
           setUser(response.data);
           // if(response.data.walletAddress) {
-          //   const {spotBalance, usdcBalance} = await fetchUserBalance(response.data.walletAddress);
+          //   const usdcBalance = await fetchUserBalance(response.data.walletAddress);
           //   setUser({
           //     ...response.data,
-          //     spotBalance,
           //     usdcBalance
           //   } as IUser);
           // }

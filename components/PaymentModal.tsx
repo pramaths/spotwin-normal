@@ -175,13 +175,13 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     try {
       setIsLoading(true);
       setError(null);
-      const {spotBalance, usdcBalance} = await fetchUserBalance(user?.walletAddress || '');
-      if (spotBalance === null || spotBalance === undefined) {
+      const usdcBalance = await fetchUserBalance(user?.walletAddress || '');
+      if (usdcBalance === null || usdcBalance === undefined) {
         throw new Error("Failed to fetch wallet balance");
       }
 
       const requiredAmount = contest?.entryFee;
-      if (contest.currency === 'spot' ? spotBalance < requiredAmount : usdcBalance < requiredAmount) {
+      if (contest.currency === 'spot' ? usdcBalance < requiredAmount : usdcBalance < requiredAmount) {
         setIsLoading(false);
         setError(
           <Text style={styles.errorText}>
@@ -200,11 +200,10 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       if(response.success) {
         setIsParticipating(true);
         if(wallet && wallet.wallets && wallet.wallets[0]  && user) {
-        let {spotBalance, usdcBalance} = await fetchUserBalance(wallet.wallets[0].publicKey!);
+        let usdcBalance = await fetchUserBalance(wallet.wallets[0].publicKey!);
         setUser({
           ...user,
             usdcBalance: usdcBalance,
-            spotBalance: spotBalance
           });
         }
         animateSuccess(); 
@@ -232,11 +231,10 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
         setShowSuccess(false);
         setError(null);
         if(user && user.walletAddress) {
-          let {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+          let usdcBalance = await fetchUserBalance(user.walletAddress);
           setUser({
             ...user,
               usdcBalance: usdcBalance,
-              spotBalance: spotBalance
             });
         }
       }
@@ -250,15 +248,14 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
 
   if (!contest) return null;
 
-  const canParticipate = (contest.currency === 'SPOT' ? user?.spotBalance && user?.spotBalance >= contest.entryFee : user?.usdcBalance && user?.usdcBalance >= contest.entryFee);
+  const canParticipate = (contest.currency === 'USDC' ? user?.usdcBalance && user?.usdcBalance >= contest.entryFee : user?.usdcBalance && user?.usdcBalance >= Number(contest.entryFee)/100000);
 
   const refreshBalacne = async () => {
     if(user && user.walletAddress) {
-      let {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+      let usdcBalance = await fetchUserBalance(user.walletAddress);
       setUser({
         ...user,
           usdcBalance: usdcBalance,
-          spotBalance: spotBalance
         });
     }
   }
@@ -307,7 +304,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
               {contest.currency === 'SPOT' ? (
                 <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} SPOT</Text>
               ) : (
-                <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} USDC</Text>
+                <Text style={styles.statValue}>{(Number(contest.entryFee)/Math.pow(10, 6)).toFixed(0)} USDC</Text>
               )}
             </View>
             <View style={styles.statItem}>
@@ -319,11 +316,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
           <View style={styles.balanceContainer}>
             <View style={styles.balanceWrapper}>
               <Text style={styles.balanceText}>Your current balance: 
-                {contest.currency === 'SPOT' ? (
-                  <Text style={styles.balanceAmount}> {user?.spotBalance?.toFixed(0) || '0'} SPOT</Text>
-                ) : (
-                  <Text style={styles.balanceAmount}> {user?.usdcBalance?.toFixed(0) || '0'} USDC</Text>
-                )}
+                <Text style={styles.balanceAmount}> {user?.usdcBalance?.toFixed(0) || '0'} USDC</Text>
               </Text>
               <TouchableOpacity 
                 onPress={refreshBalacne} 

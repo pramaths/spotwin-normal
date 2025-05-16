@@ -1,12 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, ActivityIndicator, ToastAndroid, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, ActivityIndicator, ToastAndroid, Animated, Easing, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import HeaderProfile from '@/components/HeaderProfile';
 import { useUserStore } from '@/store/userStore';
 import { Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import UsdcIcon from '@/assets/icons/usdc.svg';
-// Notification component that appears above tab bar
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+import {
+  TransactionMessage,
+  PublicKey,
+  VersionedTransaction,
+  Connection
+} from '@solana/web3.js';
+import { SpotwinClient } from '@/solana/sdk';
+import { adaptPrivyWalletToAnchor } from '@/utils/walletAdpater';
+import { STAKE } from '@/routes/api';
+import { BN } from '@coral-xyz/anchor'; 
+import apiClient from '@/utils/api';
 interface StakeNotificationProps {
   message: string;
   amount: string;
@@ -87,7 +98,7 @@ const StakeNotification: React.FC<StakeNotificationProps> = ({ message, amount, 
   if (!visible) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.notificationContainer,
         { opacity }
@@ -105,7 +116,7 @@ const StakeNotification: React.FC<StakeNotificationProps> = ({ message, amount, 
         ]}
       >
         <View style={styles.notificationCard}>
-          <Animated.View 
+          <Animated.View
             style={[
               styles.checkmarkCircle,
               { transform: [{ scale: checkmarkScale }] }
@@ -121,6 +132,12 @@ const StakeNotification: React.FC<StakeNotificationProps> = ({ message, amount, 
 };
 
 const StakeScreen = () => {
+
+  const wallet = useEmbeddedSolanaWallet();
+  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0], false);
+  const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL!);
+  const spotwinClient = new SpotwinClient(adaptWallet, connection);
+
   const { user } = useUserStore();
   const [stakeAmount, setStakeAmount] = useState('0');
   const [sliderValue, setSliderValue] = useState(0);
@@ -128,11 +145,63 @@ const StakeScreen = () => {
   const [isStaking, setIsStaking] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({ message: '', amount: '' });
+  const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
 
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
-  const spotBalance = user?.spotBalance || 150000; // Default value if user data is not available
-  const currentStake = 0; // This would come from an API in a real implementation
+  
+  // Token decimal constants
+  const USDC_DECIMALS = 6; // USDC has 6 decimal places
+  const CUSTOM_TOKEN_DECIMALS = 6; // Adjust based on your token's decimals
+  
+  // Convert raw balances to human-readable format
+  const formatTokenBalance = (rawBalance: number | string, decimals: number): number => {
+    if (typeof rawBalance === 'string') {
+      rawBalance = parseFloat(rawBalance);
+    }
+    return rawBalance / Math.pow(10, decimals);
+  };
+  
+  // Format the balances with the correct decimal places
+  const usdcBalance = formatTokenBalance(user?.usdcBalance || 0, USDC_DECIMALS);
+  const currentStake = formatTokenBalance(user?.totalStaked || 0, CUSTOM_TOKEN_DECIMALS);
+
+  const prepareSponsoredTransaction = async (instructions: any, feePayerAddress: string) => {
+    const embeddedWallet = wallet?.wallets?.[0];
+    if (!embeddedWallet) {
+      throw new Error("No wallet found");
+    }
+    if (!feePayerAddress) {
+      throw new Error("No fee payer address found");
+    }
+
+    const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL as string, "confirmed")
+    const { blockhash } = await connection.getLatestBlockhash();
+
+    const message = new TransactionMessage({
+      payerKey: new PublicKey(feePayerAddress),
+      recentBlockhash: blockhash,
+      instructions: instructions,
+    }).compileToV0Message();
+
+    const transaction = new VersionedTransaction(message);
+    const serializedMessage = Buffer.from(transaction.message.serialize()).toString('base64');
+    const provider = await embeddedWallet.getProvider();
+    const { signature: serializedUserSignature } = await provider.request({
+      method: 'signMessage',
+      params: {
+        message: serializedMessage
+      }
+    });
+
+    const userSignature = Buffer.from(serializedUserSignature, 'base64');
+    transaction.addSignature(new PublicKey(embeddedWallet.address), userSignature);
+
+    // Serialize the transaction to send to backend
+    const serializedTransaction = Buffer.from(transaction.serialize()).toString('base64');
+
+    return serializedTransaction;
+  }
 
   const handleStakeAmountChange = (text: string) => {
     // Remove any non-numeric characters
@@ -143,21 +212,21 @@ const StakeScreen = () => {
       setStakeAmount('0');
       setSliderValue(0);
     } else {
-      const value = Math.min(Number(numericValue), spotBalance);
+      const value = Math.min(Number(numericValue), usdcBalance);
       setStakeAmount(value.toString());
       setSliderValue(value);
     }
   };
 
   const handlePercentagePress = (percentage: number) => {
-    const value = Math.floor((percentage / 100) * spotBalance);
+    const value = Math.floor((percentage / 100) * usdcBalance);
     setStakeAmount(value.toString());
     setSliderValue(value);
   };
 
   const handleMaxPress = () => {
-    setStakeAmount(spotBalance.toString());
-    setSliderValue(spotBalance);
+    setStakeAmount(usdcBalance.toString());
+    setSliderValue(usdcBalance);
   };
 
   const handleStakeNow = async () => {
@@ -170,8 +239,14 @@ const StakeScreen = () => {
     }
 
     setIsStaking(true);
+    const feePayerAddress = process.env.EXPO_PUBLIC_FEE_PAYER!;
 
-    // Simulate API call
+    const ix = await spotwinClient.stakeTokens(new BN(stakeAmount), new PublicKey(feePayerAddress));
+    const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
+    const response = await apiClient(STAKE, 'POST', {
+      instructions: serializedTransaction,
+      stakeAmount: Number(stakeAmount) * (10 ** USDC_DECIMALS) // Use the decimal constant
+    });
     setTimeout(() => {
       // Show fancy notification instead of toast
       showPositionedNotification('Your tokens have been successfully staked', stakeAmount);
@@ -249,10 +324,32 @@ const StakeScreen = () => {
       setShowNotification(false);
     }, 2000);
   };
-  
-  useEffect(() => {
-    showPositionedNotification('staked successfully', '300');
-  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Implement your refresh logic here
+      // For example, fetch updated user balance and stake information
+      // You might want to call an API or update the user store
+      
+      // Fetch the latest token balances from the blockchain
+      // This is a placeholder - replace with your actual API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // In a real implementation, you would update the user store with new balances
+      // For example: await userStore.refreshBalances();
+      
+      // Show a notification to confirm the refresh
+      showPositionedNotification('Balances refreshed successfully', '');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to refresh balances', ToastAndroid.SHORT);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -275,6 +372,16 @@ const StakeScreen = () => {
           paddingHorizontal: 16
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#0504dc', '#22C55E']}
+            tintColor={'#0504dc'}
+            title={'Refreshing...'}
+            titleColor={'#333333'}
+          />
+        }
       >
         {isLoading ? (
           <>
@@ -291,16 +398,16 @@ const StakeScreen = () => {
               end={{ x: 1, y: 1 }}
               style={styles.balanceCard}
             >
-                <View style={styles.balanceRow}>
-                  <Text style={styles.balanceLabel}>Balance</Text>
-                  <View style={styles.balanceValueContainer}>
-                    <Text style={styles.balanceAmount}>{spotBalance.toLocaleString()}</Text>
-                    {spotBalance > 0 && 
+              <View style={styles.balanceRow}>
+                <Text style={styles.balanceLabel}>Balance</Text>
+                <View style={styles.balanceValueContainer}>
+                  <Text style={styles.balanceAmount}>{usdcBalance.toLocaleString()}</Text>
+                  {usdcBalance > 0 &&
                     <View style={styles.tokenIconContainer}>
                       <UsdcIcon width={28} height={28} />
                     </View>}
-                  </View>
                 </View>
+              </View>
             </LinearGradient>
 
             {/* Stake Input Card */}
@@ -360,13 +467,14 @@ const StakeScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Your Stake Card */}
-            {/* <View style={styles.stakeInfoCard}>
-              <Text style={styles.yourStakeLabel}>Your Stake</Text>
-              <View style={styles.stakeInfoRow}>
-                <Text style={styles.stakeInfoAmount}>{currentStake} SpotWin
-</Text>
-                {currentStake > 0 && <SpotIcon width={20} height={20} style={styles.tokenIcon} />}
+            {/* Total Amount Staked Card */}
+            <View style={styles.stakeInfoCard}>
+              <View style={styles.balanceRow}>
+                <Text style={styles.yourStakeLabel}>Total Amount Staked</Text>
+                <View style={styles.stakeInfoRow}>
+                 <Text style={styles.stakeInfoAmount}>{currentStake.toLocaleString()} </Text>
+                 <UsdcIcon width={24} height={24} style={styles.tokenIcon} />
+                </View>
               </View>
               {currentStake > 0 && (
                 <TouchableOpacity 
@@ -381,14 +489,14 @@ const StakeScreen = () => {
                   )}
                 </TouchableOpacity>
               )}
-            </View> */}
+            </View>
 
             <View style={styles.infoCard}>
               <View style={styles.imageContainer}>
                 <Image source={require('@/assets/icons/stake.png')} style={styles.stakeInfoImage} />
               </View>
               <View style={styles.bulletPoint}>
-                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 200 USDC to unlock premium questions + AI AGENT</Text>
+                <Text style={[styles.bulletText, { fontWeight: 'bold' }]}>Stake 50 USDC to unlock premium questions + AI AGENT</Text>
               </View>
             </View>
           </>
@@ -583,13 +691,19 @@ const styles = StyleSheet.create({
   stakeInfoCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 10,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  stakeInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
   yourStakeLabel: {
     fontSize: 16,
@@ -605,7 +719,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333333',
-    marginRight: 8,
+    marginRight: 2,
   },
   unstakeButton: {
     backgroundColor: '#FFFFFF',
@@ -654,7 +768,7 @@ const styles = StyleSheet.create({
   },
   bulletPoint: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 2,
     alignItems: 'flex-start',
   },
   bullet: {

@@ -114,10 +114,9 @@ export default function HomeScreen() {
       if (response.success && response.data) {
         setUser(response.data);
         if(user?.walletAddress) {
-          const {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+          const usdcBalance = await fetchUserBalance(user.walletAddress);
           setUser({
             ...user,
-            spotBalance,
             usdcBalance
           } as IUser);
         }
@@ -181,10 +180,9 @@ export default function HomeScreen() {
     await fetchContests();
     setRefreshing(false);
     if(user?.walletAddress) {
-      const {spotBalance, usdcBalance} = await fetchUserBalance(user.walletAddress);
+      const usdcBalance = await fetchUserBalance(user.walletAddress);
       setUser({
         ...user,
-        spotBalance,
         usdcBalance
       } as IUser);
     }
@@ -289,7 +287,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.footerValue}>{Number(item.entryFee)/20}</Text>
+                <Text style={styles.footerValue}>{Number(item.entryFee)/Math.pow(10, 6)}</Text>
                 <View style={{ marginLeft: 4 }}>
                   <UsdcIcon width={16} height={16} color="#FFF" />
                 </View>
@@ -312,7 +310,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.joinButtonText}>
-              {isParticipating ? 'Already Participating' : `Join for ${(Number(item.entryFee)/20).toFixed(0)} USDC`}
+              {isParticipating ? 'Already Participating' : `Join for ${(Number(item.entryFee)/Math.pow(10, 6)).toFixed(0)} USDC`}
             </Text>
           </TouchableOpacity>
         </LinearGradient>

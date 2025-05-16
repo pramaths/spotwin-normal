@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, GestureResponderEvent 
 import { IContest } from '../types';
 import { formatDateTime } from '../utils/dateUtils';
 import { router } from 'expo-router';
+import { Currency } from 'lucide-react-native';
 
 interface UserContestCardProps {
   contest: IContest;
 }
 
 export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: UserContestCardProps) => {
-  const { entryFee, id, match } = contest;
+  const { entryFee, id, match, currency } = contest;
 
   const handlePress = () => {
     router.push({
@@ -77,7 +78,7 @@ export const UserContestCard: React.FC<UserContestCardProps> = ({ contest }: Use
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Entry Fee</Text>
-            <Text style={styles.statValue}>{entryFee} Points</Text>
+            <Text style={styles.statValue}>{entryFee} {currency}</Text>
           </View>
 
           <View style={styles.dateTimeContainer}>

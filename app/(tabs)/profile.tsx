@@ -278,6 +278,9 @@ Thank you.`);
                 logoBackgroundColor="transparent"
               />
             </View>
+            <TouchableOpacity style={styles.addressContainer} onPress={handleCopyWalletAddress}>
+            <Text style={styles.modalSubtitleAddress}>{user?.walletAddress}</Text>
+            </TouchableOpacity>
             <Text style={styles.modalSubtitle}>Scan this QR code to deposit USDC</Text>
           </View>
         </View>
@@ -309,13 +312,6 @@ Thank you.`);
               >
                 <UsdcIcon width={24} height={24}/>
                 <Text style={styles.tokenOptionText}>USDC</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.tokenOption, withdrawToken==='SPOT' && styles.tokenOptionSelected]}
-                onPress={()=>setWithdrawToken('SPOT')}
-              >
-                <UsdcIcon width={24} height={24}/>
-                <Text style={styles.tokenOptionText}>SPOT</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
@@ -708,6 +704,13 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  modalSubtitleAddress: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
     color: '#666',
     textAlign: 'center',
     marginBottom: 24,

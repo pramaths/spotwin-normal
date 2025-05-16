@@ -38,10 +38,9 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
 
   const fetchInitialBalance = async () => {
     if (wallet.wallets) {
-      const { spotBalance, usdcBalance } = await fetchUserBalance(wallet.wallets[0].publicKey);
+      const usdcBalance = await fetchUserBalance(wallet.wallets[0].publicKey);
       setUser({
         ...user,
-        spotBalance,
         usdcBalance
       } as IUser);
     }

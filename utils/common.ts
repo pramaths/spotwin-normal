@@ -21,3 +21,4 @@ Android: ${playStoreUrl}`;
     console.error('Error sharing:', error);
   }
 };
+

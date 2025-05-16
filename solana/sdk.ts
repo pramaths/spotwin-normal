@@ -20,6 +20,7 @@ export class SpotwinClient {
     this.connection = connection;
     this.provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions());
     this.program = new Program(idl as SpotwinIdl, this.provider);
+    console.log("Available accounts in IDL:", Object.keys(this.program.account));
   }
 
   pdaContest(contestId: BN): PublicKey {
@@ -52,6 +53,34 @@ export class SpotwinClient {
         player.toBuffer()
       ],
       this.program.programId
+    )[0];
+  }
+
+  pdaStakeConfig(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('stake_config')],
+      this.program.programId,
+    )[0];
+  }
+
+  pdaStakeVault(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('stake_vault')],
+      this.program.programId,
+    )[0];
+  }
+
+  pdaStakeAuthority(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('stake_vault_auth')],
+      this.program.programId,
+    )[0];
+  }
+
+  pdaStakeAcct(staker: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('stake'), staker.toBuffer()],
+      this.program.programId,
     )[0];
   }
 
@@ -203,6 +232,84 @@ export class SpotwinClient {
         .rpc();
     } catch (error) {
       console.error("Error in SpotwinClient.sendBatch:", error);
+      throw error;
+    }
+  }
+
+  async initializeStake(poolMint: PublicKey): Promise<string> {
+    try {
+      return await this.program.methods
+        .initializeStake()
+        .accountsStrict({
+          payer: this.wallet.publicKey,
+          poolMint: poolMint,
+          stakeVault: this.pdaStakeVault(),
+          stakeAuthority: this.pdaStakeAuthority(),
+          stakeConfig: this.pdaStakeConfig(),
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .rpc();
+    } catch (error) {
+      console.error('Error in SpotwinClient.initializeStake:', error);
+      throw error;
+    }
+  }
+
+  async stakeTokens(amount: BN, feePayer: PublicKey): Promise<any> {
+
+    const stakerAta = await getAssociatedTokenAddress(
+      new PublicKey(process.env.EXPO_PUBLIC_USDC_POOL_MINT!),
+      this.wallet.publicKey,
+      true,
+    );
+
+    try {
+      return await this.program.methods
+        .stakeTokens(amount)
+        .accountsStrict({
+          staker: this.wallet.publicKey,
+          feePayer: feePayer,
+          stakeAcct: this.pdaStakeAcct(this.wallet.publicKey),
+          stakeVault: this.pdaStakeVault(),
+          stakeAuthority: this.pdaStakeAuthority(),
+          stakerAta: stakerAta,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .instruction();
+    } catch (error) {
+      console.error('Error in SpotwinClient.stakeTokens:', error);
+      throw error;
+    }
+  }
+
+  async unstakeTokens(amount: BN, stakerAta: PublicKey, player: PublicKey, feePayer: PublicKey): Promise<any> {
+    try {
+      return await this.program.methods
+        .unstakeTokens(amount)
+        .accountsStrict({
+          staker: this.wallet.publicKey,
+          stakeAcct: this.pdaStakeAcct(player),
+          stakeVault: this.pdaStakeVault(),
+          stakeAuthority: this.pdaStakeAuthority(),
+          stakerAta: stakerAta
+        })
+        .instruction();
+    } catch (error) {
+      console.error('Error in SpotwinClient.unstakeTokens:', error);
+      throw error;
+    }
+  }
+
+  async getStakeinfo(player: PublicKey): Promise<any> {
+    try {
+      const stakeAcct = this.pdaStakeAcct(player);
+      const stakeInfo = await this.program.account.stakeAccount.fetch(stakeAcct);
+      return stakeInfo;
+    } catch (error) {
+      console.error('Error in SpotwinClient.getStakeinfo:', error);
       throw error;
     }
   }

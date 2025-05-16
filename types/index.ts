@@ -30,7 +30,7 @@ export interface IUser {
   isReferralCodeUsed?: boolean
   expoPushToken?: string
   usdcBalance?: number
-  spotBalance?: number
+  totalStaked?: number
 }
 export interface ITeam {
   id: string

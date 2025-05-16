@@ -23,6 +23,10 @@ import QuestionItem from '@/components/QuestionItem';
 import { QUESTIONS_BY_CONTEST, CONTESTS_BY_ID, SUBMIT_PREDICTIONS } from '@/routes/api';
 import apiClient from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import { SpotwinClient } from '@/solana/sdk';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { adaptPrivyWalletToAnchor } from '@/utils/walletAdpater';
+import {useEmbeddedSolanaWallet} from '@privy-io/expo';
 
 export default function PredictionScreen() {
   const { contestId } = useLocalSearchParams();
@@ -65,21 +69,32 @@ export default function PredictionScreen() {
     const count = getAnsweredCountByDifficulty(difficulty);
     return count >= 3;
   };
+  const wallet  = useEmbeddedSolanaWallet();
+  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0], false);
+  const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL!);
+  const spotwinClient = new SpotwinClient(adaptWallet, connection);
+  const STAKE_THRESHOLD = 50; // USDC amount required to access all contests
   
-  // Hardcoded stake amounts for each difficulty level
-  const getStakeAmount = (difficulty: IDifficultyLevel) => {
-    switch (difficulty) {
-      case IDifficultyLevel.EASY: return 200;
-      case IDifficultyLevel.MEDIUM: return 200;
-      case IDifficultyLevel.HARD: return 200;
-      default: return 200;
+  const hasStakedEnough = async () => {
+    try {
+      const stakeInfo = await spotwinClient.getStakeinfo(new PublicKey(user?.walletAddress || ''));
+      return stakeInfo && stakeInfo.amount >= STAKE_THRESHOLD;
+    } catch (error) {
+      console.error('Error checking stake amount:', error);
+      return false;
     }
   };
   
+  // Get stake amount required for any difficulty level (now all the same)
+  const getStakeAmount = () => STAKE_THRESHOLD;
+  
   // Function to handle unlocking a special question
-  const handleUnlockQuestion = (questionId: string, difficulty: IDifficultyLevel) => {
-    // Redirect to the stake tab
-    router.push('/stake');
+  const handleUnlockQuestion = (questionId: string) => {
+    // Redirect to the stake tab with a message about the threshold
+    router.push({
+      pathname: '/stake',
+      params: { message: `Stake at least ${STAKE_THRESHOLD} USDC to unlock all contests` }
+    });
   };
 
   useEffect(() => {
@@ -440,8 +455,8 @@ export default function PredictionScreen() {
                   userVote={userVotesMap[q.id] || null}
                   onRemovePrediction={() => handleRemovePrediction(q.id)}
                   isLocked={q.specialQuestion && !unlockedQuestions.includes(q.id)}
-                  onUnlock={() => handleUnlockQuestion(q.id, q.difficultyLevel)}
-                  stakeAmount={q.specialQuestion ? `${getStakeAmount(q.difficultyLevel)} USDC` : undefined}
+                  onUnlock={() => handleUnlockQuestion(q.id)}
+                  stakeAmount={q.specialQuestion ? `${getStakeAmount()} USDC` : undefined}
                 />
               ))}
             </>
