@@ -31,6 +31,7 @@ export interface IUser {
   expoPushToken?: string
   usdcBalance?: number
   totalStaked?: number
+  customTokenBalance?: number | string
 }
 export interface ITeam {
   id: string

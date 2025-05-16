@@ -15,7 +15,7 @@ import {
 } from '@solana/web3.js';
 import { SpotwinClient } from '@/solana/sdk';
 import { adaptPrivyWalletToAnchor } from '@/utils/walletAdpater';
-import { STAKE } from '@/routes/api';
+import { STAKE, TOKENANDSTAKEBALANCE } from '@/routes/api';
 import { BN } from '@coral-xyz/anchor'; 
 import apiClient from '@/utils/api';
 interface StakeNotificationProps {
@@ -148,6 +148,24 @@ const StakeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
 
+  // Fetch balances when component loads
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (user?.id) {
+        setIsLoading(true);
+        try {
+          await useUserStore.getState().updateBalances();
+        } catch (error) {
+          console.error('Error fetching initial balances:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchBalances();
+  }, [user?.id]);
+
   const tabBarHeight = 60 + (Platform.OS === 'ios' ? insets.bottom : 0);
   
   const USDC_DECIMALS = 6; 
@@ -235,18 +253,27 @@ const StakeScreen = () => {
     setIsStaking(true);
     const feePayerAddress = process.env.EXPO_PUBLIC_FEE_PAYER!;
 
-    const ix = await spotwinClient.stakeTokens(new BN((Number(stakeAmount)*100000)), new PublicKey(feePayerAddress));
-    const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
-    const response = await apiClient(STAKE, 'POST', {
-      instructions: serializedTransaction,
-      stakeAmount: Number(stakeAmount) * (10 ** USDC_DECIMALS) // Use the decimal constant
-    });
-    setTimeout(() => {
+    try {
+      const ix = await spotwinClient.stakeTokens(new BN((Number(stakeAmount)*100000)), new PublicKey(feePayerAddress));
+      const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
+      const response = await apiClient(STAKE, 'POST', {
+        instructions: serializedTransaction,
+        stakeAmount: Number(stakeAmount) * (10 ** USDC_DECIMALS) // Use the decimal constant
+      });
+      
       // Show fancy notification instead of toast
       showPositionedNotification('Your tokens have been successfully staked', stakeAmount);
+      
+      // Update balances after staking
+      await useUserStore.getState().updateBalances();
+    } catch (error) {
+      console.error('Error staking tokens:', error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to stake tokens', ToastAndroid.SHORT);
+      }
+    } finally {
       setIsStaking(false);
-      // In a real implementation, you would update the user's stake and balance
-    }, 1500);
+    }
   };
 
   const handleUnstake = async () => {
@@ -322,19 +349,7 @@ const StakeScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Implement your refresh logic here
-      // For example, fetch updated user balance and stake information
-      // You might want to call an API or update the user store
-      
-      // Fetch the latest token balances from the blockchain
-      // This is a placeholder - replace with your actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // In a real implementation, you would update the user store with new balances
-      // For example: await userStore.refreshBalances();
-      
-      // Show a notification to confirm the refresh
-      showPositionedNotification('Balances refreshed successfully', '');
+      await useUserStore.getState().updateBalances();
     } catch (error) {
       console.error('Error refreshing data:', error);
       if (Platform.OS === 'android') {
@@ -466,11 +481,11 @@ const StakeScreen = () => {
               <View style={styles.balanceRow}>
                 <Text style={styles.yourStakeLabel}>Total Amount Staked</Text>
                 <View style={styles.stakeInfoRow}>
-                 <Text style={styles.stakeInfoAmount}>{currentStake.toLocaleString()} </Text>
+                 <Text style={styles.stakeInfoAmount}>{currentStake.toFixed(0).toLocaleString()} </Text>
                  <UsdcIcon width={24} height={24} style={styles.tokenIcon} />
                 </View>
               </View>
-              {currentStake > 0 && (
+              {/* {currentStake > 0 && (
                 <TouchableOpacity 
                   style={styles.unstakeButton}
                   onPress={handleUnstake}
@@ -482,7 +497,7 @@ const StakeScreen = () => {
                     <Text style={styles.unstakeButtonText}>Unstake</Text>
                   )}
                 </TouchableOpacity>
-              )}
+              )} */}
             </View>
 
             <View style={styles.infoCard}>

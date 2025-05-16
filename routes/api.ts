@@ -47,3 +47,4 @@ export const REFERRAL_CODE = (userId: string) => `${backendUrl}/users/${userId}/
 
 //stake
 export const STAKE = `${backendUrl}/users/stake`;
+export const TOKENANDSTAKEBALANCE = `${backendUrl}/users/balances`;

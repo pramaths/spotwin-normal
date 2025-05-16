@@ -33,17 +33,23 @@ const apiClient = async <T,>(
 ): Promise<ApiResponse<T> | ErrorResponse> => {
 
   const headers: Record<string, string> = {};
-  const token = await privy.getAccessToken().then((token) => token).catch((error) => {
-    console.error("Error getting access token:", error);
-    return null;
-  });
-  if (!(body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
+  
+  // Always try to get the token for any request type
+  try {
+    const token = await privy.getAccessToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+      console.log("Authorization header set with token");
     } else {
-      console.log("No token available for Authorization header");
+      console.warn("No token available for Authorization header");
     }
+  } catch (error) {
+    console.error("Error getting access token:", error);
+  }
+  
+  // Set content type for non-FormData requests
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
   }
 
   const options: RequestInit = {
