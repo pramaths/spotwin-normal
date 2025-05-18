@@ -69,32 +69,40 @@ export default function PredictionScreen() {
     const count = getAnsweredCountByDifficulty(difficulty);
     return count >= 3;
   };
-  const wallet  = useEmbeddedSolanaWallet();
-  const adaptWallet = adaptPrivyWalletToAnchor(wallet?.wallets?.[0], false);
-  const connection = new Connection(process.env.EXPO_PUBLIC_SOLANA_RPC_URL!);
-  const spotwinClient = new SpotwinClient(adaptWallet, connection);
-  const STAKE_THRESHOLD = 50; // USDC amount required to access all contests
+  const STAKE_THRESHOLD = Number(process.env.EXPO_PUBLIC_STAKE_THRESHOLD || 50); // USDC amount required to access all contests
   
   const hasStakedEnough = async () => {
-    try {
-      const stakeInfo = await spotwinClient.getStakeinfo(new PublicKey(user?.walletAddress || ''));
-      return stakeInfo && stakeInfo.amount >= STAKE_THRESHOLD;
-    } catch (error) {
-      console.error('Error checking stake amount:', error);
-      return false;
+    if (!user?.totalStaked) {
+      try {
+        await useUserStore.getState().updateBalances();
+      } catch (error) {
+        console.error('Error updating balances:', error);
+        return false;
+      }
     }
+    
+    // Check if user has staked enough after potential update
+    return user?.totalStaked && user.totalStaked >= STAKE_THRESHOLD;
   };
   
   // Get stake amount required for any difficulty level (now all the same)
   const getStakeAmount = () => STAKE_THRESHOLD;
   
   // Function to handle unlocking a special question
-  const handleUnlockQuestion = (questionId: string) => {
-    // Redirect to the stake tab with a message about the threshold
-    router.push({
-      pathname: '/stake',
-      params: { message: `Stake at least ${STAKE_THRESHOLD} USDC to unlock all contests` }
-    });
+  const handleUnlockQuestion = async (questionId: string) => {
+    // Check if user already has enough stake
+    const hasEnoughStake = await hasStakedEnough();
+    
+    if (hasEnoughStake) {
+      // If user has enough stake, add the question to unlockedQuestions
+      setUnlockedQuestions(prev => [...prev, questionId]);
+    } else {
+      // Redirect to the stake tab with a message about the threshold
+      router.push({
+        pathname: '/stake',
+        params: { message: `Stake at least ${STAKE_THRESHOLD} USDC to unlock all contests` }
+      });
+    }
   };
 
   useEffect(() => {
@@ -178,6 +186,28 @@ export default function PredictionScreen() {
   useEffect(() => {
     loadPredictions();
   }, [loadPredictions]);
+
+  // Check for unlocked questions based on user's stake amount
+  useEffect(() => {
+    const checkAndUnlockQuestions = async () => {
+      if (questions.length > 0) {
+        // If user has staked enough, unlock all special questions
+        const hasEnoughStake = await hasStakedEnough();
+        
+        if (hasEnoughStake) {
+          const specialQuestionIds = questions
+            .filter(q => q.specialQuestion)
+            .map(q => q.id);
+          
+          if (specialQuestionIds.length > 0) {
+            setUnlockedQuestions(specialQuestionIds);
+          }
+        }
+      }
+    };
+    
+    checkAndUnlockQuestions();
+  }, [questions, user?.totalStaked]);
 
   const handleTabPress = (difficulty: IDifficultyLevel) => {
     setSelectedDifficulty(difficulty);

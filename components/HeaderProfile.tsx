@@ -19,7 +19,6 @@ import { useAuthStore } from '../store/authstore';
 import { useRouter } from 'expo-router';
 import UsdcIcon from '../assets/icons/usdc.svg';
 import {useEmbeddedSolanaWallet} from '@privy-io/expo';
-import { fetchUserBalance } from '../utils/fetchbalance';
 
 interface HeaderProfileProps {
   user?: IUser;
@@ -31,18 +30,14 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
 }) => {
   const [howItWorksModalVisible, setHowItWorksModalVisible] = useState(false);
   const [depositModalVisible, setDepositModalVisible] = useState(false);
-  const { user, setUser } = useUserStore();
+  const { user } = useUserStore();
   const { isNewUser, setIsNewUser } = useAuthStore();
   const router = useRouter();
   const wallet = useEmbeddedSolanaWallet();
 
   const fetchInitialBalance = async () => {
     if (wallet.wallets) {
-      const usdcBalance = await fetchUserBalance(wallet.wallets[0].publicKey);
-      setUser({
-        ...user,
-        usdcBalance
-      } as IUser);
+      await useUserStore.getState().updateBalances();
     }
   };
 
@@ -100,7 +95,7 @@ const HeaderProfile: React.FC<HeaderProfileProps> = ({
            {user?.usdcBalance && user?.usdcBalance >= 0 && (
               <>
                 <Text style={styles.balanceText}>
-                  {Number(user?.usdcBalance)/100000}
+                  {Number(user?.usdcBalance)/1000000}
                 </Text>
                 <UsdcIcon width={20} height={20} />
               </>

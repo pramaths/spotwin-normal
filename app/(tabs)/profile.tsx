@@ -12,6 +12,7 @@ import { handleInvite } from '@/utils/common';
 import UsdcIcon from '@/assets/icons/usdc.svg';
 import QRCode from 'react-native-qrcode-svg';
 
+import { usePrivy } from '@privy-io/expo';
 
 // Helper function to format wallet address (show first 6 and last 6 characters)
 const formatWalletAddress = (address: string) => {
@@ -23,6 +24,7 @@ const formatWalletAddress = (address: string) => {
 const logoUrl = require('@/assets/logo.png');
 const ProfileScreen = () => {
   const router = useRouter();
+  
   const { user, setUser } = useUserStore();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || '');
@@ -34,6 +36,8 @@ const ProfileScreen = () => {
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
   const [withdrawToken, setWithdrawToken] = useState<'USDC'|'SPOT'>('USDC');
   const [isTransferring, setIsTransferring] = useState(false);
+    const {  logout } = usePrivy();
+
 
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -76,7 +80,7 @@ const ProfileScreen = () => {
   }, []);
 
   const handleLogOut = async () => {
-    await SecureStore.deleteItemAsync("token")
+    await logout();
     router.push('/(auth)/signup');
   };
 

@@ -31,7 +31,6 @@ import React from 'react';
 import * as Updates from 'expo-updates';
 import { usePrivy } from "@privy-io/expo";
 import UsdcIcon from '../../assets/icons/usdc.svg';
-import { fetchUserBalance } from '../../utils/fetchbalance';
 
 const sportsCategories = [
   { id: '1', name: 'Football', icon: '⚽' },
@@ -113,12 +112,9 @@ export default function HomeScreen() {
       const response = await apiClient<IUser>(AUTH_ME, 'GET');
       if (response.success && response.data) {
         setUser(response.data);
-        if(user?.walletAddress) {
-          const usdcBalance = await fetchUserBalance(user.walletAddress);
-          setUser({
-            ...user,
-            usdcBalance
-          } as IUser);
+        if (user?.walletAddress) {
+          await useUserStore.getState().updateBalances();
+
         }
       }
     } catch (error) {
@@ -179,12 +175,8 @@ export default function HomeScreen() {
     await fetchUser();
     await fetchContests();
     setRefreshing(false);
-    if(user?.walletAddress) {
-      const usdcBalance = await fetchUserBalance(user.walletAddress);
-      setUser({
-        ...user,
-        usdcBalance
-      } as IUser);
+    if (user?.walletAddress) {
+       await useUserStore.getState().updateBalances();
     }
   };
 
@@ -287,7 +279,7 @@ export default function HomeScreen() {
             <View style={styles.footerItem}>
               <Text style={styles.footerLabel}>Joining Fee</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.footerValue}>{Number(item.entryFee)/Math.pow(10, 6)}</Text>
+                <Text style={styles.footerValue}>{Number(item.entryFee)}</Text>
                 <View style={{ marginLeft: 4 }}>
                   <UsdcIcon width={16} height={16} color="#FFF" />
                 </View>
@@ -310,7 +302,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.joinButtonText}>
-              {isParticipating ? 'Already Participating' : `Join for ${(Number(item.entryFee)/Math.pow(10, 6)).toFixed(0)} USDC`}
+              {isParticipating ? 'Already Participating' : `Join for ${(Number(item.entryFee) / Math.pow(10, 6)).toFixed(0)} USDC`}
             </Text>
           </TouchableOpacity>
         </LinearGradient>

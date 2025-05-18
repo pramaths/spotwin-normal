@@ -254,7 +254,7 @@ const StakeScreen = () => {
     const feePayerAddress = process.env.EXPO_PUBLIC_FEE_PAYER!;
 
     try {
-      const ix = await spotwinClient.stakeTokens(new BN((Number(stakeAmount)*100000)), new PublicKey(feePayerAddress));
+      const ix = await spotwinClient.stakeTokens(new BN((Number(stakeAmount)*1000000)), new PublicKey(feePayerAddress));
       const serializedTransaction = await prepareSponsoredTransaction([ix], feePayerAddress);
       const response = await apiClient(STAKE, 'POST', {
         instructions: serializedTransaction,
@@ -478,7 +478,7 @@ const StakeScreen = () => {
 
             {/* Total Amount Staked Card */}
             <View style={styles.stakeInfoCard}>
-              <View style={styles.balanceRow}>
+              <View style={styles.stakeInfoHeader}>
                 <Text style={styles.yourStakeLabel}>Total Amount Staked</Text>
                 <View style={styles.stakeInfoRow}>
                  <Text style={styles.stakeInfoAmount}>{currentStake.toFixed(0).toLocaleString()} </Text>
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   stakeInfoCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 10,
+    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -718,7 +718,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333333',
-    marginBottom: 8,
   },
   stakeInfoRow: {
     flexDirection: 'row',

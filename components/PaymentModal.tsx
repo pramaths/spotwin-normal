@@ -22,7 +22,6 @@ import { router } from 'expo-router';
 import { useContestsStore } from '@/store/contestsStore';
 import { handleInvite } from '@/utils/common';
 import { adaptPrivyWalletToAnchor } from '@/utils/walletAdpater';
-import { fetchUserBalance } from "../utils/fetchbalance"
 import {useEmbeddedSolanaWallet} from '@privy-io/expo';
 import {
   TransactionMessage,
@@ -175,7 +174,8 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
     try {
       setIsLoading(true);
       setError(null);
-      const usdcBalance = await fetchUserBalance(user?.walletAddress || '');
+      await useUserStore.getState().updateBalances();
+      const usdcBalance = useUserStore.getState().user?.usdcBalance;
       if (usdcBalance === null || usdcBalance === undefined) {
         throw new Error("Failed to fetch wallet balance");
       }
@@ -199,13 +199,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
       });
       if(response.success) {
         setIsParticipating(true);
-        if(wallet && wallet.wallets && wallet.wallets[0]  && user) {
-        let usdcBalance = await fetchUserBalance(wallet.wallets[0].publicKey!);
-        setUser({
-          ...user,
-            usdcBalance: usdcBalance,
-          });
-        }
+        await useUserStore.getState().updateBalances();
         animateSuccess(); 
         setTimeout(() => {
           router.push({
@@ -230,13 +224,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
         console.log("Modal opened, fetching initial balance");
         setShowSuccess(false);
         setError(null);
-        if(user && user.walletAddress) {
-          let usdcBalance = await fetchUserBalance(user.walletAddress);
-          setUser({
-            ...user,
-              usdcBalance: usdcBalance,
-            });
-        }
+        await useUserStore.getState().updateBalances();
       }
     };
     fetchInitialBalance();
@@ -251,13 +239,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
   const canParticipate = (contest.currency === 'USDC' ? user?.usdcBalance && user?.usdcBalance >= contest.entryFee : user?.usdcBalance && user?.usdcBalance >= Number(contest.entryFee)/100000);
 
   const refreshBalacne = async () => {
-    if(user && user.walletAddress) {
-      let usdcBalance = await fetchUserBalance(user.walletAddress);
-      setUser({
-        ...user,
-          usdcBalance: usdcBalance,
-        });
-    }
+    await useUserStore.getState().updateBalances();
   }
 
   return (
@@ -304,7 +286,7 @@ const PaymentModal = ({ isVisible, onClose, contest, onConfirm, isUserParticipat
               {contest.currency === 'SPOT' ? (
                 <Text style={styles.statValue}>{Number(contest.entryFee).toFixed(0)} SPOT</Text>
               ) : (
-                <Text style={styles.statValue}>{(Number(contest.entryFee)/Math.pow(10, 6)).toFixed(0)} USDC</Text>
+                <Text style={styles.statValue}>{(Number(contest.entryFee)).toFixed(0)} USDC</Text>
               )}
             </View>
             <View style={styles.statItem}>
