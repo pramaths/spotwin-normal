@@ -398,12 +398,21 @@ Thank you.`);
 
               <View style={styles.infoCard}>
                 <View style={styles.infoItem}>
+                  {user?.email.includes('@') ? (
+                    <View>
                   <Text style={styles.infoLabel}>Email</Text>
                   <TouchableOpacity onPress={handleCopyEmail} style={styles.infoValueContainer}>
                     <Text style={styles.infoValue}>{user?.email}</Text>
                     <Copy size={16} color="#0504dc" style={styles.copyIcon} />
                   </TouchableOpacity>
                   {copied && copiedItem === 'email' && <Text style={styles.copiedText}>Email copied!</Text>}
+                  </View>
+                  ) : (
+                    <View>
+                    <Text style={styles.infoLabel}>Username</Text>
+                    <Text style={styles.infoValue}>{user?.email}</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.infoItem}>

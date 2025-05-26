@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Easing, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Image, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authstore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,13 +15,16 @@ import GoogleIcon from '@/assets/icons/google.svg';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const shimmerValue = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const [isPressing, setIsPressing] = useState(false);
   const { setAuthenticated, setIsNewUser } = useAuthStore();
   const { setUser, user } = useUserStore();
   const { expoPushToken } = useNotification();
+  
+  // Add separate loading states for each provider
+  const [loadingStates, setLoadingStates] = useState({
+    google: false,
+    twitter: false
+  });
+  
   const [authState, setAuthState] = useState<{
     status: 'idle' | 'loading' | 'error' | 'skipped';
     error: null | { message: string };
@@ -46,90 +49,43 @@ export default function SignupScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const startShimmerAnimation = () => {
-      Animated.loop(
-        Animated.timing(shimmerValue, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        })
-      ).start();
-    };
-
-    const startPulseAnimation = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          })
-        ])
-      ).start();
-    };
-
-    const startRotateAnimation = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(rotateAnim, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotateAnim, {
-            toValue: 0,
-            duration: 2000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          })
-        ])
-      ).start();
-    };
-
-    startShimmerAnimation();
-    startPulseAnimation();
-    startRotateAnimation();
-  }, []);
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
   const handleGoogleLogin = async () => {
+    setLoadingStates(prev => ({ ...prev, google: true }));
     setAuthState({ status: 'loading', error: null });
     try {
       await login({ provider: 'google' });
     } catch (error) {
+      setLoadingStates(prev => ({ ...prev, google: false }));
       setAuthState({
         status: 'error',
         error: { message: 'Google login failed. Please try again.' }
       });
-      
+
+      // Clear error message after 3 seconds
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => {
+        setAuthState({
+          status: 'idle',
+          error: null
+        });
+      }, 3000);
+    }
+  };
+
+  const handleTwitterLogin = async () => {
+    setLoadingStates(prev => ({ ...prev, twitter: true }));
+    setAuthState({ status: 'loading', error: null });
+    try {
+      await login({ provider: 'twitter' });
+    } catch (error) {
+      setLoadingStates(prev => ({ ...prev, twitter: false }));
+      setAuthState({
+        status: 'error',
+        error: { message: 'Twitter login failed. Please try again.' }
+      });
+
       // Clear error message after 3 seconds
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
@@ -191,11 +147,35 @@ export default function SignupScreen() {
   // Monitor state changes from OAuth login
   useEffect(() => {
     if (state.status === 'done') {
-      // Handle successful login
+      // Reset loading states when login is complete
+      setLoadingStates({ google: false, twitter: false });
       setAuthenticated(true);
       router.replace('/(tabs)');
+    } else if (state.status === 'error') {
+      // Reset loading states on error
+      setLoadingStates({ google: false, twitter: false });
     }
   }, [state]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -263,44 +243,56 @@ export default function SignupScreen() {
                           <Text style={styles.errorText}>{authState.error.message}</Text>
                         </View>
                       )}
-                      
-                      <Animated.View style={{
-                        transform: [{ scale: pulseAnim }],
-                        width: '100%',
-                        marginTop: 20,
-                        marginBottom: 20
-                      }}>
-                        <TouchableOpacity
-                          style={styles.buttonWrapper}
-                          onPress={handleGoogleLogin}
-                          disabled={state.status === 'loading'}
-                          activeOpacity={0.7}
-                          onPressIn={() => setIsPressing(true)}
-                          onPressOut={() => setIsPressing(false)}
-                          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                          pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
-                        >
-                          <View style={[
-                            styles.loginButton,
-                            isPressing && styles.loginButtonPressed
-                          ]}>
-                            <View style={styles.buttonContent}>
-                              {state.status === 'loading' ? (
-                                <>
-                                  <ActivityIndicator size="small" color="#000" />
-                                  <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
-                                </>
-                              ) : (
-                                <View style={styles.buttonContent}>
-                                  <GoogleIcon />
-                                  <Text style={styles.loginButtonText}>Login with Google</Text>
-                                  <View style={styles.glow} />
-                                </View>
-                              )}
-                            </View>
+
+                      <TouchableOpacity
+                        style={styles.buttonWrapper}
+                        onPress={handleGoogleLogin}
+                        disabled={loadingStates.google || loadingStates.twitter}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
+                      >
+                        <View style={styles.loginButton}>
+                          <View style={styles.buttonContent}>
+                            {loadingStates.google ? (
+                              <>
+                                <ActivityIndicator size="small" color="#000" />
+                                <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
+                              </>
+                            ) : (
+                              <>
+                                <GoogleIcon />
+                                <Text style={styles.loginButtonText}>Login with Google</Text>
+                              </>
+                            )}
                           </View>
-                        </TouchableOpacity>
-                      </Animated.View>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.buttonWrapper}
+                        onPress={handleTwitterLogin}
+                        disabled={loadingStates.google || loadingStates.twitter}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
+                      >
+                        <View style={styles.loginButton}>
+                          <View style={styles.buttonContent}>
+                            {loadingStates.twitter ? (
+                              <>
+                                <ActivityIndicator size="small" color="#000" />
+                                <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
+                              </>
+                            ) : (
+                              <View style={styles.buttonContent}>
+                                <Image source={require('../../assets/icons/twitter.png')} style={{ width: 24, height: 24 }} />
+                                <Text style={styles.loginButtonText}>Login with Twitter</Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -515,14 +507,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  loginButtonPressed: {
-    backgroundColor: '#e0e0e0',
-    transform: [{ scale: 0.96 }],
-    borderWidth: 2,
-    borderColor: '#444',
-    alignItems: 'center',
-    
-  },
   loginButtonText: {
     color: '#000',
     fontWeight: '700',
@@ -536,29 +520,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
-  },
-  shimmerEffect: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    width: 50,
-    height: '100%',
-    transform: [{ skewX: '-20deg' }],
-  },
-  glow: {
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
-    borderRadius: 50,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
-    opacity: 0.6,
   },
   errorContainer: {
     backgroundColor: '#fff',

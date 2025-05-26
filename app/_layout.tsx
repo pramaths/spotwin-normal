@@ -51,9 +51,6 @@ export default function RootLayout() {
           solana: {
               createOnLogin: 'all-users',
           },
-          ethereum: {
-              createOnLogin: 'all-users',
-          },
       },
   }}
     >
