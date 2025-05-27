@@ -243,7 +243,7 @@ export default function SignupScreen() {
                           <Text style={styles.errorText}>{authState.error.message}</Text>
                         </View>
                       )}
-
+{/* 
                       <TouchableOpacity
                         style={styles.buttonWrapper}
                         onPress={handleGoogleLogin}
@@ -267,7 +267,7 @@ export default function SignupScreen() {
                             )}
                           </View>
                         </View>
-                      </TouchableOpacity>
+                      </TouchableOpacity> */}
 
                       <TouchableOpacity
                         style={styles.buttonWrapper}
