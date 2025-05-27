@@ -12,6 +12,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { ToastAndroid } from 'react-native';
 import { useLoginWithOAuth, hasError, usePrivy } from '@privy-io/expo';
 import GoogleIcon from '@/assets/icons/google.svg';
+import AppleIcon from '@/assets/icons/apple.svg';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -59,6 +60,31 @@ export default function SignupScreen() {
       setAuthState({
         status: 'error',
         error: { message: 'Google login failed. Please try again.' }
+      });
+
+      // Clear error message after 3 seconds
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => {
+        setAuthState({
+          status: 'idle',
+          error: null
+        });
+      }, 3000);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setLoadingStates(prev => ({ ...prev, google: true }));
+    setAuthState({ status: 'loading', error: null });
+    try {
+      await login({ provider: 'apple' });
+    } catch (error) {
+      setLoadingStates(prev => ({ ...prev, google: false }));
+      setAuthState({
+        status: 'error',
+        error: { message: 'Apple login failed. Please try again.' }
       });
 
       // Clear error message after 3 seconds
@@ -243,7 +269,7 @@ export default function SignupScreen() {
                           <Text style={styles.errorText}>{authState.error.message}</Text>
                         </View>
                       )}
-{/* 
+
                       <TouchableOpacity
                         style={styles.buttonWrapper}
                         onPress={handleGoogleLogin}
@@ -267,7 +293,32 @@ export default function SignupScreen() {
                             )}
                           </View>
                         </View>
-                      </TouchableOpacity> */}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.buttonWrapper}
+                        onPress={handleAppleLogin}
+                        disabled={loadingStates.google || loadingStates.twitter}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
+                      >
+                        <View style={styles.loginButton}>
+                          <View style={styles.buttonContent}>
+                            {loadingStates.google ? (
+                              <>
+                                <ActivityIndicator size="small" color="#000" />
+                                <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
+                              </>
+                            ) : (
+                              <>
+                                <AppleIcon />
+                                <Text style={styles.loginButtonText}>Login with Apple</Text>
+                              </>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.buttonWrapper}
