@@ -21,7 +21,7 @@ const formatWalletAddress = (address: string) => {
   return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
 };
 
-const logoUrl = require('@/assets/Logo.png');
+const logoUrl = require('@/assets/logo.png');
 const ProfileScreen = () => {
   const router = useRouter();
   

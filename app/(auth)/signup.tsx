@@ -229,7 +229,7 @@ export default function SignupScreen() {
                   { backgroundColor: '#fff' }
                 ]}>
                   <Image
-                    source={require('../../assets/Logo.png')}
+                    source={require('../../assets/logo.png')}
                     style={[
                       styles.logo,
                       keyboardVisible && styles.logoSmall
