@@ -227,7 +227,7 @@ export default function SignupScreen() {
                   { backgroundColor: '#fff' }
                 ]}>
                   <Image
-                    source={require('../../assets/logo.png')}
+                    source={require('../../assets/Logo.png')}
                     style={[
                       styles.logo,
                       keyboardVisible && styles.logoSmall
@@ -312,7 +312,7 @@ export default function SignupScreen() {
                               </>
                             ) : (
                               <>
-                                <AppleIcon />
+                                <AppleIcon width={24} height={24} />
                                 <Text style={styles.loginButtonText}>Login with Apple</Text>
                               </>
                             )}
