@@ -23,7 +23,8 @@ export default function SignupScreen() {
   // Add separate loading states for each provider
   const [loadingStates, setLoadingStates] = useState({
     google: false,
-    twitter: false
+    twitter: false,
+    apple: false
   });
   
   const [authState, setAuthState] = useState<{
@@ -36,6 +37,7 @@ export default function SignupScreen() {
   const { login, state } = useLoginWithOAuth({
     onSuccess: async () => {
       const response = await apiClient<IUser>(LOGIN, 'POST');
+      console.log('response', response);
       if (response.success && response.data) {
         setUser(response.data);
         setAuthenticated(true);
@@ -76,12 +78,12 @@ export default function SignupScreen() {
   };
 
   const handleAppleLogin = async () => {
-    setLoadingStates(prev => ({ ...prev, google: true }));
+    setLoadingStates(prev => ({ ...prev, apple: true }));
     setAuthState({ status: 'loading', error: null });
     try {
-      await login({ provider: 'apple' });
+      await login({ provider: 'apple' , isLegacyAppleIosBehaviorEnabled: true});
     } catch (error) {
-      setLoadingStates(prev => ({ ...prev, google: false }));
+      setLoadingStates(prev => ({ ...prev, apple: false }));
       setAuthState({
         status: 'error',
         error: { message: 'Apple login failed. Please try again.' }
@@ -174,12 +176,12 @@ export default function SignupScreen() {
   useEffect(() => {
     if (state.status === 'done') {
       // Reset loading states when login is complete
-      setLoadingStates({ google: false, twitter: false });
+      setLoadingStates({ google: false, twitter: false, apple: false });
       setAuthenticated(true);
       router.replace('/(tabs)');
     } else if (state.status === 'error') {
       // Reset loading states on error
-      setLoadingStates({ google: false, twitter: false });
+      setLoadingStates({ google: false, twitter: false, apple: false });
     }
   }, [state]);
 
