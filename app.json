@@ -14,7 +14,7 @@
         "dark": "./assets/images/apple.png",
         "tinted": "./assets/images/apple.png"
       },
-      "userAppleSignIn": true,
+      "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.pramaths.spotwin",
       "buildNumber": "13",
