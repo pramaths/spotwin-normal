@@ -300,14 +300,14 @@ export default function SignupScreen() {
                       <TouchableOpacity
                         style={styles.buttonWrapper}
                         onPress={handleAppleLogin}
-                        disabled={loadingStates.google || loadingStates.twitter}
+                        disabled={loadingStates.google || loadingStates.apple}
                         activeOpacity={0.7}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                         pressRetentionOffset={{ top: 30, bottom: 30, left: 30, right: 30 }}
                       >
                         <View style={styles.loginButton}>
                           <View style={styles.buttonContent}>
-                            {loadingStates.google ? (
+                            {loadingStates.apple ? (
                               <>
                                 <ActivityIndicator size="small" color="#000" />
                                 <Text style={[styles.loginButtonText, { marginLeft: 8 }]}>Logging in...</Text>
@@ -322,6 +322,7 @@ export default function SignupScreen() {
                         </View>
                       </TouchableOpacity>
 
+                      {/* Twitter login temporarily disabled
                       <TouchableOpacity
                         style={styles.buttonWrapper}
                         onPress={handleTwitterLogin}
@@ -346,6 +347,7 @@ export default function SignupScreen() {
                           </View>
                         </View>
                       </TouchableOpacity>
+                      */}
                     </View>
                   )}
                 </View>
